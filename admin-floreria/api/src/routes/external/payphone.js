@@ -4,18 +4,11 @@ const {
   createPendingPayphoneOrder,
   finalizePayphoneOrder,
 } = require('../../services/payphoneOrderService');
+const { businessLog, businessError } = require('../../utils/logger');
 const router = express.Router();
 
-const log = (step, msg, data) => {
-  const ts = new Date().toISOString();
-  if (data !== undefined) {
-    console.log(`[PAYPHONE][${step}] ${ts} — ${msg}`, JSON.stringify(data, null, 2));
-  } else {
-    console.log(`[PAYPHONE][${step}] ${ts} — ${msg}`);
-  }
-};
-
 router.post('/box-session', async (req, res) => {
+  const startedAt = Date.now();
   // Verificar si la tienda acepta pedidos
   const company = await prisma.company.findFirst({
     where: { isActive: true },
@@ -30,7 +23,10 @@ router.post('/box-session', async (req, res) => {
     });
   }
 
-  log('BOX_SESSION', 'Iniciando creación de sesión web');
+  businessLog("PAYMENT", "PAYPHONE_SESSION_STARTED", {
+    customerEmail: req.body?.senderEmail || req.body?.customerEmail || null,
+    paymentMethod: "PAYPHONE",
+  });
 
   try {
     const session = await createPendingPayphoneOrder(prisma, {
@@ -38,11 +34,12 @@ router.post('/box-session', async (req, res) => {
       paymentLabel: 'Tarjeta (PayPhone Box)',
     });
 
-    log('BOX_SESSION', 'Orden pendiente creada', {
+    businessLog("PAYMENT", "PAYPHONE_SESSION_CREATED", {
       orderId: session.order.id,
       orderNumber: session.order.orderNumber,
       clientTransactionId: session.clientTransactionId,
       amountInCents: session.amountInCents,
+      durationMs: Date.now() - startedAt,
     });
 
     return res.status(201).json({
@@ -60,7 +57,9 @@ router.post('/box-session', async (req, res) => {
       },
     });
   } catch (error) {
-    log('BOX_SESSION', 'ERROR', { message: error.message, stack: error.stack });
+    businessError("PAYMENT", "PAYPHONE_SESSION_FAILED", error, {
+      durationMs: Date.now() - startedAt,
+    });
     return res.status(error.statusCode || 500).json({
       status: 'error',
       message: error.message || 'No se pudo crear la sesión de pago.',
@@ -70,6 +69,7 @@ router.post('/box-session', async (req, res) => {
 });
 
 router.post('/finalize', async (req, res) => {
+  const startedAt = Date.now();
   const {
     id: payphoneTransactionId,
     clientTransactionId,
@@ -80,7 +80,7 @@ router.post('/finalize', async (req, res) => {
   } = req.body;
   const resolvedClientTxId = clientTxId || clientTransactionId;
 
-  log('FINALIZE', 'Finalizando pago desde web-box', {
+  businessLog("PAYMENT", "PAYPHONE_FINALIZE_STARTED", {
     payphoneTransactionId,
     clientTransactionId: resolvedClientTxId,
     transactionStatus,
@@ -96,6 +96,16 @@ router.post('/finalize', async (req, res) => {
       authorizationCode,
     });
 
+    businessLog("PAYMENT", "PAYPHONE_FINALIZED", {
+      orderNumber: finalization.order.orderNumber,
+      paymentStatus: finalization.paymentStatus,
+      approved: finalization.approved,
+      alreadyProcessed: finalization.alreadyProcessed,
+      payphoneTransactionId,
+      clientTransactionId: resolvedClientTxId,
+      durationMs: Date.now() - startedAt,
+    });
+
     return res.status(200).json({
       status: 'success',
       data: {
@@ -106,7 +116,12 @@ router.post('/finalize', async (req, res) => {
       },
     });
   } catch (error) {
-    log('FINALIZE', 'ERROR', { message: error.message, stack: error.stack });
+    businessError("PAYMENT", "PAYPHONE_FINALIZE_FAILED", error, {
+      payphoneTransactionId,
+      clientTransactionId: resolvedClientTxId,
+      transactionStatus,
+      durationMs: Date.now() - startedAt,
+    });
     return res.status(error.statusCode || 500).json({
       status: 'error',
       message: error.message || 'No se pudo finalizar el pago.',

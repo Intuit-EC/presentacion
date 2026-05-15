@@ -4,17 +4,9 @@ const {
   createPaypalCheckoutOrder,
   capturePaypalCheckoutOrder,
 } = require("../../services/paypalOrderService");
+const { businessLog, businessError } = require("../../utils/logger");
 
 const router = express.Router();
-
-const log = (step, message, data) => {
-  const ts = new Date().toISOString();
-  if (data !== undefined) {
-    console.log(`[PAYPAL][${step}] ${ts} - ${message}`, JSON.stringify(data, null, 2));
-  } else {
-    console.log(`[PAYPAL][${step}] ${ts} - ${message}`);
-  }
-};
 
 router.post("/create-order", async (req, res) => {
   const startedAt = Date.now();
@@ -33,12 +25,15 @@ router.post("/create-order", async (req, res) => {
     });
   }
 
-  log("CREATE_ORDER", "Creando orden PayPal desde storefront");
+  businessLog("PAYMENT", "PAYPAL_CREATE_STARTED", {
+    customerEmail: req.body?.senderEmail || req.body?.customerEmail || null,
+    paymentMethod: "PAYPAL",
+  });
 
   try {
     const session = await createPaypalCheckoutOrder(prisma, req.body);
 
-    log("CREATE_ORDER", "Orden PayPal creada", {
+    businessLog("PAYMENT", "PAYPAL_CREATED", {
       orderId: session.order.id,
       orderNumber: session.orderNumber,
       clientTransactionId: session.clientTransactionId,
@@ -59,11 +54,9 @@ router.post("/create-order", async (req, res) => {
       },
     });
   } catch (error) {
-    log("CREATE_ORDER", "ERROR", {
-      message: error.message,
+    businessError("PAYMENT", "PAYPAL_CREATE_FAILED", error, {
       statusCode: error.statusCode,
       durationMs: Date.now() - startedAt,
-      stack: error.stack,
     });
     return res.status(error.statusCode || 500).json({
       status: "error",
@@ -82,7 +75,7 @@ router.post("/capture", async (req, res) => {
     cancelled,
   } = req.body || {};
 
-  log("CAPTURE", "Capturando orden PayPal", {
+  businessLog("PAYMENT", "PAYPAL_CAPTURE_STARTED", {
     paypalOrderId: paypalOrderId || token,
     clientTransactionId,
     cancelled: Boolean(cancelled),
@@ -94,6 +87,18 @@ router.post("/capture", async (req, res) => {
       token,
       clientTransactionId,
       cancelled,
+    });
+
+    businessLog("PAYMENT", "PAYPAL_CAPTURED", {
+      orderNumber: result.order.orderNumber,
+      paymentStatus: result.paymentStatus,
+      approved: result.approved,
+      alreadyProcessed: result.alreadyProcessed,
+      paypalOrderId: result.paypalOrderId || paypalOrderId || token || null,
+      captureId: result.captureId || null,
+      payerEmail: result.payerEmail || null,
+      emailMismatch: Boolean(result.emailMismatch),
+      durationMs: Date.now() - startedAt,
     });
 
     return res.status(200).json({
@@ -116,11 +121,11 @@ router.post("/capture", async (req, res) => {
       },
     });
   } catch (error) {
-    log("CAPTURE", "ERROR", {
-      message: error.message,
+    businessError("PAYMENT", "PAYPAL_CAPTURE_FAILED", error, {
       statusCode: error.statusCode,
       durationMs: Date.now() - startedAt,
-      stack: error.stack,
+      paypalOrderId: paypalOrderId || token || null,
+      clientTransactionId,
     });
     return res.status(error.statusCode || 500).json({
       status: "error",

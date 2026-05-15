@@ -5,6 +5,7 @@ const {
   normalizeStorefrontItems,
   hydrateStorefrontItems,
 } = require("../../utils/storefrontCartItems");
+const { businessLog, businessError } = require("../../utils/logger");
 const router = express.Router();
 
 /**
@@ -12,6 +13,7 @@ const router = express.Router();
  * Recibir datos de carrito abandonado y notificar por email
  */
 router.post("/", async (req, res) => {
+  const startedAt = Date.now();
   try {
     const {
       customerName,
@@ -39,7 +41,17 @@ router.post("/", async (req, res) => {
       return res.status(400).json({ status: "error", message: "Datos incompletos para notificacion de abandono" });
     }
 
-    console.log(`Notificando carrito abandonado de: ${customerName} (${phone})`);
+    businessLog("CART", "ABANDONED_RECEIVED", {
+      customerName,
+      phone,
+      senderEmail,
+      total: Number(total) || 0,
+      itemsCount: Array.isArray(items) ? items.length : 0,
+      paymentMethod: paymentMethod || null,
+      couponCode: couponCode || null,
+      source: source || "CHECKOUT_WEB",
+      abandonedAt: abandonedAt || null,
+    });
 
     const company = await prisma.company.findFirst({
       where: { isActive: true },
@@ -151,6 +163,16 @@ router.post("/", async (req, res) => {
     }
 
     if (sent) {
+      businessLog("CART", recentDuplicate ? "ABANDONED_DUPLICATE" : "ABANDONED_CREATED", {
+        cartId: abandonedCart.id,
+        customerName,
+        phone,
+        total: Number(total) || 0,
+        paymentMethod: paymentMethod || null,
+        emailSent: true,
+        durationMs: Date.now() - startedAt,
+      });
+
       return res.json({
         status: "success",
         message: "Notificacion de abandono enviada",
@@ -160,8 +182,19 @@ router.post("/", async (req, res) => {
       });
     }
 
+    businessError("CART", "ABANDONED_EMAIL_FAILED", "No se pudo enviar notificacion", {
+      customerName,
+      phone,
+      total: Number(total) || 0,
+      durationMs: Date.now() - startedAt,
+    });
     return res.status(500).json({ status: "error", message: "Error enviando notificacion" });
   } catch (error) {
+    businessError("CART", "ABANDONED_FAILED", error, {
+      phone: req.body?.phone,
+      customerName: req.body?.customerName,
+      durationMs: Date.now() - startedAt,
+    });
     console.error("Abandoned order route error:", error);
     res.status(500).json({ status: "error", message: "Error interno" });
   }

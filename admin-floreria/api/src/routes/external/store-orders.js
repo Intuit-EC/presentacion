@@ -10,17 +10,9 @@ const {
   hydrateStorefrontItems,
 } = require("../../utils/storefrontCartItems");
 const { uploadBuffer } = require("../../services/storageService");
+const { businessLog, businessError } = require("../../utils/logger");
 
 const router = express.Router();
-
-const log = (step, msg, data) => {
-  const ts = new Date().toISOString();
-  if (data !== undefined) {
-    console.log(`[STORE_ORDER][${step}] ${ts} - ${msg}`, JSON.stringify(data, null, 2));
-  } else {
-    console.log(`[STORE_ORDER][${step}] ${ts} - ${msg}`);
-  }
-};
 
 function parseMoney(value) {
   const normalized = String(value ?? "")
@@ -129,7 +121,8 @@ router.post("/", async (req, res) => {
       storeUrl,
     } = req.body;
 
-    log("CREATE_ORDER", "Creando orden desde storefront", {
+    businessLog("CHECKOUT", "STARTED", {
+      source: "TIENDA_WEB",
       paymentMethod: paymentMethod || "UNKNOWN",
       senderName,
       senderEmail,
@@ -389,7 +382,7 @@ router.post("/", async (req, res) => {
       }
     }
 
-    log("CREATE_ORDER", "Orden creada en storefront", {
+    businessLog("ORDER", "CREATED", {
       orderId: order.id,
       orderNumber: order.orderNumber,
       paymentMethod: paymentMethod || "UNKNOWN",
@@ -418,11 +411,9 @@ router.post("/", async (req, res) => {
       },
     });
   } catch (error) {
-    log("CREATE_ORDER", "ERROR", {
-      message: error.message,
+    businessError("ORDER", "CREATE_FAILED", error, {
       statusCode: error.statusCode,
       durationMs: Date.now() - startedAt,
-      stack: error.stack,
       paymentMethod: req.body?.paymentMethod || null,
     });
 
@@ -436,6 +427,7 @@ router.post("/", async (req, res) => {
 });
 
 router.post("/:orderNumber/payment-proof", async (req, res) => {
+  const startedAt = Date.now();
   try {
     const { orderNumber } = req.params;
     const { dataUrl, fileName } = req.body || {};
@@ -469,6 +461,13 @@ router.post("/:orderNumber/payment-proof", async (req, res) => {
         message: "Orden no encontrada.",
       });
     }
+
+    businessLog("PAYMENT", "PROOF_UPLOAD_STARTED", {
+      orderId: order.id,
+      orderNumber: order.orderNumber,
+      paymentStatus: order.paymentStatus,
+      fileName: fileName || "comprobante",
+    });
 
     const { mimeType, buffer } = parseDataUrl(dataUrl);
     const safeOriginalName = sanitizeFileName(fileName || "comprobante");
@@ -523,12 +522,24 @@ router.post("/:orderNumber/payment-proof", async (req, res) => {
       };
     }
 
+    businessLog("PAYMENT", "PROOF_UPLOADED", {
+      orderId: updatedOrder.id,
+      orderNumber: updatedOrder.orderNumber,
+      paymentProofStatus: updatedOrder.paymentProofStatus,
+      fileName: fileName || "comprobante",
+      durationMs: Date.now() - startedAt,
+    });
+
     return res.status(200).json({
       status: "success",
       message: "Comprobante subido correctamente.",
       data: updatedOrder,
     });
   } catch (error) {
+    businessError("PAYMENT", "PROOF_UPLOAD_FAILED", error, {
+      orderNumber: req.params?.orderNumber,
+      durationMs: Date.now() - startedAt,
+    });
     console.error("Payment proof upload error:", error);
     return res.status(500).json({
       status: "error",

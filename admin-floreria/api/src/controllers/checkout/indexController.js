@@ -9,6 +9,7 @@ const {
 const {
   emailSuscriptionSchema,
 } = require("../../utils/schemas/saveEmailSuscriptionSchema.js")
+const { businessLog, businessError } = require("../../utils/logger");
 
 const { generateOrderNumber } = require("../../utils/order.js");
 const { validateFeatureAccess } = require("../../validations/featureValidation.js");
@@ -64,6 +65,7 @@ function computeProductUnitPrice(product, variant) {
 }
 
 exports.processCheckout = async (req, res) => {
+  const startedAt = Date.now();
   try {
     const parseResult = createOrderRequestSchema.safeParse(req.body);
     const TAX_RATE = 0.15;
@@ -78,7 +80,16 @@ exports.processCheckout = async (req, res) => {
 
     const { billingData, orderData } = parseResult.data;
 
-    console.log("Checkout API: Received billingData:", billingData);
+    businessLog("CHECKOUT", "STARTED", {
+      customerName: billingData.customerName,
+      customerLastName: billingData.customerLastName,
+      customerEmail: billingData.customerEmail,
+      customerPhone: billingData.customerPhone,
+      itemsCount: orderData.OrderItem.length,
+      paymentStatus: orderData.paymentStatus,
+      couponDiscountCode: orderData.couponDiscountCode || null,
+      discountCode: orderData.discountCode || null,
+    });
     // Generar número de orden único
     const orderNumber = await generateOrderNumber();
 
@@ -295,7 +306,19 @@ exports.processCheckout = async (req, res) => {
       });
     });
 
-    console.log("Checkout API: Created order:", createdOrder);
+    businessLog("ORDER", "CREATED", {
+      orderId: createdOrder.id,
+      orderNumber: createdOrder.orderNumber,
+      customerName: createdOrder.customerName,
+      customerEmail: createdOrder.customerEmail,
+      customerPhone: createdOrder.customerPhone,
+      status: createdOrder.status,
+      paymentStatus: createdOrder.paymentStatus,
+      total: Number(createdOrder.total || 0),
+      itemsCount: createdOrder.orderItems?.length || 0,
+      source: "CHECKOUT_API",
+      durationMs: Date.now() - startedAt,
+    });
 
     // Emitir evento de creación para SSE
     orderEvents.emit("order.created", {
@@ -362,6 +385,11 @@ exports.processCheckout = async (req, res) => {
       },
     });
   } catch (error) {
+    businessError("CHECKOUT", "FAILED", error, {
+      customerEmail: req.body?.billingData?.customerEmail,
+      customerPhone: req.body?.billingData?.customerPhone,
+      durationMs: Date.now() - startedAt,
+    });
     console.error("Checkout API: Error creating checkout session:", error);
     console.error(
       "Error stack:",

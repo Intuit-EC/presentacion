@@ -10,6 +10,21 @@ const EMAIL_LOGO_PATH = path.resolve(
   __dirname,
   "../../../client/public/difiori.png"
 );
+const EMAIL_LOGO_ATTACHMENT = existsSync(EMAIL_LOGO_PATH)
+  ? [
+      {
+        filename: "difiori.png",
+        path: EMAIL_LOGO_PATH,
+        cid: "logo",
+      },
+    ]
+  : [];
+const EMAIL_LOGO_HTML_SMALL = EMAIL_LOGO_ATTACHMENT.length
+  ? '<img src="cid:logo" alt="DIFIORI" width="72" height="72" style="display:block;width:72px;height:72px;border-radius:18px;" />'
+  : "";
+const EMAIL_LOGO_HTML_LARGE = EMAIL_LOGO_ATTACHMENT.length
+  ? '<img src="cid:logo" alt="DIFIORI" width="84" height="84" style="display:block;width:84px;height:84px;border-radius:22px;" />'
+  : "";
 
 function escapeHtml(value) {
   return String(value ?? "")
@@ -253,13 +268,7 @@ class EmailService {
         to: orderData.customerEmail,
         subject: `Factura de tu pedido NR.${orderData.orderNumber}`,
         html: htmlContent,
-        attachments: [
-          {
-            filename: "difiori.png",
-            path: EMAIL_LOGO_PATH,
-            cid: "logo",
-          },
-        ],
+        attachments: EMAIL_LOGO_ATTACHMENT,
       };
 
       // Enviar el email
@@ -320,13 +329,7 @@ class EmailService {
         to: orderData.customerEmail,
         subject: `Confirmación de pedido #${orderData.orderNumber}`,
         html: htmlContent,
-        attachments: [
-          {
-            filename: "difiori.png",
-            path: EMAIL_LOGO_PATH,
-            cid: "logo",
-          },
-        ],
+        attachments: EMAIL_LOGO_ATTACHMENT,
       };
 
       const result = await this.transporter.sendMail(mailOptions);
@@ -421,7 +424,7 @@ class EmailService {
                 <h2 style="margin:0 0 8px;color:#77472b;">Nuevo pedido recibido</h2>
                 <p style="margin:0;color:#5e4b70;">Se registró un nuevo pedido en la tienda DIFIORI.</p>
               </div>
-              <img src="cid:logo" alt="DIFIORI" width="72" height="72" style="display:block;width:72px;height:72px;border-radius:18px;" />
+              ${EMAIL_LOGO_HTML_SMALL}
             </div>
             <div style="margin-bottom:18px;padding:18px;border-radius:16px;background:#fff8fb;border:1px solid #f1d7e5;">
               <div style="font-size:13px;font-weight:700;color:#7c6a8d;text-transform:uppercase;letter-spacing:.08em;">Total del pedido</div>
@@ -445,11 +448,7 @@ class EmailService {
         `,
         text: `Nuevo pedido recibido\n\n${detailsText}\n\nSubtotal: $${formatMoney(subtotal)}\nEnvio / reserva: $${formatMoney(shipping)}\nTotal: $${formatMoney(total)}\n\nProductos:\n${itemsText}${whatsappLink ? `\n\nWhatsApp: ${whatsappLink}` : ""}`,
         attachments: [
-          {
-            filename: "difiori.png",
-            path: EMAIL_LOGO_PATH,
-            cid: "logo",
-          },
+          ...EMAIL_LOGO_ATTACHMENT,
           ...itemAttachments,
         ],
       };
@@ -547,7 +546,7 @@ class EmailService {
                 <h2 style="margin:10px 0 8px;color:#77472b;font-size:34px;line-height:1.15;">Pedido ${escapeHtml(orderData.orderNumber || "")}</h2>
                 <p style="margin:0;font-size:18px;line-height:1.5;color:#5e4b70;">Se registro un nuevo pedido en la tienda. Primero veras el producto y luego todo el detalle del cliente.</p>
               </div>
-              <img src="cid:logo" alt="DIFIORI" width="84" height="84" style="display:block;width:84px;height:84px;border-radius:22px;" />
+              ${EMAIL_LOGO_HTML_LARGE}
             </div>
             <h3 style="margin:0 0 12px;color:#3d2852;font-size:28px;">Productos del pedido</h3>
             <p style="margin:0 0 12px;font-size:17px;color:#5e4b70;">Cantidad total de productos: <strong>${totalItems}</strong></p>
@@ -575,11 +574,7 @@ class EmailService {
         `,
         text: `Nuevo pedido recibido\n\n${detailsText}\n\nSubtotal: $${formatMoney(subtotal)}\nEnvio / reserva: $${formatMoney(shipping)}\nTotal: $${formatMoney(total)}\n\nProductos:\n${itemsText}${whatsappLink ? `\n\nWhatsApp: ${whatsappLink}` : ""}`,
         attachments: [
-          {
-            filename: "difiori.png",
-            path: EMAIL_LOGO_PATH,
-            cid: "logo",
-          },
+          ...EMAIL_LOGO_ATTACHMENT,
           ...itemAttachments,
         ],
       };

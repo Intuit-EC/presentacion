@@ -5,6 +5,7 @@ const {
   normalizeStorefrontItems,
   hydrateStorefrontItems,
 } = require("../../utils/storefrontCartItems");
+const { businessLog, businessError } = require("../../utils/logger");
 
 const router = express.Router();
 
@@ -98,6 +99,7 @@ router.get("/", async (req, res) => {
 });
 
 router.patch("/:id", async (req, res) => {
+  const startedAt = Date.now();
   try {
     const company = await getCompanyForAdmin(req.user?.adminId);
     if (!company) {
@@ -151,11 +153,40 @@ router.patch("/:id", async (req, res) => {
       data,
     });
 
+    if (status && status !== existing.status) {
+      businessLog("CART", "STATUS_CHANGED", {
+        cartId: updated.id,
+        customerName: updated.customerName,
+        phone: updated.customerPhone,
+        from: existing.status,
+        to: updated.status,
+        total: Number(updated.total || 0),
+        adminId: req.user?.adminId || null,
+        durationMs: Date.now() - startedAt,
+      });
+    }
+
+    if (typeof notes === "string" && notes.trim() !== String(existing.notes || "")) {
+      businessLog("CART", "NOTES_UPDATED", {
+        cartId: updated.id,
+        customerName: updated.customerName,
+        phone: updated.customerPhone,
+        status: updated.status,
+        adminId: req.user?.adminId || null,
+        durationMs: Date.now() - startedAt,
+      });
+    }
+
     return res.json({
       status: "success",
       data: updated,
     });
   } catch (error) {
+    businessError("CART", "UPDATE_FAILED", error, {
+      cartId: req.params?.id,
+      adminId: req.user?.adminId || null,
+      durationMs: Date.now() - startedAt,
+    });
     console.error("Update abandoned cart error:", error);
     return res.status(500).json({
       status: "error",

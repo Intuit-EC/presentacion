@@ -2,6 +2,7 @@ const { Prisma } = require("@prisma/client");
 const { db: prisma } = require("../../lib/prisma");
 const { orderEvents } = require("../../events/orderEvents");
 const minioClient = require("../../lib/s3Config");
+const { businessLog, businessError } = require("../../utils/logger");
 
 const PROOFS_BUCKET_NAME = process.env.MINIO_BUCKET || "difiori";
 const PROOFS_PUBLIC_URL = String(
@@ -449,25 +450,57 @@ exports.getOrderById = async (req, res) => {
 };
 
 exports.updateOrderById = async (req, res) => {
+  const startedAt = Date.now();
   try {
     const { id } = req.params;
     const data = req.body;
+    const previousOrder = await prisma.order.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        orderNumber: true,
+        customerName: true,
+        customerEmail: true,
+        customerPhone: true,
+        status: true,
+        paymentStatus: true,
+      },
+    });
+
     const order = await prisma.order.update({
       where: { id },
       data,
       select: orderSelect,
     });
     const paymentProofFields = await getPaymentProofFields(order.id);
+    businessLog("ORDER", "UPDATED", {
+      orderId: order.id,
+      orderNumber: order.orderNumber,
+      customerName: order.customerName,
+      customerEmail: order.customerEmail,
+      customerPhone: order.customerPhone,
+      statusBefore: previousOrder?.status,
+      statusAfter: order.status,
+      paymentStatusBefore: previousOrder?.paymentStatus,
+      paymentStatusAfter: order.paymentStatus,
+      updatedFields: Object.keys(data || {}),
+      durationMs: Date.now() - startedAt,
+    });
     return res.status(200).json({
       order: serializeOrder(order, paymentProofFields),
     });
   } catch (error) {
+    businessError("ORDER", "UPDATE_FAILED", error, {
+      orderId: req.params?.id,
+      durationMs: Date.now() - startedAt,
+    });
     console.error("Update order by id error:", error);
     return res.status(500).json({ error: "Error al actualizar orden" });
   }
 };
 
 exports.updateStateOrderById = async (req, res) => {
+  const startedAt = Date.now();
   try {
     const { id } = req.params;
     const { status } = req.body;
@@ -495,6 +528,20 @@ exports.updateStateOrderById = async (req, res) => {
       });
     }
 
+    const previousOrder = await prisma.order.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        orderNumber: true,
+        customerName: true,
+        customerEmail: true,
+        customerPhone: true,
+        status: true,
+        paymentStatus: true,
+        total: true,
+      },
+    });
+
     const order = await prisma.order.update({
       where: { id },
       data: { status },
@@ -511,12 +558,30 @@ exports.updateStateOrderById = async (req, res) => {
 
     const paymentProofFields = await getPaymentProofFields(order.id);
 
+    businessLog("ORDER", "STATUS_CHANGED", {
+      orderId: order.id,
+      orderNumber: order.orderNumber,
+      customerName: order.customerName,
+      customerEmail: order.customerEmail,
+      customerPhone: order.customerPhone,
+      from: previousOrder?.status,
+      to: order.status,
+      paymentStatus: order.paymentStatus,
+      total: Number(order.total || 0),
+      durationMs: Date.now() - startedAt,
+    });
+
     return res.status(200).json({
       status: "success",
       message: "Estado actualizado correctamente",
       data: { order: serializeOrder(order, paymentProofFields) },
     });
   } catch (error) {
+    businessError("ORDER", "STATUS_CHANGE_FAILED", error, {
+      orderId: req.params?.id,
+      requestedStatus: req.body?.status,
+      durationMs: Date.now() - startedAt,
+    });
     console.error("Update order status error:", error);
     return res.status(500).json({
       status: "error",
@@ -527,6 +592,7 @@ exports.updateStateOrderById = async (req, res) => {
 };
 
 exports.updatePaymentStatus = async (req, res) => {
+  const startedAt = Date.now();
   try {
     const { id } = req.params;
     const { paymentStatus } = req.body;
@@ -535,6 +601,20 @@ exports.updatePaymentStatus = async (req, res) => {
     if (!paymentStatus || !validStatuses.includes(paymentStatus)) {
       return res.status(400).json({ status: "error", message: "paymentStatus invalido." });
     }
+
+    const previousOrder = await prisma.order.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        orderNumber: true,
+        customerName: true,
+        customerEmail: true,
+        customerPhone: true,
+        status: true,
+        paymentStatus: true,
+        total: true,
+      },
+    });
 
     const order = await prisma.order.update({
       where: { id },
@@ -547,18 +627,37 @@ exports.updatePaymentStatus = async (req, res) => {
 
     const paymentProofFields = await getPaymentProofFields(order.id);
 
+    businessLog("PAYMENT", "STATUS_CHANGED", {
+      orderId: order.id,
+      orderNumber: order.orderNumber,
+      customerName: order.customerName,
+      customerEmail: order.customerEmail,
+      customerPhone: order.customerPhone,
+      orderStatus: order.status,
+      from: previousOrder?.paymentStatus,
+      to: order.paymentStatus,
+      total: Number(order.total || 0),
+      durationMs: Date.now() - startedAt,
+    });
+
     return res.status(200).json({
       status: "success",
       message: "Estado de pago actualizado",
       data: { order: serializeOrder(order, paymentProofFields) },
     });
   } catch (error) {
+    businessError("PAYMENT", "STATUS_CHANGE_FAILED", error, {
+      orderId: req.params?.id,
+      requestedPaymentStatus: req.body?.paymentStatus,
+      durationMs: Date.now() - startedAt,
+    });
     console.error("Update payment status error:", error);
     return res.status(500).json({ status: "error", message: "Error al actualizar estado de pago." });
   }
 };
 
 exports.updatePaymentProof = async (req, res) => {
+  const startedAt = Date.now();
   try {
     const { id } = req.params;
     const { paymentProofStatus, paymentVerificationNotes } = req.body;
@@ -637,12 +736,28 @@ exports.updatePaymentProof = async (req, res) => {
 
     const paymentProofFields = await getPaymentProofFields(order.id);
 
+    businessLog("PAYMENT", "PROOF_STATUS_CHANGED", {
+      orderId: order.id,
+      orderNumber: order.orderNumber,
+      customerName: order.customerName,
+      customerEmail: order.customerEmail,
+      customerPhone: order.customerPhone,
+      paymentStatus: order.paymentStatus,
+      paymentProofStatus,
+      durationMs: Date.now() - startedAt,
+    });
+
     return res.status(200).json({
       status: "success",
       message: "Comprobante actualizado correctamente.",
       data: { order: serializeOrder(order, paymentProofFields) },
     });
   } catch (error) {
+    businessError("PAYMENT", "PROOF_STATUS_CHANGE_FAILED", error, {
+      orderId: req.params?.id,
+      requestedPaymentProofStatus: req.body?.paymentProofStatus,
+      durationMs: Date.now() - startedAt,
+    });
     console.error("Update payment proof error:", error);
     return res.status(500).json({
       status: "error",
@@ -652,13 +767,42 @@ exports.updatePaymentProof = async (req, res) => {
 };
 
 exports.deleteOrderById = async (req, res) => {
+  const startedAt = Date.now();
   try {
     const { id } = req.params;
+    const existingOrder = await prisma.order.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        orderNumber: true,
+        customerName: true,
+        customerEmail: true,
+        customerPhone: true,
+        status: true,
+        paymentStatus: true,
+        total: true,
+      },
+    });
     await prisma.order.delete({
       where: { id },
     });
+    businessLog("ORDER", "DELETED", {
+      orderId: existingOrder?.id || id,
+      orderNumber: existingOrder?.orderNumber,
+      customerName: existingOrder?.customerName,
+      customerEmail: existingOrder?.customerEmail,
+      customerPhone: existingOrder?.customerPhone,
+      status: existingOrder?.status,
+      paymentStatus: existingOrder?.paymentStatus,
+      total: Number(existingOrder?.total || 0),
+      durationMs: Date.now() - startedAt,
+    });
     return res.status(200).json({ message: "Orden eliminada" });
   } catch (error) {
+    businessError("ORDER", "DELETE_FAILED", error, {
+      orderId: req.params?.id,
+      durationMs: Date.now() - startedAt,
+    });
     return res.status(500).json({ error: "Error al eliminar orden" });
   }
 };
