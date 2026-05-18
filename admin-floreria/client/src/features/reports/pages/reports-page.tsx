@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { ADMIN_API_URL } from '@/core/config/public-env';
 
 interface ReportData {
   period: { startDate: string; endDate: string };
@@ -17,7 +18,7 @@ export default function ReportsPage() {
     try {
       setLoading(true);
       setError('');
-      const response = await fetch(`/api/reports/data?range=${selectedRange}`, {
+      const response = await fetch(`${ADMIN_API_URL}/reports/data?range=${selectedRange}`, {
         credentials: 'include',
       });
       
@@ -34,7 +35,7 @@ export default function ReportsPage() {
 
   const downloadExcel = async () => {
     try {
-      const response = await fetch(`/api/reports/excel?range=${range}`, {
+      const response = await fetch(`${ADMIN_API_URL}/reports/excel?range=${range}`, {
         credentials: 'include',
       });
 
