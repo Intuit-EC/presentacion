@@ -91,10 +91,10 @@ export default function Home() {
     window.history.replaceState(null, "", `#${id}`);
   };
 
-  const handleTestimonialsClick = () => {
-    setShouldLoadDeferredSections(true);
+  const handleProductsClick = () => {
+    setShouldLoadCatalog(true);
     window.requestAnimationFrame(() => {
-      window.setTimeout(() => scrollToSection("testimonios"), 0);
+      window.setTimeout(() => scrollToSection("catalogo"), 0);
     });
   };
 
@@ -179,7 +179,7 @@ export default function Home() {
       <h1 className="sr-only">DIFIORI Flores Guayaquil - Floreria en Guayaquil, Ramos de Flores y Arreglos Florales a Domicilio</h1>
 
       <section className="home-shell-banner-slot">
-        <Banner onTestimonialsClick={handleTestimonialsClick} />
+        <Banner onProductsClick={handleProductsClick} />
       </section>
 
       <div className="home-shell-main">

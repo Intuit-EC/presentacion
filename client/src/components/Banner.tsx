@@ -10,8 +10,8 @@ const FIXED_BANNER = {
   desktopImage: "/assets/banner_collage_desktop.webp",
   title: "Sorprende hoy. Nosotros lo entregamos por ti.",
   subtitle: "Historias reales de alegria en Guayaquil",
-  cta: "Ver testimonios",
-  href: "/#testimonios",
+  cta: "Ver productos",
+  href: "/#catalogo",
 };
 
 type BannerImage = {
@@ -20,7 +20,7 @@ type BannerImage = {
 };
 
 interface BannerProps {
-  onTestimonialsClick?: () => void;
+  onProductsClick?: () => void;
 }
 
 function normalizeHeroImages(hero?: HomeHero | null): BannerImage[] {
@@ -44,7 +44,7 @@ function normalizeHeroImages(hero?: HomeHero | null): BannerImage[] {
     .filter((image) => image.url);
 }
 
-export function Banner({ onTestimonialsClick }: BannerProps) {
+export function Banner({ onProductsClick }: BannerProps) {
   const { data: hero } = useCMS();
   const cmsImages = useMemo(() => normalizeHeroImages(hero), [hero]);
   const fallbackImages = useMemo<BannerImage[]>(
@@ -140,7 +140,7 @@ export function Banner({ onTestimonialsClick }: BannerProps) {
               <div className="hero-banner-actions">
                 <button
                   type="button"
-                  onClick={onTestimonialsClick || (() => { window.location.href = FIXED_BANNER.href; })}
+                  onClick={onProductsClick || (() => { window.location.href = FIXED_BANNER.href; })}
                   className="hero-banner-btn hero-banner-btn-primary"
                 >
                   {FIXED_BANNER.cta}

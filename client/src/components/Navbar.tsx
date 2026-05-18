@@ -5,6 +5,7 @@ import { lazy, Suspense, useEffect, useState } from "react";
 import { Logo } from "@/components/Logo";
 import { useCart } from "@/context/CartContext";
 import { DEFAULT_COMPANY } from "@/lib/site";
+import { BEST_SELLERS_CATEGORY_SLUG } from "@shared/catalog";
 
 const SearchOverlay = lazy(() =>
   import("@/components/SearchOverlay").then((module) => ({ default: module.SearchOverlay })),
@@ -79,7 +80,7 @@ export function Navbar() {
 
   const leftLinks = [
     { href: "/#catalogo", label: "Catálogo" },
-    { href: "/#faq", label: "Preguntas" },
+    { href: `/categoria/${BEST_SELLERS_CATEGORY_SLUG}`, label: "Más comprados" },
   ];
 
   const rightLinks = [
