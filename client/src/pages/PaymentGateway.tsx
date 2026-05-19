@@ -88,7 +88,9 @@ export default function PaymentGateway() {
         }
 
         localStorage.setItem("pp_clientTxId", result.data.clientTransactionId);
-        sessionStorage.setItem("pp_web_token", String(result.data.paymentBoxData?.token || ""));
+        const webToken = String(result.data.paymentBoxData?.token || "");
+        sessionStorage.setItem("pp_web_token", webToken);
+        localStorage.setItem("pp_web_token", webToken);
 
         setReference(result.data.reference || "");
         setClientTransactionId(result.data.clientTransactionId || "");
@@ -150,6 +152,7 @@ export default function PaymentGateway() {
   const goBackToCheckout = () => {
     localStorage.removeItem(PAYPHONE_BOX_STORAGE_KEY);
     localStorage.removeItem("pp_clientTxId");
+    localStorage.removeItem("pp_web_token");
     sessionStorage.removeItem("pp_web_token");
     setLocation("/checkout");
   };

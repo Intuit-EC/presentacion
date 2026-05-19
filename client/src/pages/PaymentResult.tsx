@@ -8,7 +8,7 @@ import { apiUrl } from "@/lib/api-url";
 
 type ResultStatus = "loading" | "success" | "failed" | "cancelled" | "error";
 
-const PAYMENT_CONFIRM_TIMEOUT_MS = 30000;
+const PAYMENT_CONFIRM_TIMEOUT_MS = 60000;
 
 async function fetchJsonWithTimeout(
   input: RequestInfo | URL,
@@ -69,6 +69,7 @@ export default function PaymentResult() {
     const clearPayphoneDraft = () => {
       localStorage.removeItem("pp_clientTxId");
       localStorage.removeItem("pp_box_payload");
+      localStorage.removeItem("pp_web_token");
       sessionStorage.removeItem("pp_web_token");
     };
 
@@ -104,7 +105,9 @@ export default function PaymentResult() {
         });
       }
 
-      const webToken = sessionStorage.getItem("pp_web_token");
+      const webToken =
+        sessionStorage.getItem("pp_web_token") ||
+        localStorage.getItem("pp_web_token");
       if (!webToken) {
         throw new Error("No se encontró el token web de PayPhone para confirmar el pago.");
       }
@@ -170,8 +173,13 @@ export default function PaymentResult() {
           setStatus("failed");
           if (!isPaypalFlow) clearPayphoneDraft();
         }
-      } catch {
+      } catch (error) {
         setStatus("error");
+        setResultMessage(
+          error instanceof Error
+            ? error.message
+            : "Ocurrió un error al confirmar el pago. Por favor intenta nuevamente."
+        );
       }
     };
 
@@ -282,9 +290,11 @@ export default function PaymentResult() {
           {status === "failed" ? "Pago rechazado" : "Error en el pago"}
         </h2>
         <p className="text-[#E6E6E6]/60 text-sm mb-8">
-          {status === "failed"
-            ? resultMessage || "Tu tarjeta fue rechazada. Verifica los datos o intenta con otra tarjeta."
-            : "Ocurrió un error al procesar el pago. Por favor contáctanos."}
+          {status === "failed" ? (
+            resultMessage || "Tu tarjeta fue rechazada. Verifica los datos o intenta con otra tarjeta."
+          ) : (
+            resultMessage || "Ocurrió un error al procesar el pago. Por favor contáctanos."
+          )}
         </p>
         <div className="flex flex-col gap-3">
           <Link href="/checkout">

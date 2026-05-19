@@ -239,6 +239,7 @@ function shouldSsrPath(path: string) {
   return (
     path === "/" ||
     path === "/shop" ||
+    SEO_LANDING_PATHS.includes(path) ||
     path.startsWith("/categoria/") ||
     path.startsWith("/producto/")
   );
@@ -683,6 +684,12 @@ async function fetchPublicProducts(): Promise<PublicProduct[]> {
 app.use((req, res, next) => {
   if (req.method !== "GET" && req.method !== "HEAD") {
     return next();
+  }
+
+  if (req.path !== "/" && req.path.endsWith("/") && !req.path.includes(".") && !req.path.startsWith("/api") && !req.path.startsWith("/image-proxy") && !req.path.startsWith("/uploads/")) {
+    const originalUrl = req.originalUrl || req.path;
+    const newUrl = `${req.path.slice(0, -1)}${originalUrl.slice(req.path.length)}`;
+    return res.redirect(301, newUrl || "/");
   }
 
   if (req.path === "/v2" || req.path === "/v2/") {
