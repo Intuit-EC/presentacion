@@ -75,6 +75,22 @@
   padding-left: 1rem;
 }
 
+.site-nav-phrase {
+  max-width: 36rem;
+  color: rgb(74 51 98 / 0.98);
+  font-family: var(--font-serif);
+  font-size: clamp(1.2rem, 1.55vw, 1.7rem);
+  font-weight: 900;
+  line-height: 1.05;
+  white-space: nowrap;
+  transition: color 180ms ease, transform 180ms ease;
+}
+
+.site-nav-phrase:hover {
+  color: var(--color-accent);
+  transform: translateY(-1px);
+}
+
 .site-nav-icon-button {
   transition: color 180ms ease, transform 180ms ease;
 }
@@ -183,6 +199,15 @@
 
 .site-nav-mobile-menu-link:hover {
   color: var(--color-accent);
+}
+
+.site-nav-mobile-menu-phrase {
+  max-width: 20rem;
+  color: rgb(74 51 98 / 0.95);
+  font-family: var(--font-serif);
+  font-size: 2rem;
+  font-weight: 900;
+  line-height: 1.08;
 }
 
 .site-nav-whatsapp {

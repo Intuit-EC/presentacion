@@ -5,7 +5,6 @@ import { lazy, Suspense, useEffect, useState } from "react";
 import { Logo } from "@/components/Logo";
 import { useCart } from "@/context/CartContext";
 import { DEFAULT_COMPANY } from "@/lib/site";
-import { BEST_SELLERS_CATEGORY_SLUG } from "@shared/catalog";
 
 const SearchOverlay = lazy(() =>
   import("@/components/SearchOverlay").then((module) => ({ default: module.SearchOverlay })),
@@ -78,13 +77,9 @@ export function Navbar() {
     setLocation("/checkout");
   };
 
-  const leftLinks = [
-    { href: "/#catalogo", label: "Catálogo" },
-    { href: `/categoria/${BEST_SELLERS_CATEGORY_SLUG}`, label: "Más comprados" },
-  ];
-
+  const navPhrase = "Realiza tu pedido floral en Guayaquil y sorprende hoy";
   const rightLinks = [
-    { href: "/#testimonios", label: "Testimonios" },
+    { href: "/#catalogo", label: "Catálogo" },
     { href: "/#contacto", label: "Contacto" },
   ];
 
@@ -98,16 +93,9 @@ export function Navbar() {
         <div className="site-nav-shell">
           <div className="site-nav-desktop">
             <div className="site-nav-desktop-left">
-              {leftLinks.map((link) => (
-                <a
-                  key={link.label}
-                  href={link.href}
-                  className={cn("site-nav-link", "text-foreground hover:text-accent")}
-                >
-                  {link.label}
-                  <span className={cn("site-nav-link-line", "bg-accent/40")} />
-                </a>
-              ))}
+              <a href="/#catalogo" className="site-nav-phrase">
+                {navPhrase}
+              </a>
             </div>
 
             <div className="site-nav-brand-wrap">
@@ -224,7 +212,14 @@ export function Navbar() {
             </div>
 
             <div className="site-nav-mobile-menu-links">
-              {[...leftLinks, ...rightLinks].map((link) => (
+              <a
+                href="/#catalogo"
+                className="site-nav-mobile-menu-phrase"
+                onClick={() => setIsOpen(false)}
+              >
+                {navPhrase}
+              </a>
+              {rightLinks.map((link) => (
                 <a
                   key={link.label}
                   href={link.href}
