@@ -692,6 +692,19 @@ app.use((req, res, next) => {
     return res.redirect(301, newUrl || "/");
   }
 
+  // Redirect legacy PHP URLs: producto.php?id=...
+  if (req.path === "/producto.php" && req.query.id) {
+    const productId = String(req.query.id);
+    return res.redirect(301, `/product/${encodeURIComponent(productId)}`);
+  }
+
+  // Redirect legacy PHP URLs: product.php?id=...
+  if (req.path === "/product.php" && req.query.id) {
+    const productId = String(req.query.id);
+    return res.redirect(301, `/product/${encodeURIComponent(productId)}`);
+  }
+
+  // Redirect legacy v2 URLs
   if (req.path === "/v2" || req.path === "/v2/") {
     return res.redirect(301, "/");
   }
@@ -723,35 +736,66 @@ app.get("/product/:id", async (req, res, next) => {
   return next();
 });
 
+// Catch-all for any other legacy product URLs that weren't caught
+app.get("/producto.php", (req, res) => {
+  const productId = req.query.id || req.query.product_id || req.query.prod_id;
+  if (productId) {
+    return res.redirect(301, `/product/${encodeURIComponent(String(productId))}`);
+  }
+  return res.redirect(301, "/shop");
+});
+
+app.get("/product.php", (req, res) => {
+  const productId = req.query.id || req.query.product_id || req.query.prod_id;
+  if (productId) {
+    return res.redirect(301, `/product/${encodeURIComponent(String(productId))}`);
+  }
+  return res.redirect(301, "/shop");
+});
+
 app.get("/robots.txt", (_req, res) => {
   res.type("text/plain");
   res.send([
     "User-agent: *",
     "Allow: /",
     "Disallow: /checkout",
+    "Disallow: /payment-gateway",
     "Disallow: /payment-result",
     "Disallow: /admin",
     "Disallow: /v2",
+    "Disallow: /*.php",
+    "Disallow: /?*",
+    "Disallow: /*?*id=*",
+    "",
+    "User-agent: Googlebot",
+    "Allow: /",
+    "",
     `Sitemap: ${buildSiteUrl("/sitemap.xml")}`,
   ].join("\n"));
 });
 
 app.get("/sitemap.xml", async (_req, res) => {
   const today = new Date().toISOString().slice(0, 10);
-  const products = await fetchPublicProducts();
-  const categoryUrls = Array.from(new Set([
-    getCategoryPath(BEST_SELLERS_CATEGORY_NAME),
-    ...products.map((product) => getCategoryPath(product.category)),
-  ]));
-  const urls = Array.from(new Set([
-    "/",
-    "/shop",
-    ...SEO_LANDING_PATHS,
-    ...categoryUrls,
-    ...products.map((product) => getProductPath(product)),
-  ]));
+  
+  try {
+    const products = await fetchPublicProducts();
+    const categoryUrls = Array.from(new Set([
+      getCategoryPath(BEST_SELLERS_CATEGORY_NAME),
+      ...products.map((product) => getCategoryPath(product.category)),
+    ]));
+    
+    // Only include canonical URLs: /producto/... not /product/...
+    const productUrls = products.map((product) => getProductPath(product));
+    
+    const urls = Array.from(new Set([
+      "/",
+      "/shop",
+      ...SEO_LANDING_PATHS,
+      ...categoryUrls,
+      ...productUrls,
+    ]));
 
-  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${urls
   .map((path) => `  <url>
@@ -761,8 +805,23 @@ ${urls
   .join("\n")}
 </urlset>`;
 
-  res.type("application/xml");
-  res.send(xml);
+    res.type("application/xml");
+    res.send(xml);
+  } catch (error) {
+    console.warn("Error generating sitemap:", error);
+    res.type("application/xml");
+    res.send(`<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>${escapeXml(buildSiteUrl("/"))}</loc>
+    <lastmod>${today}</lastmod>
+  </url>
+  <url>
+    <loc>${escapeXml(buildSiteUrl("/shop"))}</loc>
+    <lastmod>${today}</lastmod>
+  </url>
+</urlset>`);
+  }
 });
 
 app.use("/api/external", proxyToBackend);
@@ -811,6 +870,7 @@ app.use((req, res, next) => {
 
   let vite: ViteDevServer | undefined;
   if (process.env.NODE_ENV === "production") {
+    // In production, always use SSR for dynamic routes. Static files are served by the app server.
     serveStatic(app);
   } else {
     const { setupVite } = await import("./vite");
@@ -819,6 +879,7 @@ app.use((req, res, next) => {
 
   app.get("/{*path}", async (req, res, next) => {
     try {
+      // IMPORTANT: Always use SSR in production to ensure Google sees the full HTML with metadata
       const template =
         process.env.NODE_ENV === "production"
           ? await getProdTemplate()

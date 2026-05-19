@@ -92,17 +92,40 @@ export default function Home() {
   };
 
   const handleProductsClick = () => {
-    setShouldLoadCatalog(true);
     window.requestAnimationFrame(() => {
       window.setTimeout(() => scrollToSection("catalogo"), 0);
     });
   };
 
   useEffect(() => {
-    if (shouldLoadCatalog || typeof window === "undefined") return;
-    const timer = window.setTimeout(() => setShouldLoadCatalog(true), 1000);
-    return () => window.clearTimeout(timer);
+    if (shouldLoadCatalog) return;
+
+    const target = catalogTriggerRef.current;
+    if (!target || typeof IntersectionObserver === "undefined") {
+      setShouldLoadCatalog(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          setShouldLoadCatalog(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "600px 0px" },
+    );
+
+    observer.observe(target);
+    return () => observer.disconnect();
   }, [shouldLoadCatalog]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (window.location.hash.replace("#", "") === "catalogo") {
+      setShouldLoadCatalog(true);
+    }
+  }, []);
 
   useEffect(() => {
     if (shouldLoadDeferredSections) return;
@@ -204,7 +227,12 @@ export default function Home() {
           </a>
         </section>
 
-        <div ref={catalogTriggerRef} className="sr-only" aria-hidden="true" />
+        <div
+          ref={catalogTriggerRef}
+          id="catalogo"
+          style={{ minHeight: 1 }}
+          aria-hidden="true"
+        />
         <Suspense fallback={<CatalogFallback />}>
           {shouldLoadCatalog ? <HomeCatalogSection /> : <CatalogFallback />}
         </Suspense>

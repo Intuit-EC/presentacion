@@ -6,9 +6,10 @@
 
 .hero-banner-stage {
   position: relative;
-  height: calc(100svh - 76px);
   min-height: 440px;
+  height: clamp(440px, 80vh, 620px);
   max-height: 620px;
+  aspect-ratio: 16 / 9;
 }
 
 .hero-banner-image,
