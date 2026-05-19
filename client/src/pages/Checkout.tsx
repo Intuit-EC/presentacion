@@ -34,8 +34,8 @@ type CheckoutStep = "sender" | "receiver" | "payment";
 type ShippingSectorRate = { sector: string; cost: number };
 type CheckoutFocusable = HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
 
-const CHECKOUT_REQUEST_TIMEOUT_MS = 30000;
-const PAYPAL_PROOF_UPLOAD_TIMEOUT_MS = 8000;
+const CHECKOUT_REQUEST_TIMEOUT_MS = 60000;
+const PAYPAL_PROOF_UPLOAD_TIMEOUT_MS = 20000;
 
 async function fetchJsonWithTimeout(
   input: RequestInfo | URL,

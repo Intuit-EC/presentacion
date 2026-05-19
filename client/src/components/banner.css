@@ -6,9 +6,9 @@
 
 .hero-banner-stage {
   position: relative;
-  height: calc(100svh - 70px);
-  min-height: 500px;
-  max-height: 720px;
+  height: calc(100svh - 76px);
+  min-height: 440px;
+  max-height: 620px;
 }
 
 .hero-banner-image,

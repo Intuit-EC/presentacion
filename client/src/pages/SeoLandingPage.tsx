@@ -132,6 +132,9 @@ export default function SeoLandingPage() {
         description={page.description}
         keywords={page.keywords}
         path={page.path}
+        robots="index, follow"
+        image="/opengraph.jpg"
+        type="website"
         schema={pageSchema}
       />
 
@@ -178,6 +181,18 @@ export default function SeoLandingPage() {
                 Haz tu pedido en la tienda online o escribe por WhatsApp para confirmar disponibilidad.
               </p>
             </div>
+          </div>
+        </section>
+
+        <section className="mt-16 rounded-[1.5rem] border border-primary/15 bg-white/70 p-6">
+          <div className="max-w-4xl">
+            <h2 className="section-title">Florería en Guayaquil con entrega rápida y servicio local</h2>
+            <p className="section-copy">
+              En DIFIORI somos una florería en Guayaquil especializada en arreglos florales, ramos de flores y regalos a domicilio. Nuestra tienda online está optimizada para que encuentres rápidamente flores para cumpleaños, aniversarios, amor, condolencias y celebraciones especiales.
+            </p>
+            <p className="section-copy">
+              Si buscas florerías en Guayaquil, aquí tienes envíos rápidos, atención directa por WhatsApp y decoraciones florales frescas que garantizan una experiencia profesional y confiable.
+            </p>
           </div>
         </section>
 
