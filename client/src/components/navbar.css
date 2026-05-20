@@ -210,28 +210,6 @@
   line-height: 1.08;
 }
 
-.site-nav-whatsapp {
-  position: fixed;
-  right: 2rem;
-  bottom: 2rem;
-  z-index: 100;
-  display: flex;
-  width: 60px;
-  height: 60px;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid rgb(255 255 255 / 0.2);
-  border-radius: 9999px;
-  background: #25d366;
-  box-shadow: 0 16px 34px rgb(37 211 102 / 0.28);
-  transition: background-color 180ms ease, box-shadow 180ms ease;
-}
-
-.site-nav-whatsapp:hover {
-  background: #1ebe5d;
-  box-shadow: 0 20px 40px rgb(37 211 102 / 0.32);
-}
-
 @media (min-width: 640px) {
   .site-nav {
     padding-block: 1.25rem;

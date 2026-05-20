@@ -7,7 +7,6 @@ import {
   User,
   CheckCircle,
   Loader2,
-  ArrowRight,
   Mail,
   Phone,
   MapPin,
@@ -30,6 +29,7 @@ import { Seo } from "@/components/Seo";
 
 type OrderStatus = "idle" | "loading" | "success" | "error";
 type PaymentMethod = "PayPal" | "Payphone" | "Banco" | "Zelle";
+type SelectedPaymentMethod = PaymentMethod | "";
 type CheckoutStep = "sender" | "receiver" | "payment";
 type ShippingSectorRate = { sector: string; cost: number };
 type CheckoutFocusable = HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
@@ -232,12 +232,12 @@ export default function Checkout() {
   const [, setLocation] = useLocation();
   const { data: company } = useCompany();
   const [activeStep, setActiveStep] = useState<CheckoutStep>("sender");
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("Banco");
+  const [paymentMethod, setPaymentMethod] = useState<SelectedPaymentMethod>("");
   const [orderStatus, setOrderStatus] = useState<OrderStatus>("idle");
-  const [isStepLoading, setIsStepLoading] = useState(false);
   const [isCartOpening, setIsCartOpening] = useState(false);
   const [orderNumber, setOrderNumber] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
+  const [formRevision, setFormRevision] = useState(0);
   const [couponCode, setCouponCode] = useState("");
   const [sectorInput, setSectorInput] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<{
@@ -314,6 +314,43 @@ export default function Checkout() {
     };
   };
 
+  const checkoutReadiness = useMemo(() => {
+    const {
+      senderName,
+      senderEmail,
+      senderPhone,
+      receiverName,
+      receiverPhone,
+      deliveryDateTime,
+      address,
+      sector,
+      cardMessage,
+    } = readCheckoutFields();
+    const hasValidSenderEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(senderEmail);
+    const senderComplete = Boolean(senderName && senderEmail && senderPhone && hasValidSenderEmail);
+    const deliveryComplete = Boolean(
+      receiverName &&
+        receiverPhone &&
+        sector &&
+        deliveryDateTime &&
+        address &&
+        cardMessage
+    );
+
+    return {
+      senderComplete,
+      deliveryComplete,
+      hasDestination: Boolean(sector),
+      canChoosePayment: senderComplete && deliveryComplete,
+    };
+  }, [formRevision, sectorInput]);
+
+  const canConfirmOrder = items.length > 0 && checkoutReadiness.canChoosePayment && Boolean(paymentMethod);
+
+  const updateCheckoutProgress = () => {
+    setFormRevision((current) => current + 1);
+  };
+
   useEffect(() => {
     const handleAbandonment = () => {
       if (
@@ -384,6 +421,12 @@ export default function Checkout() {
     };
   }, [orderItemsPayload, orderStatus, paymentMethod, appliedCoupon, cartTotal, shippingResolution.cost, sectorInput]);
 
+  useEffect(() => {
+    if (!checkoutReadiness.canChoosePayment && paymentMethod) {
+      setPaymentMethod("");
+    }
+  }, [checkoutReadiness.canChoosePayment, paymentMethod]);
+
   const cartSubtotal = cartTotal;
   const shippingCost = shippingResolution.cost;
   const activeStepIndex = CHECKOUT_STEPS.findIndex(
@@ -400,7 +443,7 @@ export default function Checkout() {
   }
 
   const finalTotal = cartSubtotal + shippingCost - discountAmount;
-  const isCheckoutBusy = isStepLoading || orderStatus === "loading";
+  const isCheckoutBusy = orderStatus === "loading";
 
   const focusCheckoutField = (
     step: CheckoutStep,
@@ -411,6 +454,12 @@ export default function Checkout() {
       fieldRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
       fieldRef.current?.focus({ preventScroll: true });
     }, 0);
+  };
+
+  const scrollToCheckoutSection = (step: CheckoutStep) => {
+    const target = document.getElementById(`checkout-${step}`);
+    setActiveStep(step);
+    target?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
   const getMissingSenderFields = () => {
@@ -504,55 +553,18 @@ export default function Checkout() {
     return true;
   };
 
-  const handleNextStep = () => {
-    if (isCheckoutBusy) return;
-
-    if (activeStep === "sender") {
-      if (validateSenderStep()) {
-        setIsStepLoading(true);
-        window.setTimeout(() => {
-          setActiveStep("receiver");
-          setIsStepLoading(false);
-        }, 250);
-      }
-      return;
-    }
-
-    if (activeStep === "receiver") {
-      if (validateReceiverStep()) {
-        setIsStepLoading(true);
-        window.setTimeout(() => {
-          setActiveStep("payment");
-          setIsStepLoading(false);
-        }, 250);
-      }
-    }
-  };
-
-  const handlePreviousStep = () => {
-    if (isCheckoutBusy) return;
-
-    setIsStepLoading(true);
-    window.setTimeout(() => {
-      if (activeStep === "receiver") setActiveStep("sender");
-      if (activeStep === "payment") setActiveStep("receiver");
-      setIsStepLoading(false);
-    }, 200);
-    setErrorMsg("");
-  };
-
   const handleStepChange = (targetStep: CheckoutStep) => {
     if (isCheckoutBusy || targetStep === activeStep) return;
 
     if (targetStep === "sender") {
-      setActiveStep("sender");
+      scrollToCheckoutSection("sender");
       setErrorMsg("");
       return;
     }
 
     if (targetStep === "receiver") {
       if (validateSenderStep()) {
-        setActiveStep("receiver");
+        scrollToCheckoutSection("receiver");
         setErrorMsg("");
       }
       return;
@@ -560,7 +572,7 @@ export default function Checkout() {
 
     if (targetStep === "payment") {
       if (validateSenderStep() && validateReceiverStep()) {
-        setActiveStep("payment");
+        scrollToCheckoutSection("payment");
         setErrorMsg("");
       }
     }
@@ -628,6 +640,12 @@ export default function Checkout() {
     } = readCheckoutFields();
 
     if (!validateSenderStep() || !validateReceiverStep()) return;
+
+    if (!paymentMethod) {
+      setErrorMsg("Selecciona un método de pago para continuar.");
+      scrollToCheckoutSection("payment");
+      return;
+    }
 
     setErrorMsg("");
     setOrderStatus("loading");
@@ -924,6 +942,10 @@ export default function Checkout() {
           </h1>
         </div>
 
+        <p className="mx-auto mb-5 max-w-2xl rounded-2xl border border-[#E5D7EF] bg-white px-4 py-3 text-center text-sm font-black text-[#4A3362] shadow-[0_12px_32px_rgba(74,51,98,0.06)] sm:text-base">
+          Todo está en una sola página: tus datos, entrega, pago y resumen. Completa de arriba hacia abajo y confirma al final.
+        </p>
+
         <div className="mb-5 grid grid-cols-3 gap-1.5 rounded-[1.25rem] border border-[#E5D7EF] bg-white p-1.5 shadow-[0_12px_32px_rgba(74,51,98,0.08)] sm:mb-8 sm:gap-2 sm:rounded-[1.5rem] sm:p-2">
           {CHECKOUT_STEPS.map((step, index) => {
             const isActive = step.id === activeStep;
@@ -1095,7 +1117,7 @@ export default function Checkout() {
                   </div>
                   <div className="flex items-start justify-between gap-3 text-base font-black text-[#4B1F6F] sm:text-[1.42rem]" style={{ fontFamily: '"Arial Black", Arial, sans-serif' }}>
                     <span>Pago</span>
-                    <span className="text-[#4B1F6F]">{paymentMethod}</span>
+                    <span className="text-[#4B1F6F]">{paymentMethod || "Pendiente"}</span>
                   </div>
                   {discountAmount > 0 && (
                     <div className="flex justify-between text-[1rem] font-bold text-green-600">
@@ -1117,23 +1139,15 @@ export default function Checkout() {
                 </div>
                 <button
                   type="button"
-                  onClick={
-                    activeStep === "payment"
-                      ? handleConfirmOrder
-                      : handleNextStep
-                  }
-                  disabled={items.length === 0 || isCheckoutBusy}
-                  className="mt-5 flex w-full items-center justify-center gap-3 rounded-2xl bg-[#4B1F6F] px-4 py-4 text-sm font-black uppercase tracking-[0.12em] text-white shadow-lg shadow-[#4B1F6F]/20 transition-all hover:bg-[#4A3362] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 sm:px-6 sm:py-5 sm:text-base sm:tracking-widest lg:hidden"
+                  onClick={handleConfirmOrder}
+                  disabled={!canConfirmOrder || isCheckoutBusy}
+                  className="mt-5 flex w-full items-center justify-center gap-3 rounded-2xl bg-[#4B1F6F] px-4 py-4 text-sm font-black uppercase tracking-[0.12em] text-white shadow-lg shadow-[#4B1F6F]/20 transition-all hover:bg-[#4A3362] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 sm:px-6 sm:py-5 sm:text-base sm:tracking-widest"
                 >
                   {isCheckoutBusy ? (
                     <>
                       <Loader2 className="h-5 w-5 animate-spin" />
                       {orderStatus === "loading" ? "Procesando..." : "Cargando..."}
                     </>
-                  ) : activeStep === "sender" ? (
-                    "Continuar a entrega"
-                  ) : activeStep === "receiver" ? (
-                    "Continuar a pago"
                   ) : (
                     `Confirmar pedido $${finalTotal.toFixed(2)}`
                   )}
@@ -1158,10 +1172,9 @@ export default function Checkout() {
 
             <div className="space-y-5 sm:space-y-8">
               <div
-                className={cn(
-                  "checkout-panel space-y-5 rounded-[1.5rem] p-4 sm:space-y-7 sm:rounded-[2rem] sm:p-10",
-                  activeStep !== "sender" && "hidden"
-                )}
+                id="checkout-sender"
+                onChange={updateCheckoutProgress}
+                className="checkout-panel scroll-mt-8 space-y-5 rounded-[1.5rem] p-4 sm:space-y-7 sm:rounded-[2rem] sm:p-10"
               >
                 <h3 className="flex items-center gap-2 font-sans text-2xl font-black tracking-tight text-[#4B0082] sm:gap-3 sm:text-4xl">
                   <User className="h-7 w-7 sm:h-9 sm:w-9" /> Quién envía
@@ -1203,30 +1216,12 @@ export default function Checkout() {
                     />
                   </label>
                 </div>
-                <button
-                  type="button"
-                  onClick={handleNextStep}
-                  disabled={isCheckoutBusy}
-                  className="flex w-full items-center justify-center gap-3 rounded-2xl bg-[#4B1F6F] px-4 py-4 text-base font-black text-white shadow-lg shadow-[#4B1F6F]/20 transition-all hover:bg-[#4A3362] active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto sm:px-6 sm:py-5 sm:text-lg"
-                >
-                  {isStepLoading ? (
-                    <>
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                      Cargando...
-                    </>
-                  ) : (
-                    <>
-                      Datos de quien recibe <ArrowRight className="h-4 w-4" />
-                    </>
-                  )}
-                </button>
               </div>
 
               <div
-                className={cn(
-                  "checkout-panel space-y-5 rounded-[1.5rem] p-4 sm:space-y-7 sm:rounded-[2rem] sm:p-10",
-                  activeStep !== "receiver" && "hidden"
-                )}
+                id="checkout-receiver"
+                onChange={updateCheckoutProgress}
+                className="checkout-panel scroll-mt-8 space-y-5 rounded-[1.5rem] p-4 sm:space-y-7 sm:rounded-[2rem] sm:p-10"
               >
                 <h3 className="flex items-center gap-2 font-sans text-2xl font-black tracking-tight text-[#4B0082] sm:gap-3 sm:text-4xl">
                   <Truck className="h-7 w-7 sm:h-9 sm:w-9" /> Quién recibe
@@ -1260,7 +1255,10 @@ export default function Checkout() {
                     <select
                       ref={sectorRef}
                       value={sectorInput}
-                      onChange={(e) => setSectorInput(e.target.value)}
+                      onChange={(e) => {
+                        setSectorInput(e.target.value);
+                        updateCheckoutProgress();
+                      }}
                       className="checkout-input"
                     >
                       <option value="" disabled>
@@ -1321,51 +1319,30 @@ export default function Checkout() {
                     />
                   </label>
                 </div>
-                <div className="flex flex-col gap-3 sm:flex-row">
-                  <button
-                    type="button"
-                    onClick={handlePreviousStep}
-                    disabled={isCheckoutBusy}
-                    className="rounded-2xl border border-[#DCC5E8] bg-white px-4 py-4 text-base font-black text-[#4A3362] transition-all hover:bg-[#FBF7FD] active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 sm:px-6 sm:py-5 sm:text-lg"
-                  >
-                    Volver
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleNextStep}
-                    disabled={isCheckoutBusy}
-                    className="flex flex-1 items-center justify-center gap-3 rounded-2xl bg-[#4B1F6F] px-4 py-4 text-base font-black text-white shadow-lg shadow-[#4B1F6F]/20 transition-all hover:bg-[#4A3362] active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 sm:flex-none sm:px-6 sm:py-5 sm:text-lg"
-                  >
-                    {isStepLoading ? (
-                      <>
-                        <Loader2 className="h-5 w-5 animate-spin" />
-                        Cargando...
-                      </>
-                    ) : (
-                      <>
-                        Continuar a pago <ArrowRight className="h-4 w-4" />
-                      </>
-                    )}
-                  </button>
-                </div>
               </div>
 
               <div
-                className={cn(
-                  "checkout-panel space-y-5 rounded-[1.5rem] p-4 sm:space-y-8 sm:rounded-[2rem] sm:p-10",
-                  activeStep !== "payment" && "hidden"
-                )}
+                id="checkout-payment"
+                className="checkout-panel scroll-mt-8 space-y-5 rounded-[1.5rem] p-4 sm:space-y-8 sm:rounded-[2rem] sm:p-10"
               >
                 <h3 className="flex items-center gap-2 font-sans text-2xl font-black tracking-tight text-[#4B0082] sm:gap-3 sm:text-4xl">
                   <CreditCard className="h-7 w-7 sm:h-9 sm:w-9" /> Métodos de pago
                 </h3>
+                {!checkoutReadiness.canChoosePayment ? (
+                  <div className="rounded-2xl border border-[#DCC5E8] bg-[#FBF7FD] p-4 text-sm font-black text-[#4A3362] sm:text-base">
+                    Completa primero tus datos y la entrega. El pago se habilita cuando selecciones el sector/destino de envío y llenes todos los campos obligatorios.
+                  </div>
+                ) : null}
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   {PAYMENT_METHODS.map(({ label, description, Icon }) => (
                     <button
                       key={label}
                       type="button"
-                      onClick={() => setPaymentMethod(label)}
-                      disabled={isCheckoutBusy}
+                      onClick={() => {
+                        if (!checkoutReadiness.canChoosePayment) return;
+                        setPaymentMethod(label);
+                      }}
+                      disabled={isCheckoutBusy || !checkoutReadiness.canChoosePayment}
                       className={cn(
                         "flex min-h-[132px] flex-col items-start justify-between rounded-2xl border p-5 text-left transition-all disabled:cursor-not-allowed disabled:opacity-60",
                         paymentMethod === label
@@ -1398,12 +1375,17 @@ export default function Checkout() {
 
                 <AnimatePresence mode="wait">
                   <motion.div
-                    key={paymentMethod}
+                    key={paymentMethod || "payment-locked"}
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -8 }}
                     className="checkout-subpanel rounded-2xl border border-dashed border-[#B58CCC] p-6"
                   >
+                    {!paymentMethod && (
+                      <p className="text-base font-black text-[#4A3362]">
+                        Cuando completes los datos obligatorios podrás elegir Banco, Zelle, Payphone o PayPal.
+                      </p>
+                    )}
                     {paymentMethod === "Banco" && (
                       <>
                         <p className="mb-4 text-base font-black text-[#4A3362]">
@@ -1524,16 +1506,8 @@ export default function Checkout() {
                 <div className="flex flex-col gap-3 sm:flex-row">
                   <button
                     type="button"
-                    onClick={handlePreviousStep}
-                    disabled={isCheckoutBusy}
-                    className="rounded-2xl border border-[#DCC5E8] bg-white px-4 py-4 text-base font-black text-[#4A3362] transition-all hover:bg-[#FBF7FD] active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 sm:px-6 sm:py-5 sm:text-lg"
-                  >
-                    Volver a entrega
-                  </button>
-                  <button
-                    type="button"
                     onClick={handleConfirmOrder}
-                    disabled={items.length === 0 || isCheckoutBusy}
+                    disabled={!canConfirmOrder || isCheckoutBusy}
                     className="flex flex-1 items-center justify-center gap-3 rounded-2xl bg-[#4B1F6F] px-4 py-4 text-base font-black text-white shadow-lg shadow-[#4B1F6F]/20 transition-all hover:bg-[#4A3362] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 sm:px-6 sm:py-5 sm:text-lg"
                   >
                     {orderStatus === "loading" ? (

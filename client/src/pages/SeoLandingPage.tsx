@@ -8,10 +8,10 @@ import { DEFAULT_COMPANY, absoluteUrl, canonicalUrl } from "@/lib/site";
 const landingPages = {
   "/flores-guayaquil": {
     path: "/flores-guayaquil",
-    title: "Flores Guayaquil | Flores a Domicilio en Guayaquil | DIFIORI",
+    title: "Flores en Guayaquil | Flores a Domicilio | DIFIORI",
     description:
-      "Compra flores en Guayaquil con DIFIORI. Ramos de flores, arreglos florales y regalos con entrega a domicilio en Guayaquil.",
-    keywords: "flores Guayaquil, flores a domicilio Guayaquil, arreglos florales Guayaquil, comprar flores Guayaquil",
+      "Compra flores en Guayaquil con pedidos a domicilio. DIFIORI entrega ramos de flores, arreglos florales y regalos en Guayaquil.",
+    keywords: "flores en Guayaquil, flores a domicilio Guayaquil, arreglos florales Guayaquil, comprar flores Guayaquil, pedidos de flores Guayaquil",
     h1: "Flores en Guayaquil",
     intro:
       "DIFIORI prepara flores frescas, ramos y arreglos florales para entregas a domicilio en Guayaquil. Creamos detalles para cumpleanos, aniversarios, amor, condolencias y regalos especiales.",
@@ -19,13 +19,13 @@ const landingPages = {
   },
   "/floreria-guayaquil": {
     path: "/floreria-guayaquil",
-    title: "Floreria Guayaquil | Floreria DIFIORI con Entrega a Domicilio",
+    title: "Floreria Guayaquil | Pedidos a Domicilio | DIFIORI",
     description:
-      "DIFIORI es una floreria en Guayaquil especializada en arreglos florales, ramos de flores y regalos a domicilio.",
-    keywords: "floreria Guayaquil, floreria en Guayaquil, flores Guayaquil, ramos de flores Guayaquil",
+      "Floreria Guayaquil con pedidos a domicilio. En DIFIORI compra flores, ramos, arreglos florales y regalos con entrega en Guayaquil.",
+    keywords: "floreria Guayaquil, floreria en Guayaquil, flores en Guayaquil, flores a domicilio Guayaquil, ramos de flores Guayaquil",
     h1: "Floreria Guayaquil",
     intro:
-      "DIFIORI es una floreria en Guayaquil con flores frescas, diseno floral y atencion directa para enviar detalles elegantes en la ciudad.",
+      "DIFIORI es una floreria en Guayaquil con flores frescas, diseno floral, pedidos a domicilio y atencion directa para enviar detalles elegantes en la ciudad.",
     focus: ["Arreglos florales personalizados", "Atencion directa por WhatsApp", "Entrega a domicilio en Guayaquil"],
   },
   "/florerias-en-guayaquil": {

@@ -174,7 +174,7 @@ export default function Home() {
         telephone: `+${DEFAULT_COMPANY.phoneDigits}`,
         email: DEFAULT_COMPANY.email,
         priceRange: "$$",
-        description: "Floreria en Guayaquil especializada en flores, ramos de flores, arreglos florales y regalos a domicilio.",
+        description: "Flores en Guayaquil y floreria Guayaquil con pedidos a domicilio. DIFIORI prepara ramos, arreglos florales y regalos para entrega en Guayaquil.",
         address: {
           "@type": "PostalAddress",
           addressLocality: "Guayaquil",
@@ -193,13 +193,13 @@ export default function Home() {
   return (
     <main className="min-h-screen overflow-clip bg-background scroll-smooth selection:bg-accent selection:text-white">
       <Seo
-        title="Floreria Guayaquil | Flores y Ramos de Flores | DIFIORI"
-        description="Compra arreglos florales, ramos de flores y regalos a domicilio en Guayaquil con DIFIORI."
-        keywords="floreria Guayaquil, flores Guayaquil, florerias en Guayaquil, ramos de flores, arreglos florales Guayaquil"
+        title="Flores en Guayaquil | Floreria Guayaquil a Domicilio | DIFIORI"
+        description="Flores en Guayaquil y floreria Guayaquil con pedidos a domicilio. Compra ramos, arreglos florales y regalos con entrega en Guayaquil."
+        keywords="flores en Guayaquil, floreria Guayaquil, flores a domicilio Guayaquil, pedidos de flores Guayaquil, arreglos florales Guayaquil"
         path="/"
         schema={homeSchema}
       />
-      <h1 className="sr-only">DIFIORI Flores Guayaquil - Floreria en Guayaquil, Ramos de Flores y Arreglos Florales a Domicilio</h1>
+      <h1 className="sr-only">DIFIORI Flores en Guayaquil - Floreria Guayaquil con Pedidos de Flores a Domicilio</h1>
 
       <section className="home-shell-banner-slot">
         <Banner onProductsClick={handleProductsClick} />
@@ -208,15 +208,15 @@ export default function Home() {
       <div className="home-shell-main">
         <section className="mx-auto mb-12 grid w-full max-w-6xl gap-4 px-6 md:grid-cols-3">
           <a href="/flores-guayaquil" className="surface-card p-6 transition-transform hover:-translate-y-1">
-            <h2 className="text-2xl font-semibold text-foreground">Flores Guayaquil</h2>
+            <h2 className="text-2xl font-semibold text-foreground">Flores en Guayaquil</h2>
             <p className="mt-2 text-sm leading-relaxed text-foreground/65">
-              Flores frescas y arreglos florales con entrega a domicilio en Guayaquil.
+              Flores frescas, ramos y arreglos florales con pedidos a domicilio en Guayaquil.
             </p>
           </a>
           <a href="/floreria-guayaquil" className="surface-card p-6 transition-transform hover:-translate-y-1">
             <h2 className="text-2xl font-semibold text-foreground">Floreria Guayaquil</h2>
             <p className="mt-2 text-sm leading-relaxed text-foreground/65">
-              Floreria DIFIORI para regalos, fechas especiales y pedidos por WhatsApp.
+              Floreria DIFIORI para regalos, fechas especiales y entrega a domicilio.
             </p>
           </a>
           <a href="/ramos-de-flores" className="surface-card p-6 transition-transform hover:-translate-y-1">
