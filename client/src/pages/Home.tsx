@@ -206,11 +206,27 @@ export default function Home() {
       </section>
 
       <div className="home-shell-main">
-        <section className="mx-auto mb-12 grid w-full max-w-6xl gap-4 px-6 md:grid-cols-3">
+        <div
+          ref={catalogTriggerRef}
+          id="catalogo"
+          style={{ minHeight: 1 }}
+          aria-hidden="true"
+        />
+        <Suspense fallback={<CatalogFallback />}>
+          {shouldLoadCatalog ? <HomeCatalogSection /> : <CatalogFallback />}
+        </Suspense>
+
+        <section className="mx-auto mb-12 mt-12 grid w-full max-w-6xl gap-4 px-6 md:grid-cols-2 xl:grid-cols-4">
           <a href="/flores-guayaquil" className="surface-card p-6 transition-transform hover:-translate-y-1">
             <h2 className="text-2xl font-semibold text-foreground">Flores en Guayaquil</h2>
             <p className="mt-2 text-sm leading-relaxed text-foreground/65">
               Flores frescas, ramos y arreglos florales con pedidos a domicilio en Guayaquil.
+            </p>
+          </a>
+          <a href="/arreglos-de-flores-guayaquil" className="surface-card p-6 transition-transform hover:-translate-y-1">
+            <h2 className="text-2xl font-semibold text-foreground">Arreglos de flores</h2>
+            <p className="mt-2 text-sm leading-relaxed text-foreground/65">
+              Arreglos de flores en Guayaquil para cumpleaños, amor, condolencias y detalles especiales.
             </p>
           </a>
           <a href="/floreria-guayaquil" className="surface-card p-6 transition-transform hover:-translate-y-1">
@@ -226,16 +242,6 @@ export default function Home() {
             </p>
           </a>
         </section>
-
-        <div
-          ref={catalogTriggerRef}
-          id="catalogo"
-          style={{ minHeight: 1 }}
-          aria-hidden="true"
-        />
-        <Suspense fallback={<CatalogFallback />}>
-          {shouldLoadCatalog ? <HomeCatalogSection /> : <CatalogFallback />}
-        </Suspense>
 
         <div ref={deferredTriggerRef} className="sr-only" aria-hidden="true" />
         <Suspense fallback={<DeferredFallback />}>

@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import type { Product } from "../data/mock";
 import { resolveApiUrl } from "@/lib/api";
 import { toPublicImageUrl } from "@/lib/media";
+import { isPublicCatalogProduct } from "@shared/catalog";
 
 const API_URL = "/api/external/products";
 
@@ -56,19 +57,21 @@ export async function fetchProducts(
     const json = await res.json();
     if (json.status !== "success") throw new Error("Respuesta invalida del servidor");
 
-    return json.data.map((p: any): Product => ({
-      id: String(p.id),
-      name: p.name,
-      description: p.description || "",
-      category: p.category || "General",
-      price: p.price || "$0.00",
-      image: getImageUrl(p.image),
-      isBestSeller: p.isBestSeller || false,
-      stock: p.stock ?? 99,
-      deliveryTime: p.deliveryTime || "",
-      size: p.size || "",
-      includes: p.includes || p.description || "",
-    }));
+    return json.data
+      .map((p: any): Product => ({
+        id: String(p.id),
+        name: p.name,
+        description: p.description || "",
+        category: p.category || "General",
+        price: p.price || "$0.00",
+        image: getImageUrl(p.image),
+        isBestSeller: p.isBestSeller || false,
+        stock: p.stock ?? 99,
+        deliveryTime: p.deliveryTime || "",
+        size: p.size || "",
+        includes: p.includes || p.description || "",
+      }))
+      .filter(isPublicCatalogProduct);
   } catch (error) {
     console.warn("Error fetching products from API:", error);
     return [];

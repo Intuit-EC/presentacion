@@ -6,8 +6,8 @@ import { useCart } from "@/context/CartContext";
 import { useCompany } from "@/hooks/useCompany";
 import { useToast } from "@/hooks/use-toast";
 import { getResponsiveImageSrcSet } from "@/lib/media";
-import { DEFAULT_COMPANY } from "@/lib/site";
-import { formatCategoryDisplayName, getProductPath } from "@shared/catalog";
+import { DEFAULT_COMPANY, canonicalUrl } from "@/lib/site";
+import { formatCategoryDisplayName, getNumericPriceValue, getProductPath, getProductSku } from "@shared/catalog";
 
 interface ProductCardProps {
   product: Product;
@@ -21,6 +21,10 @@ export function ProductCard({ product }: ProductCardProps) {
   const categoryLabel = formatCategoryDisplayName(product.category);
   const imageSrcSet = getResponsiveImageSrcSet(product.image, [320, 480, 640, 768]);
   const acceptOrders = company?.settings?.acceptOrders !== false;
+  const productPath = getProductPath(product);
+  const productUrl = canonicalUrl(productPath);
+  const productPrice = getNumericPriceValue(product.price);
+  const productSku = getProductSku(product);
 
   const handleBuyNow = () => {
     if (isBuying) return;
@@ -45,7 +49,7 @@ export function ProductCard({ product }: ProductCardProps) {
       itemType="https://schema.org/Product"
     >
       <Link
-        href={getProductPath(product)}
+        href={productPath}
         className="relative block aspect-square overflow-hidden border-b border-primary/20 bg-white"
       >
         <img
@@ -74,6 +78,13 @@ export function ProductCard({ product }: ProductCardProps) {
         <h3 itemProp="name" className="mb-3 font-serif text-[2rem] font-bold leading-tight text-[#4A3362]">
           {product.name}
         </h3>
+        <meta itemProp="description" content={product.description || `${product.name} con entrega a domicilio en Guayaquil.`} />
+        <meta itemProp="sku" content={productSku} />
+        <meta itemProp="mpn" content={productSku} />
+        <meta itemProp="url" content={productUrl} />
+        <div itemProp="brand" itemScope itemType="https://schema.org/Brand">
+          <meta itemProp="name" content="DIFIORI" />
+        </div>
 
         {/* <div className="flex flex-wrap justify-center gap-2 mb-6 opacity-60">
            {product.size && (
@@ -82,8 +93,11 @@ export function ProductCard({ product }: ProductCardProps) {
         </div> */}
 
         <div className="mt-auto" itemProp="offers" itemScope itemType="https://schema.org/Offer">
+          <meta itemProp="url" content={productUrl} />
           <meta itemProp="priceCurrency" content="USD" />
-          <meta itemProp="price" content={product.price.replace("$", "")} />
+          <meta itemProp="price" content={productPrice} />
+          <link itemProp="availability" href="https://schema.org/InStock" />
+          <link itemProp="itemCondition" href="https://schema.org/NewCondition" />
           <p className="mb-7 text-3xl font-black text-foreground">{product.price}</p>
         </div>
 

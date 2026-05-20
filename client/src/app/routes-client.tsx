@@ -20,6 +20,8 @@ export function BrowserRoutes() {
       <Route path="/floreria-guayaquil" component={SeoLandingPage} />
       <Route path="/florerias-en-guayaquil" component={SeoLandingPage} />
       <Route path="/ramos-de-flores" component={SeoLandingPage} />
+      <Route path="/arreglos-de-flores-guayaquil" component={SeoLandingPage} />
+      <Route path="/arreglos-florales-guayaquil" component={SeoLandingPage} />
       <Route path="/categoria/:slug" component={CategoryPage} />
       <Route path="/producto/:slug" component={ProductDetails} />
       <Route path="/product/:id" component={ProductDetails} />

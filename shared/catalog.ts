@@ -138,6 +138,15 @@ function parsePrice(value: string | number | null | undefined) {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
+export function getNumericPriceValue(price: string | number | null | undefined) {
+  const parsed = parsePrice(price);
+  return parsed > 0 ? parsed.toFixed(2) : "0.00";
+}
+
+export function getProductSku(product: ProductLike) {
+  return `DIFIORI-${String(product.id).replace(/[^a-zA-Z0-9_-]/g, "")}`;
+}
+
 export function isPublicCatalogProduct(product: CatalogProductCandidate) {
   const name = normalizeDisplayText(product.name);
   const description = normalizeDisplayText(product.description);

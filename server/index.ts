@@ -13,6 +13,7 @@ import {
   getCategoryPath,
   getProductIdFromSlug,
   getProductPath,
+  isPublicCatalogProduct,
   slugify,
 } from "../shared/catalog";
 import { createAppQueryClient } from "../client/src/lib/queryClient";
@@ -650,6 +651,8 @@ const SEO_LANDING_PATHS = [
   "/floreria-guayaquil",
   "/florerias-en-guayaquil",
   "/ramos-de-flores",
+  "/arreglos-de-flores-guayaquil",
+  "/arreglos-florales-guayaquil",
 ];
 
 async function fetchPublicProducts(): Promise<PublicProduct[]> {
@@ -674,7 +677,7 @@ async function fetchPublicProducts(): Promise<PublicProduct[]> {
         category: String(product.category || "General").trim(),
         isBestSeller: Boolean(product.isBestSeller),
       }))
-      .filter((product: PublicProduct) => product.id);
+      .filter((product: PublicProduct) => product.id && isPublicCatalogProduct(product));
   } catch (error) {
     console.warn("Could not fetch live products for sitemap.", error);
     return [];

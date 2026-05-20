@@ -16,6 +16,7 @@ const landingPages = {
     intro:
       "DIFIORI prepara flores frescas, ramos y arreglos florales para entregas a domicilio en Guayaquil. Creamos detalles para cumpleanos, aniversarios, amor, condolencias y regalos especiales.",
     focus: ["Flores frescas seleccionadas", "Entrega a domicilio en Guayaquil", "Pedidos por tienda online o WhatsApp"],
+    related: ["/arreglos-de-flores-guayaquil", "/floreria-guayaquil", "/ramos-de-flores"],
   },
   "/floreria-guayaquil": {
     path: "/floreria-guayaquil",
@@ -27,6 +28,7 @@ const landingPages = {
     intro:
       "DIFIORI es una floreria en Guayaquil con flores frescas, diseno floral, pedidos a domicilio y atencion directa para enviar detalles elegantes en la ciudad.",
     focus: ["Arreglos florales personalizados", "Atencion directa por WhatsApp", "Entrega a domicilio en Guayaquil"],
+    related: ["/arreglos-florales-guayaquil", "/arreglos-de-flores-guayaquil", "/flores-guayaquil"],
   },
   "/florerias-en-guayaquil": {
     path: "/florerias-en-guayaquil",
@@ -38,6 +40,7 @@ const landingPages = {
     intro:
       "Si buscas florerias en Guayaquil, DIFIORI combina diseno floral, flores frescas y atencion directa para ayudarte a enviar un detalle elegante el mismo dia o en fecha programada.",
     focus: ["Arreglos florales personalizados", "Atencion directa por WhatsApp", "Entrega a domicilio en Guayaquil"],
+    related: ["/floreria-guayaquil", "/arreglos-florales-guayaquil", "/flores-guayaquil"],
   },
   "/ramos-de-flores": {
     path: "/ramos-de-flores",
@@ -49,6 +52,31 @@ const landingPages = {
     intro:
       "Nuestros ramos de flores estan pensados para regalar emociones: rosas, flores mixtas y composiciones elegantes listas para enviar en Guayaquil.",
     focus: ["Ramos para amor y aniversario", "Ramos de rosas y flores mixtas", "Opciones con regalos complementarios"],
+    related: ["/flores-guayaquil", "/arreglos-de-flores-guayaquil", "/arreglos-florales-guayaquil"],
+  },
+  "/arreglos-de-flores-guayaquil": {
+    path: "/arreglos-de-flores-guayaquil",
+    title: "Arreglos de Flores en Guayaquil | Entrega a Domicilio | DIFIORI",
+    description:
+      "Compra arreglos de flores en Guayaquil con entrega a domicilio. DIFIORI prepara arreglos florales, ramos y regalos para ocasiones especiales.",
+    keywords: "arreglos de flores en Guayaquil, arreglos florales Guayaquil, arreglos de flores a domicilio Guayaquil, floreria Guayaquil",
+    h1: "Arreglos de flores en Guayaquil",
+    intro:
+      "En DIFIORI encuentras arreglos de flores en Guayaquil para cumpleaños, amor, aniversarios, condolencias y regalos especiales, con pedidos online y entrega a domicilio.",
+    focus: ["Arreglos de flores frescas", "Entrega a domicilio en Guayaquil", "Pedidos rápidos por tienda o WhatsApp"],
+    related: ["/arreglos-florales-guayaquil", "/flores-guayaquil", "/floreria-guayaquil"],
+  },
+  "/arreglos-florales-guayaquil": {
+    path: "/arreglos-florales-guayaquil",
+    title: "Arreglos Florales Guayaquil | Flores a Domicilio | DIFIORI",
+    description:
+      "Arreglos florales en Guayaquil para regalos, cumpleaños, amor y condolencias. Compra en DIFIORI con entrega a domicilio.",
+    keywords: "arreglos florales Guayaquil, arreglos florales a domicilio Guayaquil, flores Guayaquil, floreria Guayaquil",
+    h1: "Arreglos florales Guayaquil",
+    intro:
+      "DIFIORI diseña arreglos florales en Guayaquil con flores frescas, composición elegante y atención directa para que tu detalle llegue a domicilio.",
+    focus: ["Diseños florales para regalar", "Flores frescas en Guayaquil", "Compra online o por WhatsApp"],
+    related: ["/arreglos-de-flores-guayaquil", "/floreria-guayaquil", "/ramos-de-flores"],
   },
 } as const;
 
@@ -59,11 +87,15 @@ function useCurrentLandingPage() {
   const [floreriaMatch] = useRoute("/floreria-guayaquil");
   const [floreriasMatch] = useRoute("/florerias-en-guayaquil");
   const [ramosMatch] = useRoute("/ramos-de-flores");
+  const [arreglosFloresMatch] = useRoute("/arreglos-de-flores-guayaquil");
+  const [arreglosFloralesMatch] = useRoute("/arreglos-florales-guayaquil");
 
   if (floresMatch) return landingPages["/flores-guayaquil"];
   if (floreriaMatch) return landingPages["/floreria-guayaquil"];
   if (floreriasMatch) return landingPages["/florerias-en-guayaquil"];
   if (ramosMatch) return landingPages["/ramos-de-flores"];
+  if (arreglosFloresMatch) return landingPages["/arreglos-de-flores-guayaquil"];
+  if (arreglosFloralesMatch) return landingPages["/arreglos-florales-guayaquil"];
 
   return landingPages["/flores-guayaquil"];
 }
@@ -73,6 +105,7 @@ export const SEO_LANDING_PATHS = Object.keys(landingPages) as LandingPath[];
 export default function SeoLandingPage() {
   const page = useCurrentLandingPage();
   const { data: products = [], isLoading } = useProducts();
+  const relatedPages = page.related.map((path) => landingPages[path]);
   const highlightedProducts = products
     .filter((product) => {
       const text = `${product.name} ${product.category} ${product.description}`.toLowerCase();
@@ -193,6 +226,29 @@ export default function SeoLandingPage() {
             <p className="section-copy">
               Si buscas florerías en Guayaquil, aquí tienes envíos rápidos, atención directa por WhatsApp y decoraciones florales frescas que garantizan una experiencia profesional y confiable.
             </p>
+          </div>
+        </section>
+
+        <section className="mt-16">
+          <div className="mb-6">
+            <h2 className="section-title">Búsquedas relacionadas</h2>
+            <p className="section-copy">
+              También puedes encontrar DIFIORI por estas formas comunes de buscar flores y arreglos en Guayaquil.
+            </p>
+          </div>
+          <div className="grid gap-4 md:grid-cols-3">
+            {relatedPages.map((relatedPage) => (
+              <Link
+                key={relatedPage.path}
+                href={relatedPage.path}
+                className="surface-card p-6 transition-transform hover:-translate-y-1"
+              >
+                <h3 className="text-xl font-semibold text-foreground">{relatedPage.h1}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-foreground/65">
+                  {relatedPage.description}
+                </p>
+              </Link>
+            ))}
           </div>
         </section>
 

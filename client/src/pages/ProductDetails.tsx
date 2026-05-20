@@ -9,7 +9,7 @@ import { useCompany } from "@/hooks/useCompany";
 import { useCart } from "@/context/CartContext";
 import { useToast } from "@/hooks/use-toast";
 import { Seo } from "@/components/Seo";
-import { DEFAULT_COMPANY, absoluteUrl } from "@/lib/site";
+import { DEFAULT_COMPANY, absoluteUrl, canonicalUrl } from "@/lib/site";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -20,8 +20,10 @@ import {
 import {
   formatCategoryDisplayName,
   getCategoryPath,
+  getNumericPriceValue,
   getProductIdFromSlug,
   getProductPath,
+  getProductSku,
   slugify,
 } from "@shared/catalog";
 
@@ -112,7 +114,8 @@ export default function ProductDetails() {
     );
   }
 
-  const priceValue = product.price.replace(/[^0-9.]/g, "");
+  const priceValue = getNumericPriceValue(product.price);
+  const productSku = getProductSku(product);
   const productPath = getProductPath(product);
   const categoryPath = getCategoryPath(product.category);
   const categoryLabel = formatCategoryDisplayName(product.category);
@@ -150,51 +153,63 @@ export default function ProductDetails() {
   }>;
   const productSchema = {
     "@context": "https://schema.org",
-    "@type": "Product",
-    name: product.name,
-    description: product.description,
-    image: galleryImages.map((image) => absoluteUrl(image)),
-    category: categoryLabel,
-    brand: {
-      "@type": "Brand",
-      name: "DIFIORI",
-    },
-    offers: {
-      "@type": "Offer",
-      url: `https://difiori.com${productPath}`,
-      priceCurrency: "USD",
-      price: priceValue,
-      availability: "https://schema.org/InStock",
-    },
-    breadcrumb: {
-      "@type": "BreadcrumbList",
-      itemListElement: [
-        {
-          "@type": "ListItem",
-          position: 1,
-          name: "Inicio",
-          item: "https://difiori.com/",
+    "@graph": [
+      {
+        "@type": "Product",
+        "@id": `${canonicalUrl(productPath)}#product`,
+        name: product.name,
+        description: product.description || `${product.name} con entrega a domicilio en Guayaquil.`,
+        sku: productSku,
+        mpn: productSku,
+        image: galleryImages.map((image) => absoluteUrl(image)),
+        category: categoryLabel,
+        brand: {
+          "@type": "Brand",
+          name: "DIFIORI",
         },
-        {
-          "@type": "ListItem",
-          position: 2,
-          name: "Catálogo",
-          item: "https://difiori.com/shop",
+        offers: {
+          "@type": "Offer",
+          url: canonicalUrl(productPath),
+          priceCurrency: "USD",
+          price: priceValue,
+          availability: "https://schema.org/InStock",
+          itemCondition: "https://schema.org/NewCondition",
+          seller: {
+            "@type": "Organization",
+            name: "DIFIORI",
+          },
         },
-        {
-          "@type": "ListItem",
-          position: 3,
-          name: categoryLabel,
-          item: `https://difiori.com${categoryPath}`,
-        },
-        {
-          "@type": "ListItem",
-          position: 4,
-          name: product.name,
-          item: `https://difiori.com${productPath}`,
-        },
-      ],
-    },
+      },
+      {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          {
+            "@type": "ListItem",
+            position: 1,
+            name: "Inicio",
+            item: canonicalUrl("/"),
+          },
+          {
+            "@type": "ListItem",
+            position: 2,
+            name: "Catálogo",
+            item: canonicalUrl("/shop"),
+          },
+          {
+            "@type": "ListItem",
+            position: 3,
+            name: categoryLabel,
+            item: canonicalUrl(categoryPath),
+          },
+          {
+            "@type": "ListItem",
+            position: 4,
+            name: product.name,
+            item: canonicalUrl(productPath),
+          },
+        ],
+      },
+    ],
   };
   const selectedImageSrcSet = getResponsiveImageSrcSet(selectedImage, [480, 768, 1024, 1280]);
 

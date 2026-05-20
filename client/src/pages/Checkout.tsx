@@ -26,6 +26,7 @@ import { useCompany } from "@/hooks/useCompany";
 
 import { CartDialog } from "@/components/CartDialog";
 import { Seo } from "@/components/Seo";
+import { DEFAULT_COMPANY } from "@/lib/site";
 
 type OrderStatus = "idle" | "loading" | "success" | "error";
 type PaymentMethod = "PayPal" | "Payphone" | "Banco" | "Zelle";
@@ -252,6 +253,9 @@ export default function Checkout() {
   const [proofMessage, setProofMessage] = useState("");
   const [paypalPayerEmail, setPaypalPayerEmail] = useState("");
   const payphoneBoxStorageKey = "pp_box_payload";
+  const checkoutWhatsappUrl = `https://wa.me/${DEFAULT_COMPANY.phoneDigits}?text=${encodeURIComponent(
+    "Hola, necesito ayuda para completar mi pedido en DIFIORI."
+  )}`;
   const transferInstructions =
     company?.settings?.paymentSettings?.transferInstructions ||
     DEFAULT_TRANSFER_INSTRUCTIONS;
@@ -945,6 +949,25 @@ export default function Checkout() {
         <p className="mx-auto mb-5 max-w-2xl rounded-2xl border border-[#E5D7EF] bg-white px-4 py-3 text-center text-sm font-black text-[#4A3362] shadow-[0_12px_32px_rgba(74,51,98,0.06)] sm:text-base">
           Todo está en una sola página: tus datos, entrega, pago y resumen. Completa de arriba hacia abajo y confirma al final.
         </p>
+        <div className="mx-auto mb-5 flex max-w-2xl flex-col items-center justify-between gap-3 rounded-2xl border border-[#25D366]/25 bg-[#F2FFF7] px-4 py-4 text-center shadow-[0_12px_32px_rgba(37,211,102,0.10)] sm:flex-row sm:text-left">
+          <div>
+            <p className="text-sm font-black uppercase tracking-[0.12em] text-[#168A43]">
+              ¿Necesitas ayuda?
+            </p>
+            <p className="mt-1 text-sm font-bold text-[#255E3A]">
+              Te guiamos por WhatsApp para llenar datos, entrega o pago.
+            </p>
+          </div>
+          <a
+            href={checkoutWhatsappUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-2xl bg-[#25D366] px-5 py-3 text-sm font-black text-white shadow-lg shadow-[#25D366]/20 transition hover:bg-[#1ebe5d]"
+          >
+            <MessageSquare className="h-4 w-4" />
+            Ayuda por WhatsApp
+          </a>
+        </div>
 
         <div className="mb-5 grid grid-cols-3 gap-1.5 rounded-[1.25rem] border border-[#E5D7EF] bg-white p-1.5 shadow-[0_12px_32px_rgba(74,51,98,0.08)] sm:mb-8 sm:gap-2 sm:rounded-[1.5rem] sm:p-2">
           {CHECKOUT_STEPS.map((step, index) => {
@@ -1179,6 +1202,9 @@ export default function Checkout() {
                 <h3 className="flex items-center gap-2 font-sans text-2xl font-black tracking-tight text-[#4B0082] sm:gap-3 sm:text-4xl">
                   <User className="h-7 w-7 sm:h-9 sm:w-9" /> Quién envía
                 </h3>
+                <p className="rounded-2xl bg-[#FBF7FD] p-4 text-sm font-bold text-[#4A3362]">
+                  Estos datos son para confirmar el pedido contigo. El correo debe ser válido y los campos con * son obligatorios.
+                </p>
                 <div className="grid grid-cols-1 gap-5">
                   <label className="checkout-field">
                     <span>
@@ -1226,6 +1252,9 @@ export default function Checkout() {
                 <h3 className="flex items-center gap-2 font-sans text-2xl font-black tracking-tight text-[#4B0082] sm:gap-3 sm:text-4xl">
                   <Truck className="h-7 w-7 sm:h-9 sm:w-9" /> Quién recibe
                 </h3>
+                <p className="rounded-2xl bg-[#FBF7FD] p-4 text-sm font-bold text-[#4A3362]">
+                  Selecciona el sector para calcular el envío. Sin destino de entrega no se habilitan los métodos de pago.
+                </p>
                 <div className="grid grid-cols-1 gap-5">
                   <label className="checkout-field">
                     <span>
@@ -1333,6 +1362,15 @@ export default function Checkout() {
                     Completa primero tus datos y la entrega. El pago se habilita cuando selecciones el sector/destino de envío y llenes todos los campos obligatorios.
                   </div>
                 ) : null}
+                <a
+                  href={checkoutWhatsappUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-[#25D366]/30 bg-[#F2FFF7] px-4 py-3 text-sm font-black text-[#168A43] transition hover:bg-[#E8FFF1] sm:w-auto"
+                >
+                  <MessageSquare className="h-4 w-4" />
+                  Tengo dudas sobre el pago
+                </a>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   {PAYMENT_METHODS.map(({ label, description, Icon }) => (
                     <button
