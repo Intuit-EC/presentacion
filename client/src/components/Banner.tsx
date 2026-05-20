@@ -10,7 +10,7 @@ const FIXED_BANNER = {
   desktopImage: "/assets/banner_collage_desktop.webp",
   title: "Sorprende hoy. Nosotros lo entregamos por ti.",
   subtitle: "Historias reales de alegria en Guayaquil",
-  cta: "Ver productos",
+  cta: "Más vendidos",
   href: "/#catalogo",
 };
 
@@ -153,7 +153,7 @@ export function Banner({ onProductsClick }: BannerProps) {
                   rel="noopener noreferrer"
                   className="hero-banner-btn hero-banner-btn-whatsapp"
                 >
-                  <MessageCircle className="h-5 w-5" />
+                  <MessageCircle className="h-5 w-5 sm:h-6 sm:w-6" />
                   WhatsApp
                 </a>
               </div>
