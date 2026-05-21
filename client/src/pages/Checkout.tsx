@@ -1025,15 +1025,15 @@ export default function Checkout() {
           <aside className="order-2 checkout-panel rounded-[1.5rem] p-4 sm:rounded-[2rem] sm:p-7 lg:sticky lg:top-8 lg:order-2">
             <div className="space-y-5 sm:space-y-6">
               <div>
-                <div className="mb-4 flex items-center justify-between gap-3">
-                  <h3 className="flex items-center gap-2 text-2xl font-black tracking-tight text-[#4B1F6F] sm:gap-3 sm:text-5xl" style={{ fontFamily: '"Arial Black", Arial, sans-serif' }}>
-                    <ShoppingBag className="h-7 w-7 text-[#4B1F6F] sm:h-9 sm:w-9" /> Resumen
+                <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                  <h3 className="flex min-w-0 items-center gap-2 text-2xl font-black tracking-tight text-[#4B1F6F] sm:gap-3 sm:text-4xl xl:text-5xl" style={{ fontFamily: '"Arial Black", Arial, sans-serif' }}>
+                    <ShoppingBag className="h-7 w-7 shrink-0 text-[#4B1F6F] sm:h-8 sm:w-8 xl:h-9 xl:w-9" /> <span className="min-w-0 break-words">Resumen</span>
                   </h3>
                   <button
                     type="button"
                     onClick={handleOpenCart}
                     disabled={isCartOpening || isCheckoutBusy}
-                    className="inline-flex shrink-0 items-center gap-2 rounded-full border border-[#4B1F6F] bg-[#4B1F6F] px-3 py-2 text-[0.68rem] font-black uppercase tracking-[0.12em] text-white shadow-lg shadow-[#4B1F6F]/20 transition-all hover:bg-[#4A3362] disabled:cursor-not-allowed disabled:opacity-60 sm:px-5 sm:py-2.5 sm:text-sm sm:tracking-widest"
+                    className="inline-flex max-w-full items-center justify-center gap-2 rounded-full border border-[#4B1F6F] bg-[#4B1F6F] px-3 py-2 text-[0.68rem] font-black uppercase tracking-[0.08em] text-white shadow-lg shadow-[#4B1F6F]/20 transition-all hover:bg-[#4A3362] disabled:cursor-not-allowed disabled:opacity-60 sm:px-4 sm:py-2.5 sm:text-xs xl:px-5 xl:text-sm xl:tracking-widest"
                   >
                     {isCartOpening ? <Loader2 className="h-5 w-5 animate-spin" /> : null}
                     {isCartOpening ? "Abriendo..." : "Ver / cambiar"}
