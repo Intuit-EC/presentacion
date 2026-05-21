@@ -129,13 +129,30 @@ export function AppFrame({ Routes, fallback = <RouteFallback /> }: AppFrameProps
     if (hasInitializedPixel.current || typeof window === "undefined") return;
     let interactionCleanup = () => {};
     let fallbackTimeout = 0;
+    let interactionTimeout = 0;
+    let idleCallbackId = 0;
 
     const bootPixel = () => {
       if (hasInitializedPixel.current) return;
       hasInitializedPixel.current = true;
       interactionCleanup();
       if (fallbackTimeout) window.clearTimeout(fallbackTimeout);
+      if (interactionTimeout) window.clearTimeout(interactionTimeout);
+      if (idleCallbackId && "cancelIdleCallback" in window) {
+        window.cancelIdleCallback(idleCallbackId);
+      }
       initFacebookPixel();
+    };
+
+    const bootPixelWhenIdle = () => {
+      if (hasInitializedPixel.current) return;
+
+      if ("requestIdleCallback" in window) {
+        idleCallbackId = window.requestIdleCallback(bootPixel, { timeout: 3000 });
+        return;
+      }
+
+      bootPixel();
     };
 
     const setupDeferredBoot = () => {
@@ -148,7 +165,8 @@ export function AppFrame({ Routes, fallback = <RouteFallback /> }: AppFrameProps
 
       const onInteraction = (event: Event) => {
         if (!isMeaningfulInteraction(event)) return;
-        bootPixel();
+        if (interactionTimeout || hasInitializedPixel.current) return;
+        interactionTimeout = window.setTimeout(bootPixelWhenIdle, 1200);
       };
 
       interactionEvents.forEach((eventName) => {
@@ -164,8 +182,8 @@ export function AppFrame({ Routes, fallback = <RouteFallback /> }: AppFrameProps
         });
       };
 
-      // Fallback para sesiones sin interacción.
-      fallbackTimeout = window.setTimeout(bootPixel, 8000);
+      // Fallback para sesiones sin interacción: después de cargar y con tiempo ocioso.
+      fallbackTimeout = window.setTimeout(bootPixelWhenIdle, 4500);
     };
 
     if (document.readyState === "complete") {
@@ -173,6 +191,10 @@ export function AppFrame({ Routes, fallback = <RouteFallback /> }: AppFrameProps
       return () => {
         interactionCleanup();
         if (fallbackTimeout) window.clearTimeout(fallbackTimeout);
+        if (interactionTimeout) window.clearTimeout(interactionTimeout);
+        if (idleCallbackId && "cancelIdleCallback" in window) {
+          window.cancelIdleCallback(idleCallbackId);
+        }
       };
     }
 
@@ -183,6 +205,10 @@ export function AppFrame({ Routes, fallback = <RouteFallback /> }: AppFrameProps
       window.removeEventListener("load", onLoad);
       interactionCleanup();
       if (fallbackTimeout) window.clearTimeout(fallbackTimeout);
+      if (interactionTimeout) window.clearTimeout(interactionTimeout);
+      if (idleCallbackId && "cancelIdleCallback" in window) {
+        window.cancelIdleCallback(idleCallbackId);
+      }
     };
   }, []);
 

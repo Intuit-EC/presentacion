@@ -1033,7 +1033,7 @@ export default function Checkout() {
                     type="button"
                     onClick={handleOpenCart}
                     disabled={isCartOpening || isCheckoutBusy}
-                    className="inline-flex max-w-full items-center justify-center gap-2 rounded-full border border-[#4B1F6F] bg-[#4B1F6F] px-3 py-2 text-[0.68rem] font-black uppercase tracking-[0.08em] text-white shadow-lg shadow-[#4B1F6F]/20 transition-all hover:bg-[#4A3362] disabled:cursor-not-allowed disabled:opacity-60 sm:px-4 sm:py-2.5 sm:text-xs xl:px-5 xl:text-sm xl:tracking-widest"
+                    className="inline-flex max-w-full items-center justify-center gap-2 rounded-full border border-white/25 bg-gradient-to-r from-[#5A2A82] via-[#7B3FB0] to-[#C6539B] px-3 py-2 text-[0.68rem] font-black uppercase tracking-[0.08em] text-white shadow-[0_12px_28px_rgba(123,63,176,0.35)] ring-2 ring-[#C6539B]/15 transition-all hover:from-[#6B32A0] hover:via-[#8E49C8] hover:to-[#D65CAB] hover:shadow-[0_16px_34px_rgba(123,63,176,0.45)] disabled:cursor-not-allowed disabled:opacity-60 sm:px-4 sm:py-2.5 sm:text-xs xl:px-5 xl:text-sm xl:tracking-widest"
                   >
                     {isCartOpening ? <Loader2 className="h-5 w-5 animate-spin" /> : null}
                     {isCartOpening ? "Abriendo..." : "Ver / cambiar"}
