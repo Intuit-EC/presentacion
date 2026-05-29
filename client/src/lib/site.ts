@@ -19,6 +19,16 @@ export function getDefaultSeoImage() {
 
 export const DEFAULT_SEO_IMAGE = getDefaultSeoImage();
 
+function normalizePath(path = "/") {
+  const rawPath = String(path || "/").trim() || "/";
+  const [withoutHash] = rawPath.split("#");
+  const [withoutQuery] = withoutHash.split("?");
+  const withLeadingSlash = withoutQuery.startsWith("/") ? withoutQuery : `/${withoutQuery}`;
+  const withoutTrailingSlash = withLeadingSlash.length > 1 ? withLeadingSlash.replace(/\/+$/, "") : withLeadingSlash;
+
+  return withoutTrailingSlash || "/";
+}
+
 export function absoluteUrl(path?: string | null): string {
   if (!path || path.startsWith("data:")) {
     return getDefaultSeoImage();
@@ -34,5 +44,5 @@ export function absoluteUrl(path?: string | null): string {
 
 export function canonicalUrl(path = "/"): string {
   const siteUrl = getSiteUrl();
-  return `${siteUrl}${path.startsWith("/") ? path : `/${path}`}`;
+  return `${siteUrl}${normalizePath(path)}`;
 }

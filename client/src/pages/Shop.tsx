@@ -2,7 +2,7 @@ import { useProducts } from "@/hooks/useProducts";
 import { ProductCard } from "@/components/ProductCard";
 import { CategorySidebar } from "@/components/CategorySidebar";
 import { Seo } from "@/components/Seo";
-import { absoluteUrl } from "@/lib/site";
+import { absoluteUrl, canonicalUrl } from "@/lib/site";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -18,7 +18,7 @@ export default function Shop() {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
     name: "Catálogo DIFIORI",
-    url: "https://difiori.com/shop",
+    url: canonicalUrl("/shop"),
     description: "Catálogo de arreglos florales, ramos de flores y regalos a domicilio en Guayaquil.",
     image: absoluteUrl("/opengraph.jpg"),
     breadcrumb: {
@@ -28,13 +28,13 @@ export default function Shop() {
           "@type": "ListItem",
           position: 1,
           name: "Inicio",
-          item: "https://difiori.com/",
+          item: canonicalUrl("/"),
         },
         {
           "@type": "ListItem",
           position: 2,
           name: "Catálogo",
-          item: "https://difiori.com/shop",
+          item: canonicalUrl("/shop"),
         },
       ],
     },

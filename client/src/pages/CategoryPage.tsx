@@ -5,6 +5,7 @@ import { CategorySidebar } from "@/components/CategorySidebar";
 import { useCategories } from "@/hooks/useCategories";
 import { useProducts } from "@/hooks/useProducts";
 import { Seo } from "@/components/Seo";
+import { canonicalUrl } from "@/lib/site";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -45,7 +46,7 @@ export default function CategoryPage() {
         "@context": "https://schema.org",
         "@type": "CollectionPage",
         name: categoryLabel,
-        url: `https://difiori.com${categoryPath}`,
+        url: canonicalUrl(categoryPath),
         description,
         breadcrumb: {
           "@type": "BreadcrumbList",
@@ -54,19 +55,19 @@ export default function CategoryPage() {
               "@type": "ListItem",
               position: 1,
               name: "Inicio",
-              item: "https://difiori.com/",
+              item: canonicalUrl("/"),
             },
             {
               "@type": "ListItem",
               position: 2,
               name: "Catálogo",
-              item: "https://difiori.com/shop",
+              item: canonicalUrl("/shop"),
             },
             {
               "@type": "ListItem",
               position: 3,
               name: categoryLabel,
-              item: `https://difiori.com${categoryPath}`,
+              item: canonicalUrl(categoryPath),
             },
           ],
         },

@@ -157,6 +157,7 @@
 }
 
 .deferred-section {
+  scroll-margin-top: 8rem;
   content-visibility: auto;
   contain-intrinsic-size: 900px;
 }

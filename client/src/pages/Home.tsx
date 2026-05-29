@@ -1,7 +1,7 @@
 import React, { Suspense, lazy, useEffect, useRef, useState } from "react";
 import { Banner } from "@/components/Banner";
 import { Seo } from "@/components/Seo";
-import { DEFAULT_COMPANY, absoluteUrl } from "@/lib/site";
+import { DEFAULT_COMPANY, absoluteUrl, canonicalUrl } from "@/lib/site";
 import "./home-shell.css";
 
 const HomeCatalogSection = lazy(() =>
@@ -11,6 +11,9 @@ const HomeCatalogSection = lazy(() =>
 const HomeDeferredSections = lazy(() =>
   import("@/components/home/HomeDeferredSections").then((module) => ({ default: module.HomeDeferredSections })),
 );
+
+const DEFERRED_HASH_SECTIONS = ["testimonios", "faq", "contacto"] as const;
+const HOME_HASH_SECTIONS = ["catalogo", ...DEFERRED_HASH_SECTIONS] as const;
 
 function CatalogFallback() {
   return (
@@ -80,15 +83,37 @@ function DeferredFallback() {
 export default function Home() {
   const catalogTriggerRef = useRef<HTMLDivElement | null>(null);
   const deferredTriggerRef = useRef<HTMLDivElement | null>(null);
+  const hashScrollTimeoutsRef = useRef<number[]>([]);
   const [shouldLoadCatalog, setShouldLoadCatalog] = useState(false);
   const [shouldLoadDeferredSections, setShouldLoadDeferredSections] = useState(false);
 
-  const scrollToSection = (id: string) => {
-    const target = document.getElementById(id);
-    if (!target) return;
+  const clearHashScrollTimeouts = () => {
+    hashScrollTimeoutsRef.current.forEach((timeoutId) => window.clearTimeout(timeoutId));
+    hashScrollTimeoutsRef.current = [];
+  };
 
-    target.scrollIntoView({ behavior: "smooth", block: "start" });
+  const scrollToSection = (id: string, behavior: ScrollBehavior = "smooth") => {
+    const target = document.getElementById(id);
+    if (!target) return false;
+
+    target.scrollIntoView({ behavior, block: "start" });
     window.history.replaceState(null, "", `#${id}`);
+    return true;
+  };
+
+  const scrollToSectionWithRetry = (id: string) => {
+    clearHashScrollTimeouts();
+
+    const retryDelays = [0, 80, 180, 350, 700, 1100, 1600];
+    retryDelays.forEach((delay, index) => {
+      const timeoutId = window.setTimeout(() => {
+        window.requestAnimationFrame(() => {
+          scrollToSection(id, index === 0 ? "smooth" : "auto");
+        });
+      }, delay);
+
+      hashScrollTimeoutsRef.current.push(timeoutId);
+    });
   };
 
   const handleProductsClick = () => {
@@ -122,8 +147,10 @@ export default function Home() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    if (window.location.hash.replace("#", "") === "catalogo") {
+    const hash = window.location.hash.replace("#", "");
+    if (hash === "catalogo") {
       setShouldLoadCatalog(true);
+      scrollToSectionWithRetry("catalogo");
     }
   }, []);
 
@@ -154,12 +181,35 @@ export default function Home() {
     if (typeof window === "undefined") return;
 
     const hash = window.location.hash.replace("#", "");
-    if (!["testimonios", "faq", "contacto"].includes(hash)) return;
+    if (!DEFERRED_HASH_SECTIONS.includes(hash as (typeof DEFERRED_HASH_SECTIONS)[number])) return;
 
     setShouldLoadDeferredSections(true);
-    window.requestAnimationFrame(() => {
-      window.setTimeout(() => scrollToSection(hash), 0);
-    });
+    scrollToSectionWithRetry(hash);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const handleHashChange = () => {
+      const hash = window.location.hash.replace("#", "");
+      if (!HOME_HASH_SECTIONS.includes(hash as (typeof HOME_HASH_SECTIONS)[number])) return;
+
+      if (hash === "catalogo") {
+        setShouldLoadCatalog(true);
+      }
+
+      if (DEFERRED_HASH_SECTIONS.includes(hash as (typeof DEFERRED_HASH_SECTIONS)[number])) {
+        setShouldLoadDeferredSections(true);
+      }
+
+      scrollToSectionWithRetry(hash);
+    };
+
+    window.addEventListener("hashchange", handleHashChange);
+    return () => {
+      window.removeEventListener("hashchange", handleHashChange);
+      clearHashScrollTimeouts();
+    };
   }, []);
 
   const homeSchema = {
@@ -167,9 +217,9 @@ export default function Home() {
     "@graph": [
       {
         "@type": "Florist",
-        "@id": "https://difiori.com/#organization",
+        "@id": `${canonicalUrl("/")}#organization`,
         name: "DIFIORI",
-        url: "https://difiori.com/",
+        url: canonicalUrl("/"),
         image: absoluteUrl("/opengraph.jpg"),
         telephone: `+${DEFAULT_COMPANY.phoneDigits}`,
         email: DEFAULT_COMPANY.email,

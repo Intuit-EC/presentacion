@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useMemo, type ReactNode } from "react";
 import { DEFAULT_COMPANY, DEFAULT_SEO_IMAGE, absoluteUrl, canonicalUrl } from "@/lib/site";
 
 type JsonLd = Record<string, unknown> | Array<Record<string, unknown>>;
@@ -10,7 +10,9 @@ export interface SeoProps {
   path?: string;
   robots?: string;
   image?: string;
+  imageAlt?: string;
   type?: string;
+  locale?: string;
   schema?: JsonLd;
 }
 
@@ -21,7 +23,9 @@ export interface SeoState {
   path: string;
   robots: string;
   image: string;
+  imageAlt: string;
   type: string;
+  locale: string;
   schema?: JsonLd;
 }
 
@@ -38,7 +42,9 @@ export const DEFAULT_SEO_STATE: SeoState = {
   path: "/",
   robots: "index, follow",
   image: DEFAULT_SEO_IMAGE,
+  imageAlt: "Arreglos florales DIFIORI en Guayaquil",
   type: "website",
+  locale: "es_EC",
 };
 
 const SeoContext = createContext<SeoManager | null>(null);
@@ -80,7 +86,9 @@ export function buildSeoState({
   path = "/",
   robots = "index, follow",
   image = DEFAULT_SEO_IMAGE,
+  imageAlt,
   type = "website",
+  locale = "es_EC",
   schema,
 }: SeoProps): SeoState {
   return {
@@ -90,7 +98,9 @@ export function buildSeoState({
     path,
     robots,
     image,
+    imageAlt: imageAlt || title,
     type,
+    locale,
     schema,
   };
 }
@@ -98,23 +108,43 @@ export function buildSeoState({
 export function renderSeoTags(state: SeoState) {
   const canonical = canonicalUrl(state.path);
   const imageUrl = absoluteUrl(state.image);
+  const escapedTitle = escapeHtml(state.title);
+  const escapedDescription = escapeHtml(state.description);
+  const escapedCanonical = escapeHtml(canonical);
+  const escapedImageUrl = escapeHtml(imageUrl);
+  const escapedImageAlt = escapeHtml(state.imageAlt);
   const tags = [
-    `<title>${escapeHtml(state.title)}</title>`,
-    `<meta name="description" content="${escapeHtml(state.description)}" />`,
+    `<title>${escapedTitle}</title>`,
+    `<meta name="description" content="${escapedDescription}" />`,
     state.keywords ? `<meta name="keywords" content="${escapeHtml(state.keywords)}" />` : "",
     `<meta name="robots" content="${escapeHtml(state.robots)}" />`,
     `<meta name="author" content="${escapeHtml(DEFAULT_COMPANY.name)}" />`,
-    `<meta property="og:title" content="${escapeHtml(state.title)}" />`,
-    `<meta property="og:description" content="${escapeHtml(state.description)}" />`,
+    `<meta name="application-name" content="${escapeHtml(DEFAULT_COMPANY.name)}" />`,
+    `<meta name="format-detection" content="telephone=no" />`,
+    `<meta name="referrer" content="strict-origin-when-cross-origin" />`,
+    `<meta name="theme-color" content="#ffffff" />`,
+    `<meta itemprop="name" content="${escapedTitle}" />`,
+    `<meta itemprop="description" content="${escapedDescription}" />`,
+    `<meta itemprop="image" content="${escapedImageUrl}" />`,
+    `<meta property="og:title" content="${escapedTitle}" />`,
+    `<meta property="og:description" content="${escapedDescription}" />`,
     `<meta property="og:type" content="${escapeHtml(state.type)}" />`,
-    `<meta property="og:url" content="${escapeHtml(canonical)}" />`,
+    `<meta property="og:url" content="${escapedCanonical}" />`,
     `<meta property="og:site_name" content="${escapeHtml(DEFAULT_COMPANY.name)}" />`,
-    `<meta property="og:image" content="${escapeHtml(imageUrl)}" />`,
+    `<meta property="og:locale" content="${escapeHtml(state.locale)}" />`,
+    `<meta property="og:image" content="${escapedImageUrl}" />`,
+    `<meta property="og:image:secure_url" content="${escapedImageUrl}" />`,
+    `<meta property="og:image:width" content="1200" />`,
+    `<meta property="og:image:height" content="630" />`,
+    `<meta property="og:image:alt" content="${escapedImageAlt}" />`,
     `<meta name="twitter:card" content="summary_large_image" />`,
-    `<meta name="twitter:title" content="${escapeHtml(state.title)}" />`,
-    `<meta name="twitter:description" content="${escapeHtml(state.description)}" />`,
-    `<meta name="twitter:image" content="${escapeHtml(imageUrl)}" />`,
-    `<link rel="canonical" href="${escapeHtml(canonical)}" />`,
+    `<meta name="twitter:title" content="${escapedTitle}" />`,
+    `<meta name="twitter:description" content="${escapedDescription}" />`,
+    `<meta name="twitter:image" content="${escapedImageUrl}" />`,
+    `<meta name="twitter:image:alt" content="${escapedImageAlt}" />`,
+    `<link rel="canonical" href="${escapedCanonical}" />`,
+    `<link rel="alternate" href="${escapedCanonical}" hreflang="es-EC" />`,
+    `<link rel="alternate" href="${escapedCanonical}" hreflang="x-default" />`,
   ].filter(Boolean);
 
   if (state.schema) {
@@ -143,11 +173,24 @@ function removeMeta(attribute: "name" | "property", key: string) {
 }
 
 function upsertLink(rel: string, href: string) {
-  let element = document.head.querySelector<HTMLLinkElement>(`link[rel="${rel}"]`);
+  let element = document.head.querySelector<HTMLLinkElement>(`link[rel="${rel}"]:not([hreflang])`);
 
   if (!element) {
     element = document.createElement("link");
     element.setAttribute("rel", rel);
+    document.head.appendChild(element);
+  }
+
+  element.setAttribute("href", href);
+}
+
+function upsertAlternateLink(hreflang: string, href: string) {
+  let element = document.head.querySelector<HTMLLinkElement>(`link[rel="alternate"][hreflang="${hreflang}"]`);
+
+  if (!element) {
+    element = document.createElement("link");
+    element.setAttribute("rel", "alternate");
+    element.setAttribute("hreflang", hreflang);
     document.head.appendChild(element);
   }
 
@@ -161,20 +204,28 @@ export function Seo({
   path = "/",
   robots = "index, follow",
   image = DEFAULT_SEO_IMAGE,
+  imageAlt,
   type = "website",
+  locale = "es_EC",
   schema,
 }: SeoProps) {
   const manager = useContext(SeoContext);
-  const seoState = buildSeoState({
-    title,
-    description,
-    keywords,
-    path,
-    robots,
-    image,
-    type,
-    schema,
-  });
+  const seoState = useMemo(
+    () =>
+      buildSeoState({
+        title,
+        description,
+        keywords,
+        path,
+        robots,
+        image,
+        imageAlt,
+        type,
+        locale,
+        schema,
+      }),
+    [title, description, keywords, path, robots, image, imageAlt, type, locale, schema],
+  );
 
   if (manager) {
     manager.setState(seoState);
@@ -195,17 +246,30 @@ export function Seo({
     }
     upsertMeta("name", "robots", seoState.robots);
     upsertMeta("name", "author", DEFAULT_COMPANY.name);
+    upsertMeta("name", "application-name", DEFAULT_COMPANY.name);
+    upsertMeta("name", "format-detection", "telephone=no");
+    upsertMeta("name", "referrer", "strict-origin-when-cross-origin");
+    upsertMeta("name", "theme-color", "#ffffff");
+    upsertMeta("name", "twitter:card", "summary_large_image");
     upsertMeta("property", "og:title", seoState.title);
     upsertMeta("property", "og:description", seoState.description);
     upsertMeta("property", "og:type", seoState.type);
     upsertMeta("property", "og:url", canonical);
     upsertMeta("property", "og:site_name", DEFAULT_COMPANY.name);
+    upsertMeta("property", "og:locale", seoState.locale);
     upsertMeta("property", "og:image", imageUrl);
+    upsertMeta("property", "og:image:secure_url", imageUrl);
+    upsertMeta("property", "og:image:width", "1200");
+    upsertMeta("property", "og:image:height", "630");
+    upsertMeta("property", "og:image:alt", seoState.imageAlt);
+    upsertMeta("name", "twitter:image:alt", seoState.imageAlt);
     upsertMeta("name", "twitter:card", "summary_large_image");
     upsertMeta("name", "twitter:title", seoState.title);
     upsertMeta("name", "twitter:description", seoState.description);
     upsertMeta("name", "twitter:image", imageUrl);
     upsertLink("canonical", canonical);
+    upsertAlternateLink("es-EC", canonical);
+    upsertAlternateLink("x-default", canonical);
 
     const existingJsonLd = document.getElementById("seo-json-ld");
 

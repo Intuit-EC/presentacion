@@ -18,7 +18,7 @@ import {
 } from "../shared/catalog";
 import { createAppQueryClient } from "../client/src/lib/queryClient";
 import { toPublicImageUrl } from "../client/src/lib/media";
-import { DEFAULT_SEO_STATE, renderSeoTags } from "../client/src/components/Seo";
+import { DEFAULT_SEO_STATE, renderSeoTags, type SeoState } from "../client/src/components/Seo";
 import { cmsHomeHeroQueryKey, fetchHomeHero } from "../client/src/hooks/useCMS";
 import { categoriesQueryKey, fetchCategories } from "../client/src/hooks/useCategories";
 import { companyQueryKey, fetchCompany } from "../client/src/hooks/useCompany";
@@ -228,6 +228,43 @@ function buildPublicConfigScript() {
     siteUrl: SITE_URL,
     ...(ASSET_BASE_URL ? { assetBaseUrl: ASSET_BASE_URL } : {}),
   })}</script>`;
+}
+
+function getFallbackSeoState(path: string): SeoState {
+  if (path === "/checkout") {
+    return {
+      ...DEFAULT_SEO_STATE,
+      title: "Checkout | DIFIORI",
+      description: "Proceso de checkout de DIFIORI.",
+      path,
+      robots: "noindex, nofollow",
+    };
+  }
+
+  if (path === "/payment-gateway") {
+    return {
+      ...DEFAULT_SEO_STATE,
+      title: "Pago con tarjeta | DIFIORI",
+      description: "Completa tu pago seguro con DIFIORI.",
+      path,
+      robots: "noindex, nofollow",
+    };
+  }
+
+  if (path === "/payment-result") {
+    return {
+      ...DEFAULT_SEO_STATE,
+      title: "Resultado de pago | DIFIORI",
+      description: "Resultado del proceso de pago en DIFIORI.",
+      path,
+      robots: "noindex, nofollow",
+    };
+  }
+
+  return {
+    ...DEFAULT_SEO_STATE,
+    path,
+  };
 }
 
 function getHomeHeroPreload(queryClient: QueryClient) {
@@ -644,6 +681,7 @@ type PublicProduct = {
   isBestSeller: boolean;
   description: string;
   price: string;
+  image?: string;
 };
 
 const SEO_LANDING_PATHS = [
@@ -669,13 +707,14 @@ async function fetchPublicProducts(): Promise<PublicProduct[]> {
     }
 
     return payload.data
-      .map((product: { id?: string | number; name?: string; description?: string; price?: string | number; category?: string; isBestSeller?: boolean }) => ({
+      .map((product: { id?: string | number; name?: string; description?: string; price?: string | number; category?: string; isBestSeller?: boolean; image?: string }) => ({
         id: String(product.id || "").trim(),
         name: String(product.name || "").trim(),
         description: String(product.description || "").trim(),
         price: String(product.price || "").trim(),
         category: String(product.category || "General").trim(),
         isBestSeller: Boolean(product.isBestSeller),
+        image: String(product.image || "").trim() || undefined,
       }))
       .filter((product: PublicProduct) => product.id && isPublicCatalogProduct(product));
   } catch (error) {
@@ -756,6 +795,10 @@ app.get("/product.php", (req, res) => {
   return res.redirect(301, "/shop");
 });
 
+app.get(/.*\.php$/, (req, res) => {
+  return sendGone(res, req.path);
+});
+
 app.get("/robots.txt", (_req, res) => {
   res.type("text/plain");
   res.send([
@@ -766,9 +809,7 @@ app.get("/robots.txt", (_req, res) => {
     "Disallow: /payment-result",
     "Disallow: /admin",
     "Disallow: /v2",
-    "Disallow: /*.php",
     "Disallow: /?*",
-    "Disallow: /*?*id=*",
     "",
     "User-agent: Googlebot",
     "Allow: /",
@@ -790,21 +831,63 @@ app.get("/sitemap.xml", async (_req, res) => {
     // Only include canonical URLs: /producto/... not /product/...
     const productUrls = products.map((product) => getProductPath(product));
     
-    const urls = Array.from(new Set([
-      "/",
-      "/shop",
-      ...SEO_LANDING_PATHS,
-      ...categoryUrls,
-      ...productUrls,
-    ]));
+    const imageByPath = new Map<string, string>([
+      ["/", buildSiteUrl("/opengraph.jpg")],
+      ["/shop", buildSiteUrl("/opengraph.jpg")],
+      ...SEO_LANDING_PATHS.map((path) => [path, buildSiteUrl("/opengraph.jpg")] as const),
+    ]);
+
+    for (const product of products) {
+      if (!product.image) continue;
+
+      const publicImage = toPublicImageUrl(product.image);
+      imageByPath.set(
+        getProductPath(product),
+        publicImage.startsWith("http://") || publicImage.startsWith("https://")
+          ? publicImage
+          : buildSiteUrl(publicImage),
+      );
+    }
+
+    const urls = Array.from(
+      new Set([
+        "/",
+        "/shop",
+        ...SEO_LANDING_PATHS,
+        ...categoryUrls,
+        ...productUrls,
+      ]),
+    );
+
+    const priorityForPath = (path: string) => {
+      if (path === "/") return "1.0";
+      if (path === "/shop" || SEO_LANDING_PATHS.includes(path)) return "0.9";
+      if (path.startsWith("/producto/")) return "0.8";
+      if (path.startsWith("/categoria/")) return "0.7";
+      return "0.6";
+    };
+
+    const changefreqForPath = (path: string) => {
+      if (path === "/" || path === "/shop" || path.startsWith("/producto/")) return "weekly";
+      return "monthly";
+    };
 
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
 ${urls
-  .map((path) => `  <url>
+  .map((path) => {
+    const imageUrl = imageByPath.get(path);
+
+    return `  <url>
     <loc>${escapeXml(buildSiteUrl(path))}</loc>
     <lastmod>${today}</lastmod>
-  </url>`)
+    <changefreq>${changefreqForPath(path)}</changefreq>
+    <priority>${priorityForPath(path)}</priority>${imageUrl ? `
+    <image:image>
+      <image:loc>${escapeXml(imageUrl)}</image:loc>
+    </image:image>` : ""}
+  </url>`;
+  })
   .join("\n")}
 </urlset>`;
 
@@ -890,7 +973,7 @@ app.use((req, res, next) => {
 
       if (!shouldSsrPath(req.path)) {
         const page = injectHtml(template, {
-          head: renderSeoTags(DEFAULT_SEO_STATE),
+          head: renderSeoTags(getFallbackSeoState(req.path)),
           stateScript: buildPublicConfigScript(),
         });
         return res.status(200).type("text/html").send(page);
