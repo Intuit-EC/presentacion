@@ -16,6 +16,7 @@ const FIXED_BANNER = {
 
 type BannerImage = {
   url: string;
+  desktopUrl?: string;
   alt: string;
 };
 
@@ -51,23 +52,31 @@ export function Banner({ onProductsClick }: BannerProps) {
     () => [
       {
         url: FIXED_BANNER.mobileImage,
-        alt: `Floreria DIFIORI - ${FIXED_BANNER.title}`,
-      },
-      {
-        url: FIXED_BANNER.desktopImage,
+        desktopUrl: FIXED_BANNER.desktopImage,
         alt: `Floreria DIFIORI - ${FIXED_BANNER.title}`,
       },
     ],
     [],
   );
-  const carouselImages = cmsImages.length > 0 ? cmsImages : fallbackImages;
+  const carouselImages = (cmsImages.length > 0 ? cmsImages : fallbackImages).slice(0, 3);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [mountedImageIndexes, setMountedImageIndexes] = useState<ReadonlySet<number>>(() => new Set([0]));
   const title = hero?.title?.trim() || FIXED_BANNER.title;
   const subtitle = hero?.description?.trim() || FIXED_BANNER.subtitle;
 
   useEffect(() => {
     setActiveIndex(0);
+    setMountedImageIndexes(new Set([0]));
   }, [carouselImages.length]);
+
+  useEffect(() => {
+    setMountedImageIndexes((current) => {
+      if (current.has(activeIndex)) return current;
+      const next = new Set(current);
+      next.add(activeIndex);
+      return next;
+    });
+  }, [activeIndex]);
 
   useEffect(() => {
     if (carouselImages.length < 2) return;
@@ -84,23 +93,38 @@ export function Banner({ onProductsClick }: BannerProps) {
       <div className="hero-banner-stage">
         <div className="hero-banner-carousel" aria-hidden={false}>
           {carouselImages.map((image, index) => {
+            if (!mountedImageIndexes.has(index)) return null;
+
             const isActive = index === activeIndex;
             const srcSet = getResponsiveImageSrcSet(image.url, [768, 1024, 1440, 1920]);
+            const desktopSrcSet = image.desktopUrl
+              ? getResponsiveImageSrcSet(image.desktopUrl, [768, 1024, 1440, 1920])
+              : undefined;
 
             return (
-              <img
+              <picture
                 key={`${image.url}-${index}`}
-                src={image.url}
-                srcSet={srcSet}
-                alt={image.alt}
-                width={1600}
-                height={900}
-                loading={index === 0 ? "eager" : "lazy"}
-                decoding="async"
-                fetchPriority={index === 0 ? "high" : "low"}
-                sizes="100vw"
                 className={`hero-banner-image ${isActive ? "hero-banner-image-active" : ""}`}
-              />
+              >
+                {image.desktopUrl ? (
+                  <source
+                    media="(min-width: 768px)"
+                    srcSet={desktopSrcSet || image.desktopUrl}
+                    sizes="100vw"
+                  />
+                ) : null}
+                <img
+                  src={image.url}
+                  srcSet={srcSet}
+                  alt={image.alt}
+                  width={1600}
+                  height={900}
+                  loading={index === 0 ? "eager" : "lazy"}
+                  decoding="async"
+                  fetchPriority={index === 0 ? "high" : "low"}
+                  sizes="100vw"
+                />
+              </picture>
             );
           })}
         </div>

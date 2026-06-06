@@ -19,9 +19,7 @@ import {
 import { createAppQueryClient } from "../client/src/lib/queryClient";
 import { toPublicImageUrl } from "../client/src/lib/media";
 import { DEFAULT_SEO_STATE, renderSeoTags, type SeoState } from "../client/src/components/Seo";
-import { cmsHomeHeroQueryKey, fetchHomeHero } from "../client/src/hooks/useCMS";
 import { categoriesQueryKey, fetchCategories } from "../client/src/hooks/useCategories";
-import { companyQueryKey, fetchCompany } from "../client/src/hooks/useCompany";
 import { productsQueryKey, fetchProducts } from "../client/src/hooks/useProducts";
 import type { Product } from "../client/src/data/mock";
 import type { QueryClient } from "@tanstack/react-query";
@@ -126,8 +124,6 @@ const SITE_URL =
 const ASSET_BASE_URL =
   normalizeUrl(process.env.APP_PUBLIC_ASSET_URL || process.env.ASSET_BASE_URL || process.env.VITE_ASSET_BASE_URL) ||
   "";
-const DEFAULT_HERO_IMAGE = "/assets/banner_collage.webp";
-const HOME_PRODUCT_LIMIT = 8;
 const PAYPHONE_WEB_TOKEN = process.env.PAYPHONE_WEB_TOKEN || process.env.PAYPHONE_TOKEN;
 const PAYPHONE_WEB_STORE_ID = process.env.PAYPHONE_WEB_STORE_ID || process.env.PAYPHONE_STORE_ID;
 
@@ -296,25 +292,6 @@ async function loadRenderApp(vite?: ViteDevServer): Promise<RenderApp> {
 
 async function prefetchSsrRouteData(queryClient: QueryClient, path: string, baseUrl: string) {
   if (path === "/") {
-    await Promise.all([
-      queryClient.prefetchQuery({
-        queryKey: productsQueryKey({ limit: HOME_PRODUCT_LIMIT }),
-        queryFn: () => fetchProducts({ limit: HOME_PRODUCT_LIMIT }, baseUrl),
-      }),
-      queryClient.prefetchQuery({
-        queryKey: categoriesQueryKey,
-        queryFn: () => fetchCategories(baseUrl),
-      }),
-      queryClient.prefetchQuery({
-        queryKey: companyQueryKey,
-        queryFn: () => fetchCompany(baseUrl),
-      }),
-      queryClient.prefetchQuery({
-        queryKey: cmsHomeHeroQueryKey,
-        queryFn: () => fetchHomeHero(baseUrl),
-      }),
-    ]);
-
     return 200;
   }
 
