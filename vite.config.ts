@@ -87,8 +87,7 @@ export default defineConfig({
           if (id.includes("lucide-react")) {
             return "icons-vendor";
           }
-
-          return "vendor";
+          return undefined;
         },
       },
     },

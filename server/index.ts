@@ -12,10 +12,9 @@ import {
   findCategoryNameBySlug,
   getCategoryPath,
   getCategorySlug,
-  getProductIdFromSlug,
   getProductPath,
+  isProductSlugMatch,
   isPublicCatalogProduct,
-  slugify,
 } from "../shared/catalog";
 import { createAppQueryClient } from "../client/src/lib/queryClient";
 import { toPublicImageUrl } from "../client/src/lib/media";
@@ -205,6 +204,23 @@ function shouldIgnoreProxyStreamError(error: unknown, req: Request, res: Respons
   return isClosedStreamError(error) && (req.destroyed || req.aborted || res.destroyed || res.writableEnded);
 }
 
+function getPublicApiCacheControl(requestPath: string) {
+  if (requestPath === "/api/external/cms/home-hero") {
+    return "public, max-age=300, stale-while-revalidate=3600";
+  }
+
+  if (
+    requestPath === "/api/external/products" ||
+    requestPath === "/api/external/products/categories" ||
+    requestPath === "/api/external/company" ||
+    requestPath === "/api/external/reviews"
+  ) {
+    return "public, max-age=60, stale-while-revalidate=300";
+  }
+
+  return "public, max-age=120, stale-while-revalidate=600";
+}
+
 async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs: number) {
   const timeoutController = new AbortController();
   const timer = setTimeout(() => timeoutController.abort(), timeoutMs);
@@ -312,7 +328,7 @@ function tryHandlePublicApiFallback(req: Request, res: Response) {
 
   if (!payload) return false;
 
-  res.setHeader("Cache-Control", "public, max-age=300, stale-while-revalidate=3600");
+  res.setHeader("Cache-Control", getPublicApiCacheControl(requestPath));
   return req.method === "HEAD" ? res.status(200).end() : res.status(200).json(payload);
 }
 
@@ -456,11 +472,7 @@ async function prefetchSsrRouteData(queryClient: QueryClient, path: string, base
 
     const slug = decodeURIComponent(path.replace("/producto/", ""));
     const products = queryClient.getQueryData<Product[]>(productsQueryKey()) || [];
-    const productId = getProductIdFromSlug(slug);
-    const product = products.find((item) => {
-      if (productId && String(item.id) === String(productId)) return true;
-      return slugify(item.name) === slug;
-    });
+    const product = products.find((item) => isProductSlugMatch(item, slug));
 
     return product ? 200 : 404;
   }
@@ -514,7 +526,7 @@ async function proxyToBackend(req: Request, res: Response) {
       req.originalUrl.startsWith("/api/external/") &&
       !response.headers.has("cache-control")
     ) {
-      res.setHeader("Cache-Control", "public, max-age=120, stale-while-revalidate=600");
+      res.setHeader("Cache-Control", getPublicApiCacheControl(req.originalUrl.split("?")[0] || req.path));
     }
 
     res.status(response.status);

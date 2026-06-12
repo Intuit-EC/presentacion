@@ -125,6 +125,10 @@ export function getProductPath(product: ProductLike) {
   return `/producto/${getProductSlug(product)}`;
 }
 
+export function isProductSlugMatch(product: ProductLike, slug: string) {
+  return getProductSlug(product) === String(slug || "").trim();
+}
+
 export function getProductIdFromSlug(slug: string) {
   const segments = slug.split("-");
   return segments[segments.length - 1] || "";

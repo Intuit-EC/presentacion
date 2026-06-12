@@ -21,10 +21,9 @@ import {
   formatCategoryDisplayName,
   getCategoryPath,
   getNumericPriceValue,
-  getProductIdFromSlug,
   getProductPath,
   getProductSku,
-  slugify,
+  isProductSlugMatch,
 } from "@shared/catalog";
 
 export default function ProductDetails() {
@@ -42,11 +41,14 @@ export default function ProductDetails() {
 
   const routeValue = canonicalMatch ? canonicalParams?.slug || "" : legacyParams?.id || "";
   const routePath = canonicalMatch ? `/producto/${routeValue}` : `/product/${routeValue}`;
-  const legacyProductId = legacyMatch ? legacyParams?.id : getProductIdFromSlug(routeValue);
   const product = allProducts.find((item) => {
     if (!routeValue) return false;
-    if (legacyProductId && String(item.id) === String(legacyProductId)) return true;
-    return slugify(item.name) === routeValue;
+
+    if (legacyMatch) {
+      return String(item.id) === String(legacyParams?.id || "");
+    }
+
+    return isProductSlugMatch(item, routeValue);
   });
   const [selectedImage, setSelectedImage] = useState<string | undefined>(undefined);
   const [isBuying, setIsBuying] = useState(false);
