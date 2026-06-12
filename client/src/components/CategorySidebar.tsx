@@ -24,14 +24,64 @@ export function CategorySidebar({
 }: CategorySidebarProps) {
   const productListHash = "#product-list";
   const [isOpen, setIsOpen] = useState(false);
+  const [shouldFetchCategories, setShouldFetchCategories] = useState(false);
   const [, setLocation] = useLocation();
-  const { data: categories, isLoading } = useCategories(enabled);
+
+  React.useEffect(() => {
+    if (!enabled || typeof window === "undefined") return;
+
+    const mediaQuery = window.matchMedia("(min-width: 1024px)");
+    const syncFetchState = () => {
+      setShouldFetchCategories((current) => current || mediaQuery.matches);
+    };
+
+    syncFetchState();
+    mediaQuery.addEventListener("change", syncFetchState);
+
+    return () => mediaQuery.removeEventListener("change", syncFetchState);
+  }, [enabled]);
+
+  React.useEffect(() => {
+    if (isOpen) {
+      setShouldFetchCategories(true);
+    }
+  }, [isOpen]);
+
+  const { data: categories, isLoading } = useCategories(enabled && shouldFetchCategories);
 
   if (!enabled) {
     return (
       <div className="w-full lg:w-72">
         <div className="surface-card hidden h-[28rem] animate-pulse lg:block" />
         <div className="h-20 animate-pulse rounded-2xl border border-[#D9C6EA] bg-white lg:hidden" />
+      </div>
+    );
+  }
+
+  if (!shouldFetchCategories) {
+    return (
+      <div className="w-full lg:w-72 flex flex-col gap-6">
+        <div className="lg:hidden w-full relative group">
+          <button
+            onClick={() => setIsOpen((current) => !current)}
+            className="w-full flex items-center justify-between gap-4 rounded-2xl border border-[#D9C6EA] bg-white p-6 shadow-lg text-foreground transition-all active:scale-95"
+          >
+            <div className="min-w-0 flex items-center gap-3 text-left">
+              <Filter className="h-5 w-5 shrink-0 text-[#6F4D95]" />
+              <div className="min-w-0">
+                <span className="block text-[0.95rem] font-black uppercase tracking-[0.24em] text-[#4B1F6F]" style={{ fontFamily: '"Arial Black", Arial, sans-serif' }}>
+                  Categorías
+                </span>
+                <span className="block truncate pt-1 text-[1.45rem] font-black text-[#4B1F6F]" style={{ fontFamily: '"Arial Black", Arial, sans-serif' }}>
+                  {activeCategory ? formatCategoryDisplayName(activeCategory) : "Todas"}
+                </span>
+              </div>
+            </div>
+            <ChevronDown className={cn("h-6 w-6 shrink-0 text-[#6F4D95] transition-transform duration-500", isOpen && "rotate-180")} />
+          </button>
+        </div>
+
+        <div className="surface-card hidden h-[28rem] animate-pulse lg:block" />
       </div>
     );
   }

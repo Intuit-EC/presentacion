@@ -37,7 +37,8 @@ export function useCompany(enabled = true) {
     queryKey: companyQueryKey,
     queryFn: () => fetchCompany(),
     enabled,
-    staleTime: 1000 * 60,
-    refetchOnMount: true,
+    staleTime: 1000 * 60 * 5,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
   });
 }

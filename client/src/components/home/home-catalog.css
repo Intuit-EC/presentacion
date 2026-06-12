@@ -54,6 +54,11 @@
   margin-top: 2rem;
 }
 
+.home-catalog-group {
+  content-visibility: auto;
+  contain-intrinsic-size: 960px;
+}
+
 .home-catalog-group-head {
   display: flex;
   flex-direction: column;

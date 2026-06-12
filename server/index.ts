@@ -11,6 +11,7 @@ import {
   BEST_SELLERS_CATEGORY_SLUG,
   findCategoryNameBySlug,
   getCategoryPath,
+  getCategorySlug,
   getProductIdFromSlug,
   getProductPath,
   isPublicCatalogProduct,
@@ -21,7 +22,8 @@ import { toPublicImageUrl } from "../client/src/lib/media";
 import { DEFAULT_SEO_STATE, renderSeoTags, type SeoState } from "../client/src/components/Seo";
 import { categoriesQueryKey, fetchCategories } from "../client/src/hooks/useCategories";
 import { productsQueryKey, fetchProducts } from "../client/src/hooks/useProducts";
-import type { Product } from "../client/src/data/mock";
+import { DEFAULT_COMPANY } from "../client/src/lib/site";
+import { INITIAL_PRODUCTS, TESTIMONIALS, type Product } from "../client/src/data/mock";
 import type { QueryClient } from "@tanstack/react-query";
 import type { ViteDevServer } from "vite";
 import type { renderApp as renderAppFn } from "../client/src/server-entry";
@@ -126,6 +128,8 @@ const ASSET_BASE_URL =
   "";
 const PAYPHONE_WEB_TOKEN = process.env.PAYPHONE_WEB_TOKEN || process.env.PAYPHONE_TOKEN;
 const PAYPHONE_WEB_STORE_ID = process.env.PAYPHONE_WEB_STORE_ID || process.env.PAYPHONE_STORE_ID;
+const PUBLIC_PROXY_TIMEOUT_MS = 3500;
+const IMAGE_PROXY_TIMEOUT_MS = 6000;
 
 declare module "http" {
   interface IncomingMessage {
@@ -199,6 +203,117 @@ function isClosedStreamError(error: unknown) {
 
 function shouldIgnoreProxyStreamError(error: unknown, req: Request, res: Response) {
   return isClosedStreamError(error) && (req.destroyed || req.aborted || res.destroyed || res.writableEnded);
+}
+
+async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs: number) {
+  const timeoutController = new AbortController();
+  const timer = setTimeout(() => timeoutController.abort(), timeoutMs);
+  const signal = init.signal
+    ? AbortSignal.any([init.signal, timeoutController.signal])
+    : timeoutController.signal;
+
+  try {
+    return await fetch(url, { ...init, signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function createSuccessPayload(data: unknown) {
+  return { status: "success", data };
+}
+
+function getPublicProductsFallback(req: Request) {
+  const category = String(req.query.category || "").trim();
+  const featured = String(req.query.featured || "").trim() === "true";
+  const limit = Number.parseInt(String(req.query.limit || ""), 10);
+
+  let products = INITIAL_PRODUCTS.filter(isPublicCatalogProduct);
+
+  if (category && category !== "all") {
+    const normalizedCategory = category.toLocaleLowerCase("es");
+    products = products.filter((product) => product.category.toLocaleLowerCase("es") === normalizedCategory);
+  }
+
+  if (featured) {
+    products = products.filter((product) => product.isBestSeller);
+  }
+
+  if (Number.isFinite(limit) && limit > 0) {
+    products = products.slice(0, limit);
+  }
+
+  return products;
+}
+
+function getPublicCategoriesFallback() {
+  return Array.from(
+    new Set(
+      INITIAL_PRODUCTS.filter(isPublicCatalogProduct)
+        .map((product) => product.category)
+        .filter(Boolean),
+    ),
+  ).sort((left, right) => getCategorySlug(left).localeCompare(getCategorySlug(right), "es"));
+}
+
+function getHomeHeroFallback() {
+  return {
+    id: 0,
+    title: "Sorprende hoy. Nosotros lo entregamos por ti.",
+    description: "Historias reales de alegria en Guayaquil",
+    images: [
+      {
+        url: "/assets/banner_collage_mobile.webp",
+        alt: "Floreria DIFIORI en Guayaquil",
+      },
+    ],
+    backgroundType: "carousel" as const,
+  };
+}
+
+function getCompanyFallback() {
+  return {
+    name: DEFAULT_COMPANY.name,
+    email: DEFAULT_COMPANY.email,
+    phone: DEFAULT_COMPANY.phoneDisplay,
+    address: `${DEFAULT_COMPANY.city}, ${DEFAULT_COMPANY.country}`,
+    settings: {
+      acceptOrders: true,
+    },
+  };
+}
+
+function getReviewsFallback() {
+  return TESTIMONIALS.map((review, index) => ({
+    id: `fallback-review-${index + 1}`,
+    ...review,
+  }));
+}
+
+function tryHandlePublicApiFallback(req: Request, res: Response) {
+  if (req.method !== "GET" && req.method !== "HEAD") {
+    return false;
+  }
+
+  const requestPath = req.originalUrl.split("?")[0] || req.path;
+  let payload: { status: string; data: unknown } | null = null;
+
+  if (requestPath === "/api/external/products") {
+    payload = createSuccessPayload(getPublicProductsFallback(req));
+  } else if (requestPath === "/api/external/products/categories") {
+    payload = createSuccessPayload(getPublicCategoriesFallback());
+  } else if (requestPath === "/api/external/cms/home-hero") {
+    payload = createSuccessPayload(getHomeHeroFallback());
+  } else if (requestPath === "/api/external/company") {
+    payload = createSuccessPayload(getCompanyFallback());
+  } else if (requestPath === "/api/external/reviews") {
+    payload = createSuccessPayload(getReviewsFallback());
+  }
+
+  if (!payload) return false;
+
+  res.setHeader("Cache-Control", "public, max-age=300, stale-while-revalidate=3600");
+  return req.method === "HEAD" ? res.status(200).end() : res.status(200).json(payload);
 }
 
 function injectHtml(
@@ -368,7 +483,7 @@ async function proxyToBackend(req: Request, res: Response) {
   res.once("close", abortRequest);
 
   try {
-    const response = await fetch(backendUrl, {
+    const response = await fetchWithTimeout(backendUrl, {
       method: req.method,
       headers: {
         ...(contentType ? { "Content-Type": contentType } : {}),
@@ -380,7 +495,7 @@ async function proxyToBackend(req: Request, res: Response) {
       },
       signal: abortController.signal,
       body: ["POST", "PUT", "PATCH"].includes(req.method) ? JSON.stringify(req.body) : undefined,
-    });
+    }, PUBLIC_PROXY_TIMEOUT_MS);
 
     response.headers.forEach((value, key) => {
       if (["content-length", "transfer-encoding", "connection"].includes(key.toLowerCase())) {
@@ -412,6 +527,10 @@ async function proxyToBackend(req: Request, res: Response) {
     return;
   } catch (error) {
     if (shouldIgnoreProxyStreamError(error, req, res)) {
+      return;
+    }
+
+    if (tryHandlePublicApiFallback(req, res)) {
       return;
     }
 
@@ -447,12 +566,12 @@ app.get("/image-proxy", async (req, res) => {
   }
 
   try {
-    const response = await fetch(target, {
+    const response = await fetchWithTimeout(target.toString(), {
       signal: abortController.signal,
       headers: {
         Accept: "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
       },
-    });
+    }, IMAGE_PROXY_TIMEOUT_MS);
 
     if (!response.ok || !response.body) {
       return res.status(response.status || 502).send("Could not fetch image");

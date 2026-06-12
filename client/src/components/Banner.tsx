@@ -61,6 +61,7 @@ export function Banner({ onProductsClick }: BannerProps) {
   const carouselImages = (cmsImages.length > 0 ? cmsImages : fallbackImages).slice(0, 3);
   const [activeIndex, setActiveIndex] = useState(0);
   const [mountedImageIndexes, setMountedImageIndexes] = useState<ReadonlySet<number>>(() => new Set([0]));
+  const [shouldAutoRotate, setShouldAutoRotate] = useState(false);
   const title = hero?.title?.trim() || FIXED_BANNER.title;
   const subtitle = hero?.description?.trim() || FIXED_BANNER.subtitle;
 
@@ -80,12 +81,33 @@ export function Banner({ onProductsClick }: BannerProps) {
 
   useEffect(() => {
     if (carouselImages.length < 2) return;
+    if (!shouldAutoRotate) return;
 
     const timer = window.setInterval(() => {
       setActiveIndex((current) => (current + 1) % carouselImages.length);
     }, 5500);
 
     return () => window.clearInterval(timer);
+  }, [carouselImages.length, shouldAutoRotate]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (carouselImages.length < 2) return;
+
+    const mediaQuery = window.matchMedia("(max-width: 767px)");
+    const reducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const syncRotation = () => {
+      setShouldAutoRotate(!mediaQuery.matches && !reducedMotionQuery.matches);
+    };
+
+    syncRotation();
+    mediaQuery.addEventListener("change", syncRotation);
+    reducedMotionQuery.addEventListener("change", syncRotation);
+
+    return () => {
+      mediaQuery.removeEventListener("change", syncRotation);
+      reducedMotionQuery.removeEventListener("change", syncRotation);
+    };
   }, [carouselImages.length]);
 
   return (
