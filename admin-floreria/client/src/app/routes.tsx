@@ -2,7 +2,7 @@ import ProtectRoutes from "@/core/guards/protect-routes";
 import Loading from "@/shared/components/loading";
 import { useUserStore } from "@/store/use-user-store";
 import { lazy, Suspense } from "react";
-import { useRoutes } from "react-router";
+import { Navigate, useRoutes } from "react-router";
 import { featureComponentMap } from "./feature-component-map";
 
 const CouponsList = lazy(() => import("@/features/modules/loyalty/coupons/pages/CouponsList"));
@@ -96,6 +96,10 @@ export default function Routes() {
         </ProtectRoutes>
       ),
       children: [
+        {
+          index: true,
+          element: <Navigate to="dashboard" replace />,
+        },
         {
           path: "dashboard",
           element: (

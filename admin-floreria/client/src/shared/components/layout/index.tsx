@@ -16,9 +16,9 @@ export default function SideBar() {
       <AppSidebar variant="inset" />
       <SidebarInset>
         <SiteHeader />
-        <div className="p-4 lg:p-6 ">
+        <main className="min-h-[calc(100svh-var(--header-height))] bg-slate-50/70 p-4 lg:p-6">
           <Outlet />
-        </div>
+        </main>
       </SidebarInset>
     </SidebarProvider>
   );

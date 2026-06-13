@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useNavigate } from "react-router";
 import {
   IconDashboard,
   IconDiscount,
@@ -94,6 +95,7 @@ const navItems = {
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { features } = useUserStore();
+  const navigate = useNavigate();
 
   const dynamicNavItems = features.map((f) => ({
     title: f.display_name,
@@ -118,13 +120,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
-              asChild
               className="data-[slot=sidebar-menu-button]:!p-1.5"
+              onClick={() => navigate("/app/dashboard")}
             >
-              <a href="#">
+              <span className="flex items-center gap-2">
                 <IconInnerShadowTop className="!size-5" />
-                <span className="text-base font-semibold">Acme Inc.</span>
-              </a>
+                <span className="text-base font-semibold">Administrador</span>
+              </span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

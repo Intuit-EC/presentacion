@@ -22,12 +22,25 @@ export const ThemeProviderContext = createContext<ThemeProviderState>(initialSta
 
 export function ThemeProvider({
   children,
-  defaultTheme = "dark",
+  defaultTheme = "light",
   storageKey = "vite-ui-theme",
   ...props
 }: ThemeProviderProps) {
+  const themeVersionKey = `${storageKey}-version`;
+  const themeVersion = "2";
   const [theme, setTheme] = useState<Theme>(
-    () => (localStorage.getItem(storageKey) as Theme) || defaultTheme
+    () => {
+      const savedVersion = localStorage.getItem(themeVersionKey);
+      const savedTheme = localStorage.getItem(storageKey) as Theme | null;
+
+      if (savedVersion !== themeVersion) {
+        localStorage.setItem(storageKey, defaultTheme);
+        localStorage.setItem(themeVersionKey, themeVersion);
+        return defaultTheme;
+      }
+
+      return savedTheme || defaultTheme;
+    }
   );
 
   useEffect(() => {
@@ -52,6 +65,7 @@ export function ThemeProvider({
     theme,
     setTheme: (theme: Theme) => {
       localStorage.setItem(storageKey, theme);
+      localStorage.setItem(themeVersionKey, themeVersion);
       setTheme(theme);
     },
   };
