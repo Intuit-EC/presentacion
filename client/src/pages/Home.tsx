@@ -269,25 +269,25 @@ export default function Home() {
         <section className="mx-auto mb-12 mt-12 grid w-full max-w-6xl gap-4 px-6 md:grid-cols-2 xl:grid-cols-4">
           <a href="/flores-guayaquil" className="surface-card p-6 transition-transform hover:-translate-y-1">
             <h2 className="text-2xl font-semibold text-foreground">Flores en Guayaquil</h2>
-            <p className="mt-2 text-sm leading-relaxed text-foreground/65">
+            <p className="mt-2 text-sm leading-relaxed text-foreground/80">
               Flores frescas, ramos y arreglos florales con pedidos a domicilio en Guayaquil.
             </p>
           </a>
           <a href="/arreglos-de-flores-guayaquil" className="surface-card p-6 transition-transform hover:-translate-y-1">
             <h2 className="text-2xl font-semibold text-foreground">Arreglos de flores</h2>
-            <p className="mt-2 text-sm leading-relaxed text-foreground/65">
+            <p className="mt-2 text-sm leading-relaxed text-foreground/80">
               Arreglos de flores en Guayaquil para cumpleaños, amor, condolencias y detalles especiales.
             </p>
           </a>
           <a href="/floreria-guayaquil" className="surface-card p-6 transition-transform hover:-translate-y-1">
             <h2 className="text-2xl font-semibold text-foreground">Floreria Guayaquil</h2>
-            <p className="mt-2 text-sm leading-relaxed text-foreground/65">
+            <p className="mt-2 text-sm leading-relaxed text-foreground/80">
               Floreria DIFIORI para regalos, fechas especiales y entrega a domicilio.
             </p>
           </a>
           <a href="/ramos-de-flores" className="surface-card p-6 transition-transform hover:-translate-y-1">
             <h2 className="text-2xl font-semibold text-foreground">Ramos de flores</h2>
-            <p className="mt-2 text-sm leading-relaxed text-foreground/65">
+            <p className="mt-2 text-sm leading-relaxed text-foreground/80">
               Ramos de rosas y flores mixtas para enviar en Guayaquil.
             </p>
           </a>

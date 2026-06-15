@@ -98,7 +98,7 @@ export function Navbar() {
             </div>
 
             <div className="site-nav-brand-wrap">
-              <Link href="/" className="site-nav-brand-link">
+              <Link href="/" className="site-nav-brand-link" aria-label="Ir al inicio de DIFIORI">
                 <Logo
                   size="md"
                   variant="dark"
@@ -157,7 +157,7 @@ export function Navbar() {
             </button>
 
             <div className="site-nav-mobile-brand">
-              <Link href="/" className="site-nav-mobile-brand-link">
+              <Link href="/" className="site-nav-mobile-brand-link" aria-label="Ir al inicio de DIFIORI">
                 <Logo size="sm" variant="dark" className="w-full items-center" />
               </Link>
             </div>

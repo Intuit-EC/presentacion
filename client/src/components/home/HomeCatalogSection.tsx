@@ -65,10 +65,8 @@ export function HomeCatalogSection() {
                       Seleccion destacada de {section.label.toLowerCase()} con entrega en Guayaquil.
                     </p>
                   </div>
-                  <Link href={section.href}>
-                    <button type="button" className="ui-btn-secondary home-catalog-cta">
-                      Ver categoria
-                    </button>
+                  <Link href={section.href} className="ui-btn-secondary home-catalog-cta">
+                    Ver categoria
                   </Link>
                 </div>
 
@@ -87,10 +85,8 @@ export function HomeCatalogSection() {
         </div>
 
         <div className="home-catalog-footer">
-          <Link href="/shop">
-            <button type="button" className="ui-btn-secondary home-catalog-all">
-              Ver Coleccion Completa
-            </button>
+          <Link href="/shop" className="ui-btn-secondary home-catalog-all">
+            Ver Coleccion Completa
           </Link>
         </div>
       </main>

@@ -192,7 +192,7 @@ export default function SeoLandingPage() {
             <MapPin className="mt-1 h-6 w-6 shrink-0 text-accent" aria-hidden="true" />
             <div>
               <h2 className="text-lg font-semibold">Cobertura local</h2>
-              <p className="mt-2 text-sm leading-relaxed text-foreground/65">
+              <p className="mt-2 text-sm leading-relaxed text-foreground/80">
                 Entregamos flores, ramos y arreglos florales a domicilio en Guayaquil.
               </p>
             </div>
@@ -201,7 +201,7 @@ export default function SeoLandingPage() {
             <Truck className="mt-1 h-6 w-6 shrink-0 text-accent" aria-hidden="true" />
             <div>
               <h2 className="text-lg font-semibold">Entrega a domicilio</h2>
-              <p className="mt-2 text-sm leading-relaxed text-foreground/65">
+              <p className="mt-2 text-sm leading-relaxed text-foreground/80">
                 Preparamos arreglos florales y ramos de flores para regalos, fechas especiales y sorpresas.
               </p>
             </div>
@@ -210,7 +210,7 @@ export default function SeoLandingPage() {
             <MessageSquare className="mt-1 h-6 w-6 shrink-0 text-accent" aria-hidden="true" />
             <div>
               <h2 className="text-lg font-semibold">Compra facil</h2>
-              <p className="mt-2 text-sm leading-relaxed text-foreground/65">
+              <p className="mt-2 text-sm leading-relaxed text-foreground/80">
                 Haz tu pedido en la tienda online o escribe por WhatsApp para confirmar disponibilidad.
               </p>
             </div>
@@ -244,7 +244,7 @@ export default function SeoLandingPage() {
                 className="surface-card p-6 transition-transform hover:-translate-y-1"
               >
                 <h3 className="text-xl font-semibold text-foreground">{relatedPage.h1}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-foreground/65">
+                <p className="mt-2 text-sm leading-relaxed text-foreground/80">
                   {relatedPage.description}
                 </p>
               </Link>
