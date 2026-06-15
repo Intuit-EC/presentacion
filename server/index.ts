@@ -426,6 +426,15 @@ async function prefetchSsrRouteData(queryClient: QueryClient, path: string, base
     return 200;
   }
 
+  if (SEO_LANDING_PATHS.includes(path)) {
+    await queryClient.prefetchQuery({
+      queryKey: productsQueryKey(),
+      queryFn: () => fetchProducts(undefined, baseUrl),
+    });
+
+    return 200;
+  }
+
   if (path === "/shop") {
     await Promise.all([
       queryClient.prefetchQuery({

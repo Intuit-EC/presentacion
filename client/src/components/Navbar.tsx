@@ -62,7 +62,8 @@ export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isCartNavigating, setIsCartNavigating] = useState(false);
-  const { cartItemCount } = useCart();
+  const { cartItemCount, isCartLoading } = useCart();
+  const visibleCartItemCount = isCartLoading ? null : cartItemCount;
 
   useEffect(() => {
     setIsOpen(false);
@@ -130,7 +131,7 @@ export function Navbar() {
                 </button>
                 <button
                   type="button"
-                  aria-label={`Ver carrito (${cartItemCount})`}
+                  aria-label={visibleCartItemCount === null ? "Ver carrito" : `Ver carrito (${visibleCartItemCount})`}
                   onClick={handleCartNavigation}
                   disabled={isCartNavigating}
                   className={cn("site-nav-cart-button", "text-foreground hover:text-accent")}
@@ -140,7 +141,9 @@ export function Navbar() {
                   ) : (
                     <IconBag className="h-6 w-6 min-[1440px]:h-7 min-[1440px]:w-7" />
                   )}
-                  <span className="translate-y-[2px] text-xs font-black tracking-widest min-[1440px]:text-sm">({cartItemCount})</span>
+                  <span className="translate-y-[2px] text-xs font-black tracking-widest min-[1440px]:text-sm">
+                    {visibleCartItemCount === null ? "" : `(${visibleCartItemCount})`}
+                  </span>
                 </button>
               </div>
             </div>
@@ -173,7 +176,7 @@ export function Navbar() {
               </button>
               <button
                 type="button"
-                aria-label={`Ver carrito (${cartItemCount})`}
+                aria-label={visibleCartItemCount === null ? "Ver carrito" : `Ver carrito (${visibleCartItemCount})`}
                 onClick={handleCartNavigation}
                 disabled={isCartNavigating}
                 className={cn(
@@ -186,9 +189,9 @@ export function Navbar() {
                 ) : (
                   <IconBag className="h-6 w-6 sm:h-7 sm:w-7" />
                 )}
-                {cartItemCount > 0 && !isCartNavigating ? (
+                {visibleCartItemCount !== null && visibleCartItemCount > 0 && !isCartNavigating ? (
                   <span className="absolute right-0 top-0 flex h-4 min-w-4 -translate-y-1 translate-x-1 items-center justify-center rounded-full border-2 border-[#fff] bg-accent px-1 text-[9px] font-black leading-none text-white shadow-lg sm:h-5 sm:min-w-5 sm:text-[10px]">
-                    {cartItemCount}
+                    {visibleCartItemCount}
                   </span>
                 ) : null}
               </button>
