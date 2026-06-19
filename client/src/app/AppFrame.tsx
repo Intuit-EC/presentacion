@@ -198,34 +198,36 @@ export function AppFrame({ Routes, fallback = <RouteFallback /> }: AppFrameProps
   useEffect(() => {
     if (shouldLoadFloatingWhatsApp || hideNavbar || typeof window === "undefined") return;
 
-    let timeoutId: ReturnType<typeof setTimeout> | undefined;
-    let idleCallbackId = 0;
-
     const enableFloatingWhatsApp = () => {
       setShouldLoadFloatingWhatsApp(true);
     };
 
-    const scheduleFloatingWhatsApp = () => {
-      if ("requestIdleCallback" in window) {
-        idleCallbackId = window.requestIdleCallback(enableFloatingWhatsApp, { timeout: 2500 });
-        return;
-      }
+    const interactionEvents: Array<keyof WindowEventMap> = [
+      "pointerdown",
+      "keydown",
+      "touchstart",
+      "scroll",
+    ];
 
-      timeoutId = globalThis.setTimeout(enableFloatingWhatsApp, 1200);
+    const onInteraction = (event: Event) => {
+      if (!isMeaningfulInteraction(event)) return;
+      enableFloatingWhatsApp();
+      interactionEvents.forEach((eventName) => {
+        window.removeEventListener(eventName, onInteraction);
+      });
     };
 
-    if (document.readyState === "complete") {
-      scheduleFloatingWhatsApp();
-    } else {
-      window.addEventListener("load", scheduleFloatingWhatsApp, { once: true });
-    }
+    interactionEvents.forEach((eventName) => {
+      window.addEventListener(eventName, onInteraction, {
+        passive: true,
+        once: true,
+      });
+    });
 
     return () => {
-      window.removeEventListener("load", scheduleFloatingWhatsApp);
-      if (timeoutId) window.clearTimeout(timeoutId);
-      if (idleCallbackId && "cancelIdleCallback" in window) {
-        window.cancelIdleCallback(idleCallbackId);
-      }
+      interactionEvents.forEach((eventName) => {
+        window.removeEventListener(eventName, onInteraction);
+      });
     };
   }, [hideNavbar, shouldLoadFloatingWhatsApp]);
 

@@ -21,6 +21,7 @@ import { toPublicImageUrl } from "../client/src/lib/media";
 import { DEFAULT_SEO_STATE, renderSeoTags, type SeoState } from "../client/src/components/Seo";
 import { categoriesQueryKey, fetchCategories } from "../client/src/hooks/useCategories";
 import { cmsHomeHeroQueryKey, fetchHomeHero, type HomeHero } from "../client/src/hooks/useCMS";
+import { companyQueryKey, fetchCompany } from "../client/src/hooks/useCompany";
 import { productsQueryKey, fetchProducts } from "../client/src/hooks/useProducts";
 import { DEFAULT_COMPANY } from "../client/src/lib/site";
 import { INITIAL_PRODUCTS, TESTIMONIALS, type Product } from "../client/src/data/mock";
@@ -431,6 +432,11 @@ async function loadRenderApp(vite?: ViteDevServer): Promise<RenderApp> {
 }
 
 async function prefetchSsrRouteData(queryClient: QueryClient, path: string, baseUrl: string) {
+  await queryClient.prefetchQuery({
+    queryKey: companyQueryKey,
+    queryFn: () => fetchCompany(baseUrl),
+  });
+
   if (path === "/") {
     await queryClient.prefetchQuery({
       queryKey: cmsHomeHeroQueryKey,
@@ -956,32 +962,30 @@ app.get("/llms.txt", (_req, res) => {
     "",
     "> Floreria en Guayaquil, Ecuador. Venta online de flores, ramos, arreglos florales y regalos con entrega a domicilio.",
     "",
-    "## Summary",
-    "- Sitio ecommerce de DIFIORI para explorar catalogo, categorias y productos florales.",
-    "- Cobertura principal: Guayaquil, Ecuador.",
-    "- Idioma principal: es-EC.",
+    "Sitio ecommerce en espanol para descubrir productos, categorias y paginas canonicas de DIFIORI.",
+    "Cobertura principal: Guayaquil, Ecuador.",
+    "Idioma principal: es-EC.",
     "",
     "## Preferred URLs",
-    `- Home: ${buildSiteUrl("/")}`,
-    `- Catalogo: ${buildSiteUrl("/shop")}`,
-    `- Sitemap: ${buildSiteUrl("/sitemap.xml")}`,
-    `- Robots: ${buildSiteUrl("/robots.txt")}`,
+    `- [Home](${buildSiteUrl("/")}): Pagina principal del sitio.`,
+    `- [Catalogo](${buildSiteUrl("/shop")}): Vista general de productos disponibles.`,
+    `- [Sitemap](${buildSiteUrl("/sitemap.xml")}): URLs canonicas indexables del sitio.`,
+    `- [Robots](${buildSiteUrl("/robots.txt")}): Reglas de rastreo publicas.`,
     "",
     "## Key Pages",
-    `- Flores en Guayaquil: ${buildSiteUrl("/flores-guayaquil")}`,
-    `- Floreria Guayaquil: ${buildSiteUrl("/floreria-guayaquil")}`,
-    `- Ramos de flores: ${buildSiteUrl("/ramos-de-flores")}`,
-    `- Arreglos de flores Guayaquil: ${buildSiteUrl("/arreglos-de-flores-guayaquil")}`,
+    `- [Flores en Guayaquil](${buildSiteUrl("/flores-guayaquil")}): Landing SEO principal sobre flores y entregas en Guayaquil.`,
+    `- [Floreria Guayaquil](${buildSiteUrl("/floreria-guayaquil")}): Landing SEO de marca y servicio.`,
+    `- [Ramos de flores](${buildSiteUrl("/ramos-de-flores")}): Landing SEO para ramos.`,
+    `- [Arreglos de flores Guayaquil](${buildSiteUrl("/arreglos-de-flores-guayaquil")}): Landing SEO para arreglos florales.`,
     "",
     "## Product Discovery",
-    "- Las URLs canonicas de producto usan el formato /producto/<slug>.",
-    "- Las URLs canonicas de categoria usan el formato /categoria/<slug>.",
-    "- Evitar rutas de checkout y pago para indexacion o navegacion de agentes.",
+    `- [Productos canonicos](${buildSiteUrl("/shop")}): Las URLs canonicas de producto usan el formato /producto/<slug>.`,
+    `- [Categorias canonicas](${buildSiteUrl("/shop")}): Las URLs canonicas de categoria usan el formato /categoria/<slug>.`,
     "",
-    "## Policies",
-    `- Checkout no indexable: ${buildSiteUrl("/checkout")}`,
-    `- Pago no indexable: ${buildSiteUrl("/payment-gateway")}`,
-    `- Resultado de pago no indexable: ${buildSiteUrl("/payment-result")}`,
+    "## Optional",
+    `- [Checkout](${buildSiteUrl("/checkout")}): Flujo transaccional no indexable; evitar para descubrimiento general.`,
+    `- [Pago con tarjeta](${buildSiteUrl("/payment-gateway")}): Ruta operativa no indexable.`,
+    `- [Resultado de pago](${buildSiteUrl("/payment-result")}): Ruta operativa no indexable.`,
   ].join("\n"));
 });
 
