@@ -20,6 +20,7 @@ import { createAppQueryClient } from "../client/src/lib/queryClient";
 import { toPublicImageUrl } from "../client/src/lib/media";
 import { DEFAULT_SEO_STATE, renderSeoTags, type SeoState } from "../client/src/components/Seo";
 import { categoriesQueryKey, fetchCategories } from "../client/src/hooks/useCategories";
+import { cmsHomeHeroQueryKey, fetchHomeHero, type HomeHero } from "../client/src/hooks/useCMS";
 import { productsQueryKey, fetchProducts } from "../client/src/hooks/useProducts";
 import { DEFAULT_COMPANY } from "../client/src/lib/site";
 import { INITIAL_PRODUCTS, TESTIMONIALS, type Product } from "../client/src/data/mock";
@@ -395,7 +396,15 @@ function getFallbackSeoState(path: string): SeoState {
 }
 
 function getHomeHeroPreload(queryClient: QueryClient) {
-  void queryClient;
+  const hero = queryClient.getQueryData<HomeHero | null>(cmsHomeHeroQueryKey);
+  const firstImage = Array.isArray(hero?.images) ? hero.images[0] : null;
+  const imageUrl = toPublicImageUrl(
+    typeof firstImage === "string" ? firstImage : firstImage?.url,
+  );
+
+  if (imageUrl) {
+    return `<link rel="preload" as="image" href="${escapeXml(imageUrl)}" fetchpriority="high" />`;
+  }
 
   return `<link rel="preload" as="image" href="/assets/banner_collage_mobile.webp" type="image/webp" fetchpriority="high" imagesrcset="/assets/banner_collage_mobile.webp 767w, /assets/banner_collage_desktop.webp 768w" imagesizes="100vw" />`;
 }
@@ -423,6 +432,11 @@ async function loadRenderApp(vite?: ViteDevServer): Promise<RenderApp> {
 
 async function prefetchSsrRouteData(queryClient: QueryClient, path: string, baseUrl: string) {
   if (path === "/") {
+    await queryClient.prefetchQuery({
+      queryKey: cmsHomeHeroQueryKey,
+      queryFn: () => fetchHomeHero(baseUrl),
+    });
+
     return 200;
   }
 

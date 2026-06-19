@@ -1,13 +1,15 @@
+import { lazy } from "react";
 import { Switch, Route } from "wouter";
 import Home from "@/pages/Home";
-import Shop from "@/pages/Shop";
-import CategoryPage from "@/pages/CategoryPage";
-import SeoLandingPage from "@/pages/SeoLandingPage";
-import ProductDetails from "@/pages/ProductDetails";
-import NotFound from "@/pages/not-found";
-import Checkout from "@/pages/Checkout";
-import PaymentGateway from "@/pages/PaymentGateway";
-import PaymentResult from "@/pages/PaymentResult";
+
+const Shop = lazy(() => import("@/pages/Shop"));
+const CategoryPage = lazy(() => import("@/pages/CategoryPage"));
+const SeoLandingPage = lazy(() => import("@/pages/SeoLandingPage"));
+const ProductDetails = lazy(() => import("@/pages/ProductDetails"));
+const NotFound = lazy(() => import("@/pages/not-found"));
+const Checkout = lazy(() => import("@/pages/Checkout"));
+const PaymentGateway = lazy(() => import("@/pages/PaymentGateway"));
+const PaymentResult = lazy(() => import("@/pages/PaymentResult"));
 
 export function BrowserRoutes() {
   return (
