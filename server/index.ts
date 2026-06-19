@@ -949,6 +949,42 @@ app.get("/robots.txt", (_req, res) => {
   ].join("\n"));
 });
 
+app.get("/llms.txt", (_req, res) => {
+  res.type("text/plain");
+  res.send([
+    "# DIFIORI",
+    "",
+    "> Floreria en Guayaquil, Ecuador. Venta online de flores, ramos, arreglos florales y regalos con entrega a domicilio.",
+    "",
+    "## Summary",
+    "- Sitio ecommerce de DIFIORI para explorar catalogo, categorias y productos florales.",
+    "- Cobertura principal: Guayaquil, Ecuador.",
+    "- Idioma principal: es-EC.",
+    "",
+    "## Preferred URLs",
+    `- Home: ${buildSiteUrl("/")}`,
+    `- Catalogo: ${buildSiteUrl("/shop")}`,
+    `- Sitemap: ${buildSiteUrl("/sitemap.xml")}`,
+    `- Robots: ${buildSiteUrl("/robots.txt")}`,
+    "",
+    "## Key Pages",
+    `- Flores en Guayaquil: ${buildSiteUrl("/flores-guayaquil")}`,
+    `- Floreria Guayaquil: ${buildSiteUrl("/floreria-guayaquil")}`,
+    `- Ramos de flores: ${buildSiteUrl("/ramos-de-flores")}`,
+    `- Arreglos de flores Guayaquil: ${buildSiteUrl("/arreglos-de-flores-guayaquil")}`,
+    "",
+    "## Product Discovery",
+    "- Las URLs canonicas de producto usan el formato /producto/<slug>.",
+    "- Las URLs canonicas de categoria usan el formato /categoria/<slug>.",
+    "- Evitar rutas de checkout y pago para indexacion o navegacion de agentes.",
+    "",
+    "## Policies",
+    `- Checkout no indexable: ${buildSiteUrl("/checkout")}`,
+    `- Pago no indexable: ${buildSiteUrl("/payment-gateway")}`,
+    `- Resultado de pago no indexable: ${buildSiteUrl("/payment-result")}`,
+  ].join("\n"));
+});
+
 app.get("/sitemap.xml", async (_req, res) => {
   const today = new Date().toISOString().slice(0, 10);
   
