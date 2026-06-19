@@ -23,6 +23,7 @@ export function Logo({
     md: "h-16",
     lg: "h-20",
   };
+  const isCompactWordmark = size === "sm";
 
   const logoUrl = getCompanyLogoUrl(company?.logo);
 
@@ -42,41 +43,43 @@ export function Logo({
   return (
     <div className={cn("flex flex-col", className || "items-center", sizes[size])}>
       <svg
-        viewBox="0 0 400 82"
+        viewBox={isCompactWordmark ? "0 0 420 56" : "0 0 420 86"}
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
         className="h-full w-auto max-w-full overflow-visible"
       >
         <text
-          x="200"
-          y="43"
+          x="210"
+          y={isCompactWordmark ? "40" : "44"}
           textAnchor="middle"
           fill={color}
           style={{
             fontFamily: "Montserrat, sans-serif",
             fontWeight: 800,
-            fontSize: "52px",
-            letterSpacing: "0.12em",
+            fontSize: isCompactWordmark ? "42px" : "52px",
+            letterSpacing: isCompactWordmark ? "0.08em" : "0.12em",
           }}
         >
           DIFIORI
         </text>
 
-        <text
-          x="200"
-          y="68"
-          textAnchor="middle"
-          fill={variant === "light" ? "#666666" : "#0D0717"}
-          style={{
-            fontFamily: "Montserrat, sans-serif",
-            fontWeight: 700,
-            fontSize: "18px",
-            letterSpacing: "0.22em",
-            opacity: 1,
-          }}
-        >
-          FLORES • REGALOS • EVENTOS
-        </text>
+        {isCompactWordmark ? null : (
+          <text
+            x="210"
+            y="70"
+            textAnchor="middle"
+            fill={variant === "light" ? "#666666" : "#0D0717"}
+            style={{
+              fontFamily: "Montserrat, sans-serif",
+              fontWeight: 700,
+              fontSize: "18px",
+              letterSpacing: "0.18em",
+              opacity: 1,
+            }}
+          >
+            FLORES • REGALOS • EVENTOS
+          </text>
+        )}
       </svg>
     </div>
   );
