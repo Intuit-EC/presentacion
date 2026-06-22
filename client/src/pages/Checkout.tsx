@@ -264,6 +264,7 @@ export default function Checkout() {
     () => normalizeSectorRates(company?.settings?.paymentSettings?.shippingSectorRates),
     [company?.settings?.paymentSettings?.shippingSectorRates]
   );
+  const hasConfiguredShippingSectors = shippingSectorRates.length > 0;
   const shippingResolution = useMemo(
     () => resolveShippingCostBySector(sectorInput, shippingSectorRates),
     [sectorInput, shippingSectorRates]
@@ -273,7 +274,8 @@ export default function Checkout() {
   const senderNameRef = useRef<HTMLInputElement>(null);
   const senderEmailRef = useRef<HTMLInputElement>(null);
   const senderPhoneRef = useRef<HTMLInputElement>(null);
-  const sectorRef = useRef<HTMLSelectElement>(null);
+  const sectorSelectRef = useRef<HTMLSelectElement>(null);
+  const sectorInputRef = useRef<HTMLInputElement>(null);
   const dateTimeRef = useRef<HTMLInputElement>(null);
   const addressRef = useRef<HTMLInputElement>(null);
   const cardMessageRef = useRef<HTMLTextAreaElement>(null);
@@ -335,7 +337,7 @@ export default function Checkout() {
     const deliveryComplete = Boolean(
       receiverName &&
         receiverPhone &&
-        sector &&
+        (hasConfiguredShippingSectors ? sector : true) &&
         deliveryDateTime &&
         address &&
         cardMessage
@@ -347,7 +349,7 @@ export default function Checkout() {
       hasDestination: Boolean(sector),
       canChoosePayment: senderComplete && deliveryComplete,
     };
-  }, [formRevision, sectorInput]);
+  }, [formRevision, hasConfiguredShippingSectors, sectorInput]);
 
   const canConfirmOrder = items.length > 0 && checkoutReadiness.canChoosePayment && Boolean(paymentMethod);
 
@@ -489,7 +491,7 @@ export default function Checkout() {
     return [
       [receiverName, "nombre de quien recibe"],
       [receiverPhone, "teléfono de quien recibe"],
-      [sector, "sector"],
+      ...(hasConfiguredShippingSectors ? [[sector, "sector"] as const] : []),
       [deliveryDateTime, "hora de entrega"],
       [address, "dirección exacta"],
       [cardMessage, "mensaje para la tarjeta"],
@@ -542,7 +544,7 @@ export default function Checkout() {
       } else if (!receiverPhone) {
         focusCheckoutField("receiver", receiverPhoneRef);
       } else if (!sector) {
-        focusCheckoutField("receiver", sectorRef);
+        focusCheckoutField("receiver", hasConfiguredShippingSectors ? sectorSelectRef : sectorInputRef);
       } else if (!deliveryDateTime) {
         focusCheckoutField("receiver", dateTimeRef);
       } else if (!address) {
@@ -1279,31 +1281,44 @@ export default function Checkout() {
                   </label>
                   <label className="checkout-field">
                     <span>
-                      <MapPin className="h-5 w-5" /> Sector *
+                      <MapPin className="h-5 w-5" /> {hasConfiguredShippingSectors ? "Sector *" : "Sector o zona"}
                     </span>
-                    <select
-                      ref={sectorRef}
-                      value={sectorInput}
-                      onChange={(e) => {
-                        setSectorInput(e.target.value);
-                        updateCheckoutProgress();
-                      }}
-                      className="checkout-input"
-                    >
-                      <option value="" disabled>
-                        Selecciona un sector
-                      </option>
-                      {shippingSectorRates.map((item) => (
-                        <option key={item.sector} value={item.sector}>
-                          {item.sector}
+                    {hasConfiguredShippingSectors ? (
+                      <select
+                        ref={sectorSelectRef}
+                        value={sectorInput}
+                        onChange={(e) => {
+                          setSectorInput(e.target.value);
+                          updateCheckoutProgress();
+                        }}
+                        className="checkout-input"
+                      >
+                        <option value="" disabled>
+                          Selecciona un sector
                         </option>
-                      ))}
-                    </select>
+                        {shippingSectorRates.map((item) => (
+                          <option key={item.sector} value={item.sector}>
+                            {item.sector}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <input
+                        ref={sectorInputRef}
+                        value={sectorInput}
+                        onChange={(e) => {
+                          setSectorInput(e.target.value);
+                          updateCheckoutProgress();
+                        }}
+                        className="checkout-input"
+                        placeholder="Ej: Urdesa, Samborondón, vía a la costa"
+                      />
+                    )}
                     <span className="text-sm font-black text-[#4A3362]">
                       {shippingResolution.isMatched
                         ? `Costo de envío para ${shippingResolution.matchedSector}: $${shippingCost.toFixed(2)}`
                         : shippingSectorRates.length === 0
-                          ? "No hay sectores configurados en este momento. Contáctanos para coordinar el envío."
+                          ? "Aún no hay sectores precargados. Escribe tu zona y te contactaremos para confirmar el envío."
                           : "Selecciona tu sector para calcular el envío."}
                     </span>
                   </label>

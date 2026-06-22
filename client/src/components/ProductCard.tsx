@@ -39,7 +39,7 @@ export function ProductCard({ product }: ProductCardProps) {
 
     setIsBuying(true);
     buyNow(product);
-    window.location.href = "/checkout"; // Safe navigation bypassing Wouter re-renders causing hook conflicts
+    window.location.assign("/checkout");
   };
 
   return (

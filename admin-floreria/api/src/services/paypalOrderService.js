@@ -670,8 +670,8 @@ async function capturePaypalCheckoutOrder(prisma, payload) {
       const updatedOrder = await prisma.order.update({
         where: { id: order.id },
         data: {
-          paymentStatus: "FAILED",
-          paidAt: null,
+          paymentStatus: "PAID",
+          paidAt: new Date(),
           paymentVerificationNotes: `PayPal: correo no coincide. Esperado: ${expectedPayerEmail}. Pagador real: ${actualPayerEmail || "no disponible"}.`,
           orderNotes: appendNote(
             appendNote(order.orderNotes, `PayPal Order ID: ${resolvedPaypalOrderId}`),
@@ -682,8 +682,8 @@ async function capturePaypalCheckoutOrder(prisma, payload) {
 
       return {
         order: updatedOrder,
-        paymentStatus: "FAILED",
-        approved: false,
+        paymentStatus: "PAID",
+        approved: true,
         alreadyProcessed: false,
         paypalOrderId: resolvedPaypalOrderId,
         captureId: capture?.id || null,

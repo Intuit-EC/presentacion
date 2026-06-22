@@ -22,6 +22,15 @@ interface CartContextType {
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
+const CART_STORAGE_KEY = "difiori_cart";
+
+function persistCartItems(items: CartItem[]) {
+  try {
+    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
+  } catch (error) {
+    console.error("Error saving cart", error);
+  }
+}
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
@@ -34,7 +43,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     let isMounted = true;
 
     try {
-      const saved = localStorage.getItem("difiori_cart");
+      const saved = localStorage.getItem(CART_STORAGE_KEY);
       if (saved) {
         setItems(JSON.parse(saved));
       }
@@ -55,21 +64,27 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   // Save to local storage
   useEffect(() => {
     if (isInitialized) {
-      localStorage.setItem("difiori_cart", JSON.stringify(items));
+      persistCartItems(items);
     }
   }, [items, isInitialized]);
 
   const addItem = (product: Product, quantity = 1) => {
     setItems((prev) => {
-      const existing = prev.find((item) => item.product.id === product.id);
-      if (existing) {
-        return prev.map((item) =>
-          item.product.id === product.id
-            ? { ...item, quantity: item.quantity + quantity }
-            : item
-        );
-      }
-      return [...prev, { product, quantity }];
+      const nextItems = (() => {
+        const existing = prev.find((item) => item.product.id === product.id);
+        if (existing) {
+          return prev.map((item) =>
+            item.product.id === product.id
+              ? { ...item, quantity: item.quantity + quantity }
+              : item
+          );
+        }
+
+        return [...prev, { product, quantity }];
+      })();
+
+      persistCartItems(nextItems);
+      return nextItems;
     });
     
     toast({
@@ -80,11 +95,17 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   };
 
   const buyNow = (product: Product) => {
-    setItems([{ product, quantity: 1 }]);
+    const nextItems = [{ product, quantity: 1 }];
+    persistCartItems(nextItems);
+    setItems(nextItems);
   };
 
   const removeItem = (productId: string) => {
-    setItems((prev) => prev.filter((item) => item.product.id !== productId));
+    setItems((prev) => {
+      const nextItems = prev.filter((item) => item.product.id !== productId);
+      persistCartItems(nextItems);
+      return nextItems;
+    });
   };
 
   const updateQuantity = (productId: string, quantity: number) => {
@@ -93,13 +114,20 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       return;
     }
     setItems((prev) =>
-      prev.map((item) =>
+      {
+        const nextItems = prev.map((item) =>
         item.product.id === productId ? { ...item, quantity } : item
-      )
+        );
+        persistCartItems(nextItems);
+        return nextItems;
+      }
     );
   };
 
-  const clearCart = () => setItems([]);
+  const clearCart = () => {
+    persistCartItems([]);
+    setItems([]);
+  };
 
   const cartTotal = items.reduce((total, item) => {
     const price = parseFloat(item.product.price.replace(/[^0-9.-]+/g, ""));
