@@ -27,6 +27,10 @@ export function toPublicImageUrl(source?: string | null) {
   if (value.startsWith("/image-proxy?")) return value;
 
   if (value.startsWith("http://") || value.startsWith("https://")) {
+    // Cloudinary already provides an optimized global CDN. Sending these images
+    // through our server adds an avoidable network hop and hurts first paint.
+    if (isCloudinaryUrl(value)) return value;
+
     try {
       const target = new URL(value);
       if (getKnownOrigins().includes(target.origin)) {
@@ -79,6 +83,6 @@ export function getResponsiveImageSrcSet(
   if (!isCloudinaryUrl(originalSource)) return undefined;
 
   return widths
-    .map((width) => `${toPublicImageUrl(buildCloudinaryVariant(originalSource, width))} ${width}w`)
+    .map((width) => `${buildCloudinaryVariant(originalSource, width)} ${width}w`)
     .join(", ");
 }

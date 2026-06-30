@@ -16,8 +16,15 @@
       href="/assets/banner_collage_mobile.webp"
       type="image/webp"
       fetchpriority="high"
-      imagesrcset="/assets/banner_collage_mobile.webp 767w, /assets/banner_collage_desktop.webp 768w"
-      imagesizes="100vw"
+      media="(max-width: 767px)"
+    />
+    <link
+      rel="preload"
+      as="image"
+      href="/assets/banner_collage_desktop.webp"
+      type="image/webp"
+      fetchpriority="high"
+      media="(min-width: 768px)"
     />
   </head>
   <body>

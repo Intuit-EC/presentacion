@@ -11,9 +11,10 @@ import { formatCategoryDisplayName, getNumericPriceValue, getProductPath, getPro
 
 interface ProductCardProps {
   product: Product;
+  priority?: boolean;
 }
 
-export function ProductCard({ product }: ProductCardProps) {
+export function ProductCard({ product, priority = false }: ProductCardProps) {
   const { buyNow } = useCart();
   const { data: company } = useCompany();
   const { toast } = useToast();
@@ -57,9 +58,11 @@ export function ProductCard({ product }: ProductCardProps) {
           src={product.image}
           srcSet={imageSrcSet}
           alt={`${product.name} - Floreria DIFIORI Guayaquil`}
-          loading="lazy"
+          loading={priority ? "eager" : "lazy"}
           decoding="async"
-          fetchPriority="low"
+          fetchPriority={priority ? "high" : "low"}
+          width={720}
+          height={720}
           sizes="(min-width: 1280px) 360px, (min-width: 640px) 44vw, 92vw"
           className="h-full w-full object-contain object-center"
         />

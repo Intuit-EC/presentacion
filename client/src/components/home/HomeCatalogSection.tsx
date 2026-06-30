@@ -56,7 +56,7 @@ export function HomeCatalogSection() {
               .fill(0)
               .map((_, i) => <div key={i} className="product-skeleton" />)
           ) : categorySections.length > 0 ? (
-            categorySections.map((section) => (
+            categorySections.map((section, sectionIndex) => (
               <section key={section.category} className="home-catalog-group">
                 <div className="home-catalog-group-head">
                   <div>
@@ -71,8 +71,12 @@ export function HomeCatalogSection() {
                 </div>
 
                 <div className="product-grid">
-                  {section.products.map((product) => (
-                    <ProductCard key={product.id} product={product} />
+                  {section.products.map((product, productIndex) => (
+                    <ProductCard
+                      key={product.id}
+                      product={product}
+                      priority={sectionIndex === 0 && productIndex < 2}
+                    />
                   ))}
                 </div>
               </section>

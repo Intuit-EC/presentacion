@@ -138,7 +138,7 @@ export default function Home() {
           observer.disconnect();
         }
       },
-      { rootMargin: window.matchMedia("(max-width: 767px)").matches ? "120px 0px" : "600px 0px" },
+      { rootMargin: window.matchMedia("(max-width: 767px)").matches ? "700px 0px" : "900px 0px" },
     );
 
     observer.observe(target);
