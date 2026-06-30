@@ -1,7 +1,7 @@
 import React from "react";
 import type { Product } from "@/data/mock";
 import { Link } from "wouter";
-import { Loader2, MessageSquare, ShoppingBag } from "lucide-react";
+import { Clock3, Loader2, MessageSquare, ShoppingBag } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { useCompany } from "@/hooks/useCompany";
 import { useToast } from "@/hooks/use-toast";
@@ -71,13 +71,15 @@ export function ProductCard({ product }: ProductCardProps) {
         )}
       </Link>
 
-      <div className="flex flex-1 flex-col items-center p-6 text-center sm:p-7">
+      <div className="flex flex-1 flex-col p-5 sm:p-6">
         <span className="mb-3 text-[10px] font-black uppercase tracking-[0.2em] text-[#4A3362]">
           {categoryLabel}
         </span>
-        <h3 itemProp="name" className="mb-3 font-serif text-[2rem] font-bold leading-tight text-[#4A3362]">
-          {product.name}
-        </h3>
+        <Link href={productPath} className="group/title mb-3 block">
+          <h3 itemProp="name" className="font-serif text-[1.65rem] font-bold leading-tight text-[#4A3362] transition-colors group-hover/title:text-accent">
+            {product.name}
+          </h3>
+        </Link>
         <meta itemProp="description" content={product.description || `${product.name} con entrega a domicilio en Guayaquil.`} />
         <meta itemProp="sku" content={productSku} />
         <meta itemProp="mpn" content={productSku} />
@@ -92,16 +94,25 @@ export function ProductCard({ product }: ProductCardProps) {
            )}
         </div> */}
 
-        <div className="mt-auto" itemProp="offers" itemScope itemType="https://schema.org/Offer">
+        <div className="mb-5 flex items-center gap-2 text-sm font-semibold text-foreground/75">
+          <Clock3 className="h-4 w-4 text-accent" />
+          Entrega estimada: {product.deliveryTime || "a coordinar"}
+        </div>
+
+        <div className="mt-auto flex w-full items-end justify-between gap-4 border-t border-primary/30 pt-4" itemProp="offers" itemScope itemType="https://schema.org/Offer">
           <meta itemProp="url" content={productUrl} />
           <meta itemProp="priceCurrency" content="USD" />
           <meta itemProp="price" content={productPrice} />
           <link itemProp="availability" href="https://schema.org/InStock" />
           <link itemProp="itemCondition" href="https://schema.org/NewCondition" />
-          <p className="mb-7 text-3xl font-black text-foreground">{product.price}</p>
+          <div>
+            <span className="block text-[10px] font-black uppercase tracking-[0.16em] text-foreground/55">Precio</span>
+            <p className="text-3xl font-black text-foreground">{product.price}</p>
+          </div>
+          <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-extrabold text-emerald-700">Disponible</span>
         </div>
 
-        <div className="flex w-full flex-col gap-3">
+        <div className="mt-5 flex w-full flex-col gap-2.5">
           <button type="button" onClick={handleBuyNow} disabled={isBuying} className="ui-btn-primary w-full">
             {isBuying ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -117,7 +128,7 @@ export function ProductCard({ product }: ProductCardProps) {
             className="ui-btn-secondary w-full"
           >
             <MessageSquare className="h-4 w-4" />
-            Pedir por WhatsApp
+            Consultar por WhatsApp
           </a>
         </div>
       </div>

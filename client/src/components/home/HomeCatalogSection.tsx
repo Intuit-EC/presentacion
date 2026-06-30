@@ -45,7 +45,7 @@ export function HomeCatalogSection() {
         <div id="catalogo" className="home-catalog-header">
           <div className="home-catalog-line" />
           <h2 className="home-catalog-title">
-            Catalogo de Arreglos Florales
+            Elige el detalle perfecto
           </h2>
           <div className="home-catalog-line" />
         </div>
@@ -62,11 +62,11 @@ export function HomeCatalogSection() {
                   <div>
                     <h2 className="home-catalog-group-title">{section.label}</h2>
                     <p className="home-catalog-group-copy">
-                      Seleccion destacada de {section.label.toLowerCase()} con entrega en Guayaquil.
+                      Opciones favoritas de {section.label.toLowerCase()} listas para sorprender en Guayaquil.
                     </p>
                   </div>
                   <Link href={section.href} className="ui-btn-secondary home-catalog-cta">
-                    Ver categoria
+                    Ver todos
                   </Link>
                 </div>
 

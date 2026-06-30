@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { ArrowRight, MessageCircle } from "lucide-react";
+import { ArrowRight, Check, Clock3, MessageCircle, ShieldCheck, Truck } from "lucide-react";
 import { useCMS, type HomeHero } from "@/hooks/useCMS";
 import { getResponsiveImageSrcSet, toPublicImageUrl } from "@/lib/media";
 import { DEFAULT_COMPANY } from "@/lib/site";
@@ -9,8 +9,8 @@ const FIXED_BANNER = {
   mobileImage: "/assets/banner_collage_mobile.webp",
   desktopImage: "/assets/banner_collage_desktop.webp",
   title: "Sorprende hoy. Nosotros lo entregamos por ti.",
-  subtitle: "Historias reales de alegria en Guayaquil",
-  cta: "Más vendidos",
+  subtitle: "Flores frescas, entrega en Guayaquil y una dedicatoria hecha para esa persona especial.",
+  cta: "Elegir mi regalo",
   href: "/#catalogo",
 };
 
@@ -183,6 +183,11 @@ export function Banner({ onProductsClick }: BannerProps) {
                 {subtitle}
               </p>
 
+              <div className="hero-banner-proof" aria-label="Beneficios de compra">
+                <span><Check className="h-4 w-4" /> Flores seleccionadas</span>
+                <span><Check className="h-4 w-4" /> Compra segura</span>
+              </div>
+
               <div className="hero-banner-actions">
                 <button
                   type="button"
@@ -194,18 +199,24 @@ export function Banner({ onProductsClick }: BannerProps) {
                 </button>
 
                 <a
-                  href={`https://wa.me/${DEFAULT_COMPANY.phoneDigits}`}
+                  href={`https://wa.me/${DEFAULT_COMPANY.phoneDigits}?text=${encodeURIComponent("Hola, necesito ayuda para elegir un arreglo floral.")}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="hero-banner-btn hero-banner-btn-whatsapp"
                 >
                   <MessageCircle className="h-5 w-5 sm:h-6 sm:w-6" />
-                  WhatsApp
+                  Ayúdame a elegir
                 </a>
               </div>
             </div>
           </div>
         </div>
+      </div>
+
+      <div className="hero-trust-bar" aria-label="Información de servicio">
+        <div><Truck /><span><strong>Entrega en Guayaquil</strong><small>Coordinamos fecha y dirección</small></span></div>
+        <div><Clock3 /><span><strong>Atención personalizada</strong><small>Te acompañamos en tu compra</small></span></div>
+        <div><ShieldCheck /><span><strong>Pagos seguros</strong><small>Tarjeta o transferencia</small></span></div>
       </div>
     </section>
   );

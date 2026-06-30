@@ -34,11 +34,11 @@
 }
 
 .home-catalog-title {
-  white-space: nowrap;
+  text-align: center;
   font-size: 0.875rem;
   font-weight: 900;
   text-transform: uppercase;
-  letter-spacing: 0.5em;
+  letter-spacing: 0.28em;
   color: var(--color-foreground);
 }
 
@@ -47,7 +47,7 @@
 }
 
 .home-catalog-list > * + * {
-  margin-top: 5rem;
+  margin-top: 4rem;
 }
 
 .home-catalog-group > * + * {
@@ -79,6 +79,12 @@
   font-size: 1rem;
   line-height: 1.625;
   color: rgb(75 31 111 / 0.88);
+}
+
+@media (max-width: 639px) {
+  .home-catalog-header { gap: 0.75rem; margin-bottom: 2rem; }
+  .home-catalog-title { font-size: 0.72rem; letter-spacing: 0.14em; }
+  .home-catalog-section { margin-bottom: 6rem; }
 }
 
 .home-catalog-cta {
