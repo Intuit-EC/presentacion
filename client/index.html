@@ -3,7 +3,30 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="theme-color" content="#FDF8FF" />
-    <style>html,body,#root{min-height:100%;margin:0;background:#FDF8FF;color:#4A3362}</style>
+    <style>
+      html,body,#root{min-height:100%;margin:0;background:#FDF8FF;color:#4A3362}
+      *,*::before,*::after{box-sizing:border-box}
+      img,svg{display:block;max-width:100%}
+      .site-nav{position:fixed;inset:0 0 auto;z-index:50;min-height:76px;background:#fff}
+      .site-nav-desktop{display:none}
+      .site-nav-mobile{display:grid;grid-template-columns:44px minmax(0,1fr) auto;align-items:center;min-height:76px;padding:0 24px}
+      .site-nav-mobile-brand{display:flex;justify-content:center;min-width:0}
+      .site-nav-mobile-brand-link{display:flex;width:180px;max-width:100%;height:44px;align-items:center;justify-content:center}
+      .site-nav-mobile-actions{display:flex}
+      .site-nav-mobile-icon{width:44px;height:44px}
+      .site-nav-mobile-menu{position:fixed;inset:0;z-index:100;background:#FDF8FF}
+      .hero-banner-stage{min-height:440px}
+      @media(min-width:1024px){
+        .site-nav{min-height:112px}
+        .site-nav-mobile{display:none}
+        .site-nav-desktop{display:grid;grid-template-columns:minmax(0,1fr) clamp(250px,20vw,320px) minmax(0,1fr);align-items:center;min-height:112px;padding:0 32px}
+        .site-nav-brand-link{display:flex;align-items:center;justify-content:center;height:70px}
+        .site-nav-brand-logo{width:230px;max-height:70px}
+        .site-nav-desktop-left,.site-nav-desktop-right{display:flex;align-items:center;min-width:0}
+        .site-nav-desktop-right{justify-content:flex-end}
+        .hero-banner-stage{min-height:620px}
+      }
+    </style>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="color-scheme" content="light" />
     <!--app-head-->

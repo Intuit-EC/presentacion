@@ -7,20 +7,10 @@ export function getDistPath() {
 }
 
 export async function getProdTemplate() {
-  const template = await fs.promises.readFile(path.resolve(getDistPath(), "index.html"), "utf-8");
-
-  return template.replace(
-    /<link rel="stylesheet"([^>]*?)href="([^"]+\.css)"([^>]*)>/g,
-    (_match, beforeHref = "", href = "", afterHref = "") => {
-      const attrs = `${beforeHref}${afterHref}`.trim();
-      const normalizedAttrs = attrs ? ` ${attrs}` : "";
-
-      return [
-        `<link rel="preload" as="style" href="${href}"${normalizedAttrs} onload="this.onload=null;this.rel='stylesheet'">`,
-        `<noscript><link rel="stylesheet" href="${href}"${normalizedAttrs}></noscript>`,
-      ].join("");
-    },
-  );
+  // Keep the generated stylesheet as a render-blocking stylesheet. Converting it
+  // to an asynchronous preload made the SSR markup paint before its CSS arrived,
+  // producing a large, unstyled logo/navigation flash on every cold visit.
+  return fs.promises.readFile(path.resolve(getDistPath(), "index.html"), "utf-8");
 }
 
 export function serveStatic(app: Express) {
