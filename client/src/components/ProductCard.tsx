@@ -45,7 +45,7 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
 
   return (
     <article
-      className="surface-card group flex h-full flex-col overflow-hidden border-[#DECDF0] transition-all duration-500"
+      className="surface-card group flex h-full flex-col overflow-hidden border-[#DECDF0] transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_24px_60px_rgba(74,51,98,0.14)]"
       itemScope
       itemType="https://schema.org/Product"
     >

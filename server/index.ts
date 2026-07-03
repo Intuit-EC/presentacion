@@ -650,12 +650,16 @@ app.get("/image-proxy", async (req, res) => {
 });
 
 async function postJsonToBackend(path: string, payload: unknown) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 20000);
+  try {
   const response = await fetch(buildBackendUrl(path), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify(payload),
+    signal: controller.signal,
   });
 
   const rawBody = await response.text();
@@ -668,6 +672,9 @@ async function postJsonToBackend(path: string, payload: unknown) {
   }
 
   return { response, data, rawBody };
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }
 
 app.post("/api/payphone-web/box-prepare", async (req: Request, res: Response) => {

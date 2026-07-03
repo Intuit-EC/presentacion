@@ -5,7 +5,8 @@
   width: 100%;
   border-bottom: 1px solid rgb(235 220 247 / 0.1);
   background: rgb(255 255 255 / 0.96);
-  box-shadow: 0 8px 20px rgb(0 0 0 / 0.025);
+  box-shadow: 0 8px 28px rgb(74 51 98 / 0.06);
+  backdrop-filter: blur(18px) saturate(1.15);
   padding-block: 1rem;
 }
 
@@ -125,8 +126,10 @@
   align-items: center;
   justify-content: center;
   border-radius: 9999px;
-  transition: color 180ms ease;
+  transition: color 180ms ease, background-color 180ms ease, transform 180ms ease;
 }
+
+.site-nav-mobile-icon:hover { background: rgb(235 220 247 / 0.55); transform: scale(1.04); }
 
 .site-nav-mobile-brand {
   display: flex;

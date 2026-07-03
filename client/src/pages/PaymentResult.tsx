@@ -8,7 +8,7 @@ import { apiUrl } from "@/lib/api-url";
 
 type ResultStatus = "loading" | "success" | "failed" | "cancelled" | "error";
 
-const PAYMENT_CONFIRM_TIMEOUT_MS = 60000;
+const PAYMENT_CONFIRM_TIMEOUT_MS = 25000;
 
 async function fetchJsonWithTimeout(
   input: RequestInfo | URL,
@@ -139,6 +139,7 @@ export default function PaymentResult() {
     const confirmOrder = async () => {
       try {
         if (!finalClientTxId) {
+          setResultMessage("No encontramos una sesión de pago activa. Vuelve al checkout e intenta nuevamente.");
           setStatus("error");
           return;
         }
@@ -188,17 +189,17 @@ export default function PaymentResult() {
 
   if (status === "loading") {
     return (
-      <div className="min-h-screen bg-[#3D2852] flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center px-6">
         <Seo
           title="Resultado de pago | DIFIORI"
           description="Resultado del proceso de pago."
           path="/payment-result"
           robots="noindex, nofollow"
         />
-        <div className="text-center text-white">
-          <Loader2 className="w-16 h-16 animate-spin mx-auto mb-4 text-[#5A3F73]" />
+        <div className="text-center text-foreground">
+          <Loader2 className="w-16 h-16 animate-spin mx-auto mb-4 text-accent" />
           <p className="font-bold text-lg">Confirmando tu pago...</p>
-          <p className="text-[#E6E6E6]/40 text-sm mt-2">Por favor no cierres esta ventana</p>
+          <p className="text-foreground/60 text-sm mt-2">Por favor no cierres esta ventana</p>
         </div>
       </div>
     );

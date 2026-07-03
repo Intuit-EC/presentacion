@@ -66,9 +66,10 @@
 }
 
 .home-catalog-group-title {
-  font-family: "Arial Black", Arial, sans-serif;
+  font-family: var(--font-serif);
   font-size: 1.875rem;
-  font-weight: 900;
+  font-weight: 700;
+  font-style: italic;
   line-height: 1.1;
   color: #4b1f6f;
 }

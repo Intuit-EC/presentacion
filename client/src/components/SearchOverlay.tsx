@@ -64,13 +64,13 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[100] bg-[#111111]/90 backdrop-blur-2xl flex flex-col items-center pt-32 px-6"
+          className="fixed inset-0 z-[100] bg-[#FDF8FF]/95 backdrop-blur-2xl flex flex-col items-center pt-32 px-6"
         >
           <button 
             type="button"
             aria-label="Cerrar búsqueda"
             onClick={onClose}
-            className="absolute top-10 right-10 p-4 text-white/40 hover:text-white transition-colors group"
+            className="absolute top-10 right-10 p-4 text-foreground/50 hover:text-foreground transition-colors group"
           >
             <X className="w-8 h-8 group-hover:rotate-90 transition-transform duration-500" />
           </button>
@@ -92,7 +92,7 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
                   placeholder="¿Qué arreglo buscas hoy?..."
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  className="w-full bg-transparent text-4xl md:text-6xl font-serif text-white outline-none placeholder:text-white/10"
+                  className="w-full bg-transparent text-4xl md:text-6xl font-serif text-foreground outline-none placeholder:text-foreground/20"
                 />
               </div>
             </div>
@@ -108,7 +108,7 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95 }}
                     onClick={() => handleSelectProduct(getProductPath(product))}
-                    className="flex gap-6 items-center p-6 bg-white/5 rounded-[2.5rem] border border-white/5 hover:border-[#5A3F73]/40 hover:bg-white/10 transition-all cursor-pointer group relative overflow-hidden"
+                    className="flex gap-6 items-center p-6 bg-white rounded-[2.5rem] border border-primary/60 shadow-sm hover:border-[#5A3F73]/40 hover:shadow-lg transition-all cursor-pointer group relative overflow-hidden"
                   >
                     <div className="w-24 h-28 rounded-2xl overflow-hidden shrink-0 border border-white/10">
                       <img src={product.image} alt={product.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
@@ -117,8 +117,8 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
                       <p className="text-[#5A3F73] font-semibold text-xs tracking-[0.16em] mb-1">
                         {formatCategoryDisplayName(product.category)}
                       </p>
-                      <h4 className="text-white font-bold text-lg leading-tight mb-2">{product.name}</h4>
-                      <p className="text-white/40 font-bold text-sm">{product.price}</p>
+                      <h4 className="text-foreground font-bold text-lg leading-tight mb-2">{product.name}</h4>
+                      <p className="text-foreground/60 font-bold text-sm">{product.price}</p>
                     </div>
                     <ArrowRight className="w-6 h-6 text-[#5A3F73] opacity-0 group-hover:opacity-100 group-hover:translate-x-2 transition-all" />
                   </motion.div>
@@ -127,14 +127,14 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
 
               {query.trim() !== "" && filteredProducts.length === 0 && (
                 <div className="col-span-full py-20 text-center">
-                   <p className="text-white/20 text-2xl font-serif italic">No hemos encontrado resultados para "{query}"</p>
+                   <p className="text-foreground/50 text-2xl font-serif italic">No hemos encontrado resultados para "{query}"</p>
                 </div>
               )}
 
               {query.trim() === "" && (
                  <div className="col-span-full py-10 flex flex-col items-center">
                    <Sparkles className="w-12 h-12 text-[#5A3F73]/30 mb-6 animate-pulse" />
-                   <p className="text-white/30 text-xs font-black uppercase tracking-[0.4em]">Explora nuestra colección exclusiva</p>
+                   <p className="text-foreground/45 text-xs font-black uppercase tracking-[0.4em]">Explora nuestra colección exclusiva</p>
                  </div>
               )}
             </div>

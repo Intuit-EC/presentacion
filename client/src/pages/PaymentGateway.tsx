@@ -15,6 +15,8 @@ declare global {
 const PAYPHONE_BOX_STORAGE_KEY = "pp_box_payload";
 const PAYPHONE_SDK_URL = "https://cdn.payphonetodoesposible.com/box/v1.1/payphone-payment-box.js";
 const PAYPHONE_CSS_URL = "https://cdn.payphonetodoesposible.com/box/v1.1/payphone-payment-box.css";
+const PAYMENT_PREPARE_TIMEOUT_MS = 20000;
+const SDK_LOAD_TIMEOUT_MS = 15000;
 
 type GatewayState = "preparing" | "ready" | "error";
 
@@ -28,17 +30,24 @@ function ensureStylesheet(href: string) {
   document.head.appendChild(link);
 }
 
-function ensureScript(src: string) {
+function ensureScript(src: string, timeoutMs = SDK_LOAD_TIMEOUT_MS) {
   return new Promise<void>((resolve, reject) => {
+    let timeoutId = window.setTimeout(() => {
+      reject(new Error("La pasarela está tardando demasiado en cargar. Intenta nuevamente."));
+    }, timeoutMs);
+    const finish = (callback: () => void) => {
+      window.clearTimeout(timeoutId);
+      callback();
+    };
     const existing = document.querySelector(`script[src="${src}"]`) as HTMLScriptElement | null;
     if (existing) {
-      if (existing.dataset.loaded === "true") {
-        resolve();
+      if (existing.dataset.loaded === "true" || window.PPaymentButtonBox) {
+        finish(resolve);
         return;
       }
 
-      existing.addEventListener("load", () => resolve(), { once: true });
-      existing.addEventListener("error", () => reject(new Error("No se pudo cargar el SDK de PayPhone.")), {
+      existing.addEventListener("load", () => finish(resolve), { once: true });
+      existing.addEventListener("error", () => finish(() => reject(new Error("No se pudo cargar el SDK de PayPhone."))), {
         once: true,
       });
       return;
@@ -49,9 +58,9 @@ function ensureScript(src: string) {
     script.async = true;
     script.onload = () => {
       script.dataset.loaded = "true";
-      resolve();
+      finish(resolve);
     };
-    script.onerror = () => reject(new Error("No se pudo cargar el SDK de PayPhone."));
+    script.onerror = () => finish(() => reject(new Error("No se pudo cargar el SDK de PayPhone.")));
     document.head.appendChild(script);
   });
 }
@@ -73,6 +82,8 @@ export default function PaymentGateway() {
     }
 
     const preparePaymentBox = async () => {
+      const controller = new AbortController();
+      const timeoutId = window.setTimeout(() => controller.abort(), PAYMENT_PREPARE_TIMEOUT_MS);
       try {
         const checkoutPayload = JSON.parse(rawPayload);
 
@@ -80,6 +91,7 @@ export default function PaymentGateway() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(checkoutPayload),
+          signal: controller.signal,
         });
 
         const result = await response.json();
@@ -98,7 +110,13 @@ export default function PaymentGateway() {
         setGatewayState("ready");
       } catch (error) {
         setGatewayState("error");
-        setErrorMessage(error instanceof Error ? error.message : "Error al preparar el pago.");
+        setErrorMessage(
+          error instanceof DOMException && error.name === "AbortError"
+            ? "La preparación del pago tardó demasiado. Revisa tu conexión e intenta nuevamente."
+            : error instanceof Error ? error.message : "Error al preparar el pago.",
+        );
+      } finally {
+        window.clearTimeout(timeoutId);
       }
     };
 
@@ -134,8 +152,13 @@ export default function PaymentGateway() {
         container.innerHTML = "";
       }
 
-      const payphoneBox = new PayphoneButtonBox(widgetPayload);
-      payphoneBox.render("pp-button");
+      try {
+        const payphoneBox = new PayphoneButtonBox(widgetPayload);
+        payphoneBox.render("pp-button");
+      } catch (error) {
+        setGatewayState("error");
+        setErrorMessage(error instanceof Error ? error.message : "No se pudo mostrar el formulario de pago.");
+      }
     };
 
     initializePayPhoneBox();
@@ -159,17 +182,17 @@ export default function PaymentGateway() {
 
   if (gatewayState === "preparing") {
     return (
-      <div className="min-h-screen bg-[#3D2852] flex items-center justify-center px-6">
+      <div className="min-h-screen bg-background flex items-center justify-center px-6">
         <Seo
           title="Preparando pago | DIFIORI"
           description="Preparando el botón de pago PayPhone."
           path="/payment-gateway"
           robots="noindex, nofollow"
         />
-        <div className="text-center text-white max-w-md">
-          <Loader2 className="w-16 h-16 animate-spin mx-auto mb-4 text-[#D8C3F0]" />
+        <div className="text-center text-foreground max-w-md">
+          <Loader2 className="w-16 h-16 animate-spin mx-auto mb-4 text-accent" />
           <h2 className="text-3xl font-serif font-bold mb-3">Preparando tu pago</h2>
-          <p className="text-[#E6E6E6]/70">Generando la sesión segura del Payment Box desde la web.</p>
+          <p className="text-foreground/70">Generando la sesión segura. Esto puede tardar unos segundos.</p>
         </div>
       </div>
     );
@@ -177,7 +200,7 @@ export default function PaymentGateway() {
 
   if (gatewayState === "error") {
     return (
-      <div className="min-h-screen bg-[#3D2852] flex items-center justify-center px-6">
+      <div className="min-h-screen bg-background flex items-center justify-center px-6">
         <Seo
           title="Error de pago | DIFIORI"
           description="No se pudo preparar el Payment Box."
@@ -187,11 +210,11 @@ export default function PaymentGateway() {
         <motion.div
           initial={{ opacity: 0, scale: 0.96 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="bg-[#2A1B38]/85 backdrop-blur-3xl p-10 rounded-[2.5rem] shadow-2xl border border-red-500/25 text-center max-w-lg w-full"
+          className="bg-white p-10 rounded-[2.5rem] shadow-2xl border border-red-500/20 text-center max-w-lg w-full"
         >
           <AlertCircle className="w-20 h-20 text-red-400 mx-auto mb-5" />
-          <h2 className="text-3xl font-serif font-bold text-[#E6E6E6] mb-3">No se pudo iniciar el pago</h2>
-          <p className="text-[#E6E6E6]/70 text-sm mb-8">{errorMessage}</p>
+          <h2 className="text-3xl font-serif font-bold text-foreground mb-3">No se pudo iniciar el pago</h2>
+          <p className="text-foreground/70 text-sm mb-8">{errorMessage}</p>
           <button
             onClick={goBackToCheckout}
             className="w-full bg-[#5A3F73] hover:bg-[#4A3362] text-white py-4 rounded-3xl font-black text-base transition-all shadow-xl"
@@ -204,7 +227,7 @@ export default function PaymentGateway() {
   }
 
   return (
-    <div className="min-h-screen bg-[#3D2852] flex items-center justify-center px-6 py-12">
+    <div className="min-h-screen bg-background flex items-center justify-center px-6 py-12">
       <Seo
         title="Pago con tarjeta | DIFIORI"
         description="Completa tu pago con PayPhone."
@@ -214,16 +237,16 @@ export default function PaymentGateway() {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-[#2A1B38]/85 backdrop-blur-3xl p-10 rounded-[2.5rem] shadow-2xl border border-[#5A3F73]/35 w-full max-w-2xl"
+        className="bg-white p-6 sm:p-10 rounded-[2.5rem] shadow-2xl border border-primary w-full max-w-2xl"
       >
-        <div className="text-center text-white mb-8">
+        <div className="text-center text-foreground mb-8">
           <h1 className="text-3xl font-serif font-bold mb-2">Pago con tarjeta</h1>
-          <p className="text-[#E6E6E6]/70">
+          <p className="text-foreground/70">
             Completa tu pago con PayPhone desde esta misma página.
           </p>
           {reference ? <p className="text-[#D8C3F0] font-semibold mt-4">{reference}</p> : null}
           {clientTransactionId ? (
-            <p className="text-[#E6E6E6]/45 text-xs mt-1 break-all">{clientTransactionId}</p>
+            <p className="text-foreground/45 text-xs mt-1 break-all">{clientTransactionId}</p>
           ) : null}
         </div>
 
@@ -231,7 +254,7 @@ export default function PaymentGateway() {
 
         <button
           onClick={goBackToCheckout}
-          className="mt-8 w-full border border-[#5A3F73]/40 text-[#E6E6E6] py-4 rounded-3xl font-bold text-sm transition-all hover:border-[#5A3F73] hover:bg-[#5A3F73]/10"
+          className="mt-8 w-full border border-accent/30 text-accent py-4 rounded-3xl font-bold text-sm transition-all hover:border-accent hover:bg-primary/30"
         >
           Volver al checkout
         </button>
