@@ -34,7 +34,9 @@ router.get('/', async (req, res) => {
           orderBy: { sortOrder: 'asc' },
         },
       },
-      orderBy: [{ featured: 'desc' }, { createdAt: 'desc' }],
+      // Los productos recién creados aparecen primero. Antes, los mismos
+      // destacados ocupaban siempre las primeras posiciones del catálogo.
+      orderBy: [{ createdAt: 'desc' }, { featured: 'desc' }],
       ...(limit ? { take: limit * 2 } : {}),
     });
 

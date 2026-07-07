@@ -17,8 +17,9 @@ const PAYPHONE_SDK_URL = "https://cdn.payphonetodoesposible.com/box/v1.1/payphon
 const PAYPHONE_CSS_URL = "https://cdn.payphonetodoesposible.com/box/v1.1/payphone-payment-box.css";
 const PAYMENT_PREPARE_TIMEOUT_MS = 20000;
 const SDK_LOAD_TIMEOUT_MS = 15000;
+const WIDGET_RENDER_TIMEOUT_MS = 15000;
 
-type GatewayState = "preparing" | "ready" | "error";
+type GatewayState = "preparing" | "loading-widget" | "ready" | "error";
 
 function ensureStylesheet(href: string) {
   const existing = document.querySelector(`link[href="${href}"]`);
@@ -72,6 +73,7 @@ export default function PaymentGateway() {
   const [widgetPayload, setWidgetPayload] = useState<Record<string, unknown> | null>(null);
   const [reference, setReference] = useState("");
   const [clientTransactionId, setClientTransactionId] = useState("");
+  const [widgetAttempt, setWidgetAttempt] = useState(0);
 
   useEffect(() => {
     const rawPayload = localStorage.getItem(PAYPHONE_BOX_STORAGE_KEY);
@@ -94,7 +96,13 @@ export default function PaymentGateway() {
           signal: controller.signal,
         });
 
-        const result = await response.json();
+        const rawResult = await response.text();
+        let result: any;
+        try {
+          result = rawResult ? JSON.parse(rawResult) : {};
+        } catch {
+          throw new Error("La pasarela devolvió una respuesta inválida. Intenta nuevamente.");
+        }
         if (!response.ok || result.status !== "success") {
           throw new Error(result.message || "No se pudo preparar el botón de pago.");
         }
@@ -106,8 +114,8 @@ export default function PaymentGateway() {
 
         setReference(result.data.reference || "");
         setClientTransactionId(result.data.clientTransactionId || "");
+        setGatewayState("loading-widget");
         setWidgetPayload(result.data.paymentBoxData);
-        setGatewayState("ready");
       } catch (error) {
         setGatewayState("error");
         setErrorMessage(
@@ -127,6 +135,8 @@ export default function PaymentGateway() {
     if (!widgetPayload) return;
 
     let cancelled = false;
+    let renderTimeoutId = 0;
+    let observer: MutationObserver | null = null;
 
     const initializePayPhoneBox = async () => {
       if (cancelled) return;
@@ -134,6 +144,7 @@ export default function PaymentGateway() {
       try {
         ensureStylesheet(PAYPHONE_CSS_URL);
         await ensureScript(PAYPHONE_SDK_URL);
+        if (cancelled) return;
       } catch (error) {
         setGatewayState("error");
         setErrorMessage(error instanceof Error ? error.message : "No se pudo cargar el SDK de PayPhone.");
@@ -148,14 +159,36 @@ export default function PaymentGateway() {
       }
 
       const container = document.getElementById("pp-button");
-      if (container) {
-        container.innerHTML = "";
+      if (!container) {
+        setGatewayState("error");
+        setErrorMessage("No se encontró el espacio para mostrar el formulario de pago.");
+        return;
       }
+      container.innerHTML = "";
+
+      const markWidgetReady = () => {
+        if (cancelled || !container.childElementCount) return;
+        window.clearTimeout(renderTimeoutId);
+        observer?.disconnect();
+        setGatewayState("ready");
+      };
+
+      observer = new MutationObserver(markWidgetReady);
+      observer.observe(container, { childList: true, subtree: true });
+      renderTimeoutId = window.setTimeout(() => {
+        if (cancelled) return;
+        observer?.disconnect();
+        setGatewayState("error");
+        setErrorMessage("PayPhone no pudo mostrar el formulario. Puedes reintentar sin perder los datos del pedido.");
+      }, WIDGET_RENDER_TIMEOUT_MS);
 
       try {
         const payphoneBox = new PayphoneButtonBox(widgetPayload);
         payphoneBox.render("pp-button");
+        markWidgetReady();
       } catch (error) {
+        window.clearTimeout(renderTimeoutId);
+        observer?.disconnect();
         setGatewayState("error");
         setErrorMessage(error instanceof Error ? error.message : "No se pudo mostrar el formulario de pago.");
       }
@@ -165,12 +198,14 @@ export default function PaymentGateway() {
 
     return () => {
       cancelled = true;
+      window.clearTimeout(renderTimeoutId);
+      observer?.disconnect();
       const container = document.getElementById("pp-button");
       if (container) {
         container.innerHTML = "";
       }
     };
-  }, [widgetPayload]);
+  }, [widgetPayload, widgetAttempt]);
 
   const goBackToCheckout = () => {
     localStorage.removeItem(PAYPHONE_BOX_STORAGE_KEY);
@@ -178,6 +213,16 @@ export default function PaymentGateway() {
     localStorage.removeItem("pp_web_token");
     sessionStorage.removeItem("pp_web_token");
     setLocation("/checkout");
+  };
+
+  const retryGateway = () => {
+    setErrorMessage("");
+    if (widgetPayload) {
+      setGatewayState("loading-widget");
+      setWidgetAttempt((attempt) => attempt + 1);
+      return;
+    }
+    window.location.reload();
   };
 
   if (gatewayState === "preparing") {
@@ -215,12 +260,20 @@ export default function PaymentGateway() {
           <AlertCircle className="w-20 h-20 text-red-400 mx-auto mb-5" />
           <h2 className="text-3xl font-serif font-bold text-foreground mb-3">No se pudo iniciar el pago</h2>
           <p className="text-foreground/70 text-sm mb-8">{errorMessage}</p>
-          <button
-            onClick={goBackToCheckout}
-            className="w-full bg-[#5A3F73] hover:bg-[#4A3362] text-white py-4 rounded-3xl font-black text-base transition-all shadow-xl"
-          >
-            Volver al checkout
-          </button>
+          <div className="flex flex-col gap-3">
+            <button
+              onClick={retryGateway}
+              className="w-full bg-[#5A3F73] hover:bg-[#4A3362] text-white py-4 rounded-3xl font-black text-base transition-all shadow-xl"
+            >
+              Reintentar pago
+            </button>
+            <button
+              onClick={goBackToCheckout}
+              className="w-full border border-accent/25 text-accent py-4 rounded-3xl font-bold text-sm transition-all hover:bg-primary/30"
+            >
+              Volver al checkout
+            </button>
+          </div>
         </motion.div>
       </div>
     );
@@ -250,7 +303,16 @@ export default function PaymentGateway() {
           ) : null}
         </div>
 
-        <div id="pp-button" className="min-h-[180px]" />
+        <div className="relative min-h-[180px]">
+          {gatewayState === "loading-widget" ? (
+            <div className="absolute inset-0 z-10 flex min-h-[180px] flex-col items-center justify-center rounded-2xl bg-white text-center">
+              <Loader2 className="mb-3 h-10 w-10 animate-spin text-accent" />
+              <p className="font-bold text-foreground">Cargando formulario seguro…</p>
+              <p className="mt-1 text-sm text-foreground/60">No actualices ni cierres esta página.</p>
+            </div>
+          ) : null}
+          <div id="pp-button" className="min-h-[180px]" />
+        </div>
 
         <button
           onClick={goBackToCheckout}

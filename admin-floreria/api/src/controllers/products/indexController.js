@@ -135,6 +135,7 @@ exports.getAllProducts = async (req, res) => {
           }
         }
       },
+      orderBy: [{ createdAt: "desc" }],
     });
 
     // return res.status(200).json({

@@ -59,7 +59,7 @@ const DEFAULT_SETTINGS: PaymentSettings = {
   payphoneLiveToken: "",
   payphoneLiveWebhookToken: "",
   transferInstructions: DEFAULT_TRANSFER_INSTRUCTIONS,
-  shippingSectorRates: [{ sector: "", cost: "" }],
+  shippingSectorRates: [],
   ownerNotificationEmail: "",
   ownerNotificationName: "",
 };
@@ -87,7 +87,7 @@ function normalizeSectorRates(value: unknown): ShippingSectorRate[] {
 }
 
 function ensureEditableSectorRates(value: ShippingSectorRate[]): ShippingSectorRate[] {
-  return value.length > 0 ? value : [{ sector: "", cost: "" }];
+  return value;
 }
 
 function normalizeEditableCost(value: string) {
@@ -152,10 +152,20 @@ export default function PaymentsPage() {
     setForm((current) => ({
       ...current,
       shippingSectorRates: [
-        ...current.shippingSectorRates,
         { sector: "", cost: "" },
+        ...current.shippingSectorRates,
       ],
     }));
+  };
+
+  const moveSectorRate = (fromIndex: number, toIndex: number) => {
+    setForm((current) => {
+      if (toIndex < 0 || toIndex >= current.shippingSectorRates.length) return current;
+      const shippingSectorRates = [...current.shippingSectorRates];
+      const [moved] = shippingSectorRates.splice(fromIndex, 1);
+      shippingSectorRates.splice(toIndex, 0, moved);
+      return { ...current, shippingSectorRates };
+    });
   };
 
   const removeSectorRate = (index: number) => {
@@ -328,7 +338,7 @@ export default function PaymentsPage() {
           Define los sectores y el costo de envio que vera el cliente en checkout segun lo que escriba.
         </p>
         <p className="mt-2 text-xs text-gray-500">
-          Para guardar una fila debes completar ambos campos: sector y costo.
+          Las zonas aparecen en el checkout en este mismo orden. Las nuevas se agregan arriba; puedes moverlas antes de guardar.
         </p>
         <div className="mt-4 flex flex-wrap gap-3">
           <Button
@@ -350,8 +360,38 @@ export default function PaymentsPage() {
         </div>
 
         <div className="mt-6 space-y-3">
+          {form.shippingSectorRates.length === 0 ? (
+            <div className="rounded-lg border border-dashed bg-gray-50 px-4 py-8 text-center text-sm text-gray-500">
+              Todavía no hay zonas configuradas. Agrega la primera para definir su nombre, costo y posición.
+            </div>
+          ) : null}
           {form.shippingSectorRates.map((item, index) => (
-            <div key={index} className="grid gap-3 rounded-lg border bg-gray-50 p-3 md:grid-cols-[1fr_180px_auto]">
+            <div key={index} className="grid gap-3 rounded-lg border bg-gray-50 p-3 md:grid-cols-[52px_1fr_180px_auto]">
+              <div className="flex items-center gap-1 md:flex-col md:justify-end">
+                <span className="mb-1 text-xs font-semibold text-gray-500">#{index + 1}</span>
+                <div className="flex gap-1">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    aria-label={`Subir ${item.sector || "zona"}`}
+                    disabled={index === 0}
+                    onClick={() => moveSectorRate(index, index - 1)}
+                  >
+                    ↑
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    aria-label={`Bajar ${item.sector || "zona"}`}
+                    disabled={index === form.shippingSectorRates.length - 1}
+                    onClick={() => moveSectorRate(index, index + 1)}
+                  >
+                    ↓
+                  </Button>
+                </div>
+              </div>
               <Field
                 label="Sector"
                 value={item.sector}
