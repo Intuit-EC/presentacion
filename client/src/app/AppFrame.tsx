@@ -2,12 +2,16 @@ import { Suspense, lazy, useEffect, useRef, useState, type CSSProperties, type C
 import { useLocation } from "wouter";
 import { Navbar } from "@/components/Navbar";
 import { useCompany } from "@/hooks/useCompany";
+import { useCart } from "@/context/CartContext";
 
 const Toaster = lazy(() =>
   import("@/components/ui/toaster").then((module) => ({ default: module.Toaster })),
 );
 const FloatingWhatsApp = lazy(() =>
   import("@/components/FloatingWhatsApp").then((module) => ({ default: module.FloatingWhatsApp })),
+);
+const CartSheet = lazy(() =>
+  import("@/components/CartSheet").then((module) => ({ default: module.CartSheet })),
 );
 
 function isMeaningfulInteraction(event: Event) {
@@ -38,6 +42,7 @@ export function AppFrame({ Routes, fallback = <RouteFallback /> }: AppFrameProps
   const [shouldLoadToaster, setShouldLoadToaster] = useState(false);
   const [shouldFetchCompany, setShouldFetchCompany] = useState(false);
   const [shouldLoadFloatingWhatsApp, setShouldLoadFloatingWhatsApp] = useState(false);
+  const { isCartOpen } = useCart();
   const hideNavbar = location === "/checkout" || location === "/payment-gateway" || location === "/payment-result";
   const { data: company } = useCompany(shouldFetchCompany && !hideNavbar);
   const showClosedStoreBanner = !hideNavbar && company?.settings?.acceptOrders === false;
@@ -261,6 +266,11 @@ export function AppFrame({ Routes, fallback = <RouteFallback /> }: AppFrameProps
       {shouldLoadFloatingWhatsApp ? (
         <Suspense fallback={null}>
           <FloatingWhatsApp />
+        </Suspense>
+      ) : null}
+      {!hideNavbar && isCartOpen ? (
+        <Suspense fallback={null}>
+          <CartSheet />
         </Suspense>
       ) : null}
       {shouldLoadToaster ? (

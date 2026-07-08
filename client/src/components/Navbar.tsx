@@ -48,33 +48,20 @@ function IconBag({ className }: { className?: string }) {
   );
 }
 
-function IconSpinner({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" className={cn("animate-spin", className)} aria-hidden="true">
-      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" opacity="0.25" />
-      <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-    </svg>
-  );
-}
-
 export function Navbar() {
-  const [location, setLocation] = useLocation();
+  const [location] = useLocation();
   const [isOpen, setIsOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [isCartNavigating, setIsCartNavigating] = useState(false);
-  const { cartItemCount, isCartLoading } = useCart();
+  const { cartItemCount, isCartLoading, setIsCartOpen } = useCart();
   const visibleCartItemCount = isCartLoading ? null : cartItemCount;
 
   useEffect(() => {
     setIsOpen(false);
     setIsSearchOpen(false);
-    setIsCartNavigating(false);
   }, [location]);
 
   const handleCartNavigation = () => {
-    if (isCartNavigating || location === "/checkout") return;
-    setIsCartNavigating(true);
-    setLocation("/checkout");
+    setIsCartOpen(true);
   };
 
   const navPhrase = "Realiza tu pedido floral en Guayaquil y sorprende hoy";
@@ -133,14 +120,9 @@ export function Navbar() {
                   type="button"
                   aria-label={visibleCartItemCount === null ? "Ver carrito" : `Ver carrito (${visibleCartItemCount})`}
                   onClick={handleCartNavigation}
-                  disabled={isCartNavigating}
                   className={cn("site-nav-cart-button", "text-foreground hover:text-accent")}
                 >
-                  {isCartNavigating ? (
-                    <IconSpinner className="h-6 w-6 min-[1440px]:h-7 min-[1440px]:w-7" />
-                  ) : (
-                    <IconBag className="h-6 w-6 min-[1440px]:h-7 min-[1440px]:w-7" />
-                  )}
+                  <IconBag className="h-6 w-6 min-[1440px]:h-7 min-[1440px]:w-7" />
                   <span className="translate-y-[2px] text-xs font-black tracking-widest min-[1440px]:text-sm">
                     {visibleCartItemCount === null ? "" : `(${visibleCartItemCount})`}
                   </span>
@@ -178,18 +160,13 @@ export function Navbar() {
                 type="button"
                 aria-label={visibleCartItemCount === null ? "Ver carrito" : `Ver carrito (${visibleCartItemCount})`}
                 onClick={handleCartNavigation}
-                disabled={isCartNavigating}
                 className={cn(
                   "relative flex h-11 w-11 items-center justify-center rounded-full transition-colors hover:scale-110 disabled:pointer-events-none disabled:opacity-70 sm:h-12 sm:w-12",
                   "text-foreground",
                 )}
               >
-                {isCartNavigating ? (
-                  <IconSpinner className="h-6 w-6 sm:h-7 sm:w-7" />
-                ) : (
-                  <IconBag className="h-6 w-6 sm:h-7 sm:w-7" />
-                )}
-                {visibleCartItemCount !== null && visibleCartItemCount > 0 && !isCartNavigating ? (
+                <IconBag className="h-6 w-6 sm:h-7 sm:w-7" />
+                {visibleCartItemCount !== null && visibleCartItemCount > 0 ? (
                   <span className="absolute right-0 top-0 flex h-4 min-w-4 -translate-y-1 translate-x-1 items-center justify-center rounded-full border-2 border-[#fff] bg-accent px-1 text-[9px] font-black leading-none text-white shadow-lg sm:h-5 sm:min-w-5 sm:text-[10px]">
                     {visibleCartItemCount}
                   </span>

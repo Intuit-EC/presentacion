@@ -51,13 +51,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       console.error("Error loading cart", e);
     }
 
-    const timer = window.setTimeout(() => {
-      if (isMounted) setIsInitialized(true);
-    }, 650);
+    // La lectura de localStorage es síncrona; no hace falta bloquear el carrito
+    // con una espera artificial antes de permitir comprar.
+    if (isMounted) setIsInitialized(true);
 
     return () => {
       isMounted = false;
-      window.clearTimeout(timer);
     };
   }, []);
 
