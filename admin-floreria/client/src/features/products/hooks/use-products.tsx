@@ -5,6 +5,54 @@ import productsService from "../api/products-service";
 import { useUserStore } from "@/store/use-user-store";
 import filtersService from "@/features/filters/api/filters-service";
 
+const ADMIN_PRODUCT_ORDER_KEY = "difiori-admin-product-card-order";
+
+function readAdminProductOrder() {
+  try {
+    const rawValue = window.localStorage.getItem(ADMIN_PRODUCT_ORDER_KEY);
+    const parsed = rawValue ? JSON.parse(rawValue) : [];
+    return Array.isArray(parsed) ? parsed.filter(Boolean) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveAdminProductOrder(productIds: string[]) {
+  try {
+    window.localStorage.setItem(
+      ADMIN_PRODUCT_ORDER_KEY,
+      JSON.stringify(productIds)
+    );
+  } catch {
+    // Si el navegador bloquea localStorage, el orden visual sigue funcionando
+    // durante la sesión actual.
+  }
+}
+
+function clearAdminProductOrder() {
+  try {
+    window.localStorage.removeItem(ADMIN_PRODUCT_ORDER_KEY);
+  } catch {
+    // No action needed.
+  }
+}
+
+function applyAdminProductOrder(productList: Product[]) {
+  const savedOrder = readAdminProductOrder();
+  if (savedOrder.length === 0) return productList;
+
+  const productsById = new Map(productList.map((product) => [product.id, product]));
+  const orderedProducts = savedOrder
+    .map((id) => productsById.get(id))
+    .filter((product): product is Product => Boolean(product));
+  const visibleOrderedIds = new Set(orderedProducts.map((product) => product.id));
+  const remainingProducts = productList.filter(
+    (product) => !visibleOrderedIds.has(product.id)
+  );
+
+  return [...orderedProducts, ...remainingProducts];
+}
+
 export default function useProducts() {
   const { user } = useUserStore();
   const [products, setProducts] = useState<Product[]>([]);
@@ -57,8 +105,9 @@ export default function useProducts() {
       const { status, message, data } = response;
 
       if (status === "success" && data) {
-        setProducts(data || []);
-        syncCategorySuggestions(data || [], categorySuggestions);
+        const orderedProducts = applyAdminProductOrder(data || []);
+        setProducts(orderedProducts);
+        syncCategorySuggestions(orderedProducts, categorySuggestions);
       } else {
         toast.error(message || "Error al cargar productos");
       }
@@ -255,6 +304,24 @@ export default function useProducts() {
     setVariants(newVariants);
   };
 
+  const moveProduct = async (fromIndex: number, toIndex: number) => {
+    if (toIndex < 0 || toIndex >= products.length || fromIndex === toIndex) return;
+
+    const reorderedProducts = [...products];
+    const [removed] = reorderedProducts.splice(fromIndex, 1);
+    reorderedProducts.splice(toIndex, 0, removed);
+
+    setProducts(reorderedProducts);
+    saveAdminProductOrder(reorderedProducts.map((product) => product.id));
+    toast.success("Orden visual del administrador actualizado");
+  };
+
+  const resetProductOrder = async () => {
+    clearAdminProductOrder();
+    toast.success("Ubicación visual restablecida");
+    await fetchProducts();
+  };
+
   return {
     products,
     search,
@@ -277,6 +344,8 @@ export default function useProducts() {
     updateVariant,
     removeVariant,
     moveVariant,
+    moveProduct,
+    resetProductOrder,
     fetchProducts,
   };
 }

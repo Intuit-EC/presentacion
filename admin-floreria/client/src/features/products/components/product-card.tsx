@@ -6,10 +6,12 @@ import {
   CardTitle,
 } from "@/shared/components/ui/card";
 import { Badge } from "@/shared/components/ui/badge";
+import { Button } from "@/shared/components/ui/button";
 import type { FormData, Product, Variant } from "../types";
 import { ProductModal } from "./product-modal";
 import { getImageUrl } from "@/core/utils/variables";
 import { ProductAlert } from "./product-alert";
+import { ArrowDown, ArrowUp, GripVertical } from "lucide-react";
 
 type ProductCardProps = {
   product: Product;
@@ -29,6 +31,10 @@ type ProductCardProps = {
     React.SetStateAction<ProductCardProps["variants"]>
   >;
   editingProduct?: { id: string } | null;
+  index: number;
+  totalProducts: number;
+  canReorder: boolean;
+  moveProduct: (fromIndex: number, toIndex: number) => void;
   addVariant: () => void;
   moveVariant: (fromIndex: number, toIndex: number) => void;
   updateVariant: (
@@ -84,13 +90,15 @@ export function ProductCard({
   variants,
   setVariants,
   editingProduct,
+  index,
+  totalProducts,
+  canReorder,
+  moveProduct,
   addVariant,
   moveVariant,
   updateVariant,
   removeVariant,
 }: ProductCardProps) {
-  console.log("Rendering ProductCard for product:", product);
-
   return (
     <Card className="py-0 flex flex-col h-full min-h-[450px] sm:min-h-[500px]">
       <div className="relative w-full h-40 sm:h-48 overflow-hidden rounded-t-lg flex-shrink-0">
@@ -101,6 +109,46 @@ export function ProductCard({
         />
       </div>
       <CardHeader className="pb-2 sm:pb-3 flex-shrink-0">
+        <div className="mb-2 flex items-center justify-between gap-2 rounded-lg border border-dashed border-gray-200 bg-gray-50 px-2 py-1">
+          <span className="inline-flex items-center gap-1 text-xs font-medium text-gray-600">
+            <GripVertical className="h-3.5 w-3.5" />
+            Posición #{index + 1}
+          </span>
+          <div className="flex gap-1">
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="h-7 w-7 p-0"
+              onClick={() => moveProduct(index, index - 1)}
+              disabled={!canReorder || index === 0}
+              aria-label={`Subir ${product.name}`}
+              title={
+                canReorder
+                  ? "Subir producto"
+                  : "Limpia la búsqueda para reordenar la lista completa"
+              }
+            >
+              <ArrowUp className="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="h-7 w-7 p-0"
+              onClick={() => moveProduct(index, index + 1)}
+              disabled={!canReorder || index === totalProducts - 1}
+              aria-label={`Bajar ${product.name}`}
+              title={
+                canReorder
+                  ? "Bajar producto"
+                  : "Limpia la búsqueda para reordenar la lista completa"
+              }
+            >
+              <ArrowDown className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        </div>
         <CardTitle className="text-base sm:text-lg line-clamp-2">
           {product.name}
         </CardTitle>
