@@ -37,6 +37,17 @@ function getImageUrl(imagePath: string | null | undefined): string {
   return toPublicImageUrl(imagePath) || PLACEHOLDER;
 }
 
+function shuffleProducts(products: Product[]) {
+  const shuffled = [...products];
+
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const randomIndex = Math.floor(Math.random() * (index + 1));
+    [shuffled[index], shuffled[randomIndex]] = [shuffled[randomIndex], shuffled[index]];
+  }
+
+  return shuffled;
+}
+
 export async function fetchProducts(
   options: string | ProductsQueryOptions = {},
   baseUrl?: string,
@@ -47,7 +58,6 @@ export async function fetchProducts(
 
     if (normalized.category && normalized.category !== "all") params.set("category", normalized.category);
     if (normalized.featured) params.set("featured", "true");
-    if (normalized.limit && normalized.limit > 0) params.set("limit", String(normalized.limit));
 
     const query = params.toString();
     const endpoint = query ? `${API_URL}?${query}` : API_URL;
@@ -57,7 +67,7 @@ export async function fetchProducts(
     const json = await res.json();
     if (json.status !== "success") throw new Error("Respuesta invalida del servidor");
 
-    return json.data
+    const products = json.data
       .map((p: any): Product => ({
         id: String(p.id),
         name: p.name,
@@ -72,6 +82,12 @@ export async function fetchProducts(
         includes: p.includes || p.description || "",
       }))
       .filter(isPublicCatalogProduct);
+
+    const randomizedProducts = shuffleProducts(products);
+
+    return normalized.limit && normalized.limit > 0
+      ? randomizedProducts.slice(0, normalized.limit)
+      : randomizedProducts;
   } catch (error) {
     console.warn("Error fetching products from API:", error);
     return [];
