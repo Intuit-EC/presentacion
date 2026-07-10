@@ -19,6 +19,7 @@ import {
   formatCategoryDisplayName,
   getCategoryDescription,
   getCategoryPath,
+  getProductPath,
 } from "@shared/catalog";
 
 export default function CategoryPage() {
@@ -44,33 +45,57 @@ export default function CategoryPage() {
   const schema = categoryName
     ? {
         "@context": "https://schema.org",
-        "@type": "CollectionPage",
-        name: categoryLabel,
-        url: canonicalUrl(categoryPath),
-        description,
-        breadcrumb: {
-          "@type": "BreadcrumbList",
-          itemListElement: [
-            {
-              "@type": "ListItem",
-              position: 1,
-              name: "Inicio",
-              item: canonicalUrl("/"),
+        "@graph": [
+          {
+            "@type": "CollectionPage",
+            name: categoryLabel,
+            url: canonicalUrl(categoryPath),
+            description,
+            breadcrumb: {
+              "@id": `${canonicalUrl(categoryPath)}#breadcrumb`,
             },
-            {
-              "@type": "ListItem",
-              position: 2,
-              name: "Catálogo",
-              item: canonicalUrl("/shop"),
-            },
-            {
-              "@type": "ListItem",
-              position: 3,
-              name: categoryLabel,
-              item: canonicalUrl(categoryPath),
-            },
-          ],
-        },
+            mainEntity: products.length > 0 ? { "@id": `${canonicalUrl(categoryPath)}#itemlist` } : undefined,
+          },
+          {
+            "@type": "BreadcrumbList",
+            "@id": `${canonicalUrl(categoryPath)}#breadcrumb`,
+            itemListElement: [
+              {
+                "@type": "ListItem",
+                position: 1,
+                name: "Inicio",
+                item: canonicalUrl("/"),
+              },
+              {
+                "@type": "ListItem",
+                position: 2,
+                name: "Catálogo",
+                item: canonicalUrl("/shop"),
+              },
+              {
+                "@type": "ListItem",
+                position: 3,
+                name: categoryLabel,
+                item: canonicalUrl(categoryPath),
+              },
+            ],
+          },
+          ...(products.length > 0
+            ? [
+                {
+                  "@type": "ItemList",
+                  "@id": `${canonicalUrl(categoryPath)}#itemlist`,
+                  name: `${categoryLabel} DIFIORI`,
+                  itemListElement: products.slice(0, 24).map((product, index) => ({
+                    "@type": "ListItem",
+                    position: index + 1,
+                    url: canonicalUrl(getProductPath(product)),
+                    name: product.name,
+                  })),
+                },
+              ]
+            : []),
+        ],
       }
     : undefined;
 

@@ -1,7 +1,7 @@
 import React from "react";
 import type { Product } from "@/data/mock";
 import { Link } from "wouter";
-import { Clock3, Loader2, MessageSquare, ShoppingBag } from "lucide-react";
+import { Clock3, Loader2, MessageSquare, ShieldCheck, ShoppingBag, Truck } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { useCompany } from "@/hooks/useCompany";
 import { useToast } from "@/hooks/use-toast";
@@ -116,6 +116,16 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
         </div>
 
         <div className="mt-5 flex w-full flex-col gap-2.5">
+          <div className="grid grid-cols-2 gap-2 text-[11px] font-extrabold uppercase tracking-[0.08em] text-foreground/65">
+            <span className="inline-flex items-center justify-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-2">
+              <ShieldCheck className="h-3.5 w-3.5 text-accent" aria-hidden="true" />
+              Pago seguro
+            </span>
+            <span className="inline-flex items-center justify-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-2">
+              <Truck className="h-3.5 w-3.5 text-accent" aria-hidden="true" />
+              Guayaquil
+            </span>
+          </div>
           <button type="button" onClick={handleBuyNow} disabled={isBuying} className="ui-btn-primary w-full">
             {isBuying ? (
               <Loader2 className="h-4 w-4 animate-spin" />

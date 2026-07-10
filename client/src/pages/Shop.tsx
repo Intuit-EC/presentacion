@@ -3,6 +3,7 @@ import { ProductCard } from "@/components/ProductCard";
 import { CategorySidebar } from "@/components/CategorySidebar";
 import { Seo } from "@/components/Seo";
 import { absoluteUrl, canonicalUrl } from "@/lib/site";
+import { getProductPath } from "@shared/catalog";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -16,28 +17,52 @@ export default function Shop() {
   const { data: allProducts = [], isLoading } = useProducts();
   const shopSchema = {
     "@context": "https://schema.org",
-    "@type": "CollectionPage",
-    name: "Catálogo DIFIORI",
-    url: canonicalUrl("/shop"),
-    description: "Catálogo de arreglos florales, ramos de flores y regalos a domicilio en Guayaquil.",
-    image: absoluteUrl("/opengraph.jpg"),
-    breadcrumb: {
-      "@type": "BreadcrumbList",
-      itemListElement: [
-        {
-          "@type": "ListItem",
-          position: 1,
-          name: "Inicio",
-          item: canonicalUrl("/"),
+    "@graph": [
+      {
+        "@type": "CollectionPage",
+        name: "Catálogo DIFIORI",
+        url: canonicalUrl("/shop"),
+        description: "Catálogo de arreglos florales, ramos de flores y regalos a domicilio en Guayaquil.",
+        image: absoluteUrl("/opengraph.jpg"),
+        breadcrumb: {
+          "@id": `${canonicalUrl("/shop")}#breadcrumb`,
         },
-        {
-          "@type": "ListItem",
-          position: 2,
-          name: "Catálogo",
-          item: canonicalUrl("/shop"),
-        },
-      ],
-    },
+        mainEntity: allProducts.length > 0 ? { "@id": `${canonicalUrl("/shop")}#itemlist` } : undefined,
+      },
+      {
+        "@type": "BreadcrumbList",
+        "@id": `${canonicalUrl("/shop")}#breadcrumb`,
+        itemListElement: [
+          {
+            "@type": "ListItem",
+            position: 1,
+            name: "Inicio",
+            item: canonicalUrl("/"),
+          },
+          {
+            "@type": "ListItem",
+            position: 2,
+            name: "Catálogo",
+            item: canonicalUrl("/shop"),
+          },
+        ],
+      },
+      ...(allProducts.length > 0
+        ? [
+            {
+              "@type": "ItemList",
+              "@id": `${canonicalUrl("/shop")}#itemlist`,
+              name: "Productos disponibles DIFIORI",
+              itemListElement: allProducts.slice(0, 24).map((product, index) => ({
+                "@type": "ListItem",
+                position: index + 1,
+                url: canonicalUrl(getProductPath(product)),
+                name: product.name,
+              })),
+            },
+          ]
+        : []),
+    ],
   };
 
   return (

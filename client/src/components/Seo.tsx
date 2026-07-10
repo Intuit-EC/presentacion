@@ -3,6 +3,8 @@ import { DEFAULT_COMPANY, DEFAULT_SEO_IMAGE, absoluteUrl, canonicalUrl } from "@
 
 type JsonLd = Record<string, unknown> | Array<Record<string, unknown>>;
 
+const INDEXABLE_ROBOTS = "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1";
+
 export interface SeoProps {
   title: string;
   description: string;
@@ -40,7 +42,7 @@ export const DEFAULT_SEO_STATE: SeoState = {
     "Flores en Guayaquil y floreria Guayaquil con pedidos a domicilio. Compra ramos, arreglos florales y regalos con entrega en Guayaquil.",
   keywords: "flores en Guayaquil, floreria Guayaquil, flores a domicilio Guayaquil, pedidos de flores Guayaquil, arreglos florales Guayaquil",
   path: "/",
-  robots: "index, follow",
+  robots: INDEXABLE_ROBOTS,
   image: DEFAULT_SEO_IMAGE,
   imageAlt: "Arreglos florales DIFIORI en Guayaquil",
   type: "website",
@@ -56,6 +58,10 @@ function escapeHtml(value: string) {
     .replace(/'/g, "&#39;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;");
+}
+
+function normalizeRobotsDirective(robots: string) {
+  return robots.trim().toLowerCase() === "index, follow" ? INDEXABLE_ROBOTS : robots;
 }
 
 export function createSeoManager(initialState: SeoState = DEFAULT_SEO_STATE): SeoManager {
@@ -84,7 +90,7 @@ export function buildSeoState({
   description,
   keywords,
   path = "/",
-  robots = "index, follow",
+  robots = INDEXABLE_ROBOTS,
   image = DEFAULT_SEO_IMAGE,
   imageAlt,
   type = "website",
@@ -96,7 +102,7 @@ export function buildSeoState({
     description,
     keywords,
     path,
-    robots,
+    robots: normalizeRobotsDirective(robots),
     image,
     imageAlt: imageAlt || title,
     type,
@@ -202,7 +208,7 @@ export function Seo({
   description,
   keywords,
   path = "/",
-  robots = "index, follow",
+  robots = INDEXABLE_ROBOTS,
   image = DEFAULT_SEO_IMAGE,
   imageAlt,
   type = "website",

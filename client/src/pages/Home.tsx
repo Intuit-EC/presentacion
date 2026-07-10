@@ -2,6 +2,7 @@ import React, { Suspense, lazy, useEffect, useRef, useState } from "react";
 import { ArrowRight, CalendarHeart, Gift, Heart, Sparkles } from "lucide-react";
 import { Banner } from "@/components/Banner";
 import { Seo } from "@/components/Seo";
+import { FAQS } from "@/data/mock";
 import { DEFAULT_COMPANY, absoluteUrl, canonicalUrl } from "@/lib/site";
 import "./home-shell.css";
 
@@ -237,6 +238,28 @@ export default function Home() {
           { "@type": "Offer", itemOffered: { "@type": "Product", name: "Ramos de flores" } },
           { "@type": "Offer", itemOffered: { "@type": "Product", name: "Arreglos florales a domicilio" } },
         ],
+      },
+      {
+        "@type": "WebSite",
+        "@id": `${canonicalUrl("/")}#website`,
+        name: "DIFIORI",
+        url: canonicalUrl("/"),
+        inLanguage: "es-EC",
+        publisher: {
+          "@id": `${canonicalUrl("/")}#organization`,
+        },
+      },
+      {
+        "@type": "FAQPage",
+        "@id": `${canonicalUrl("/")}#faq`,
+        mainEntity: FAQS.map((faq) => ({
+          "@type": "Question",
+          name: faq.question,
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: faq.answer,
+          },
+        })),
       },
     ],
   };

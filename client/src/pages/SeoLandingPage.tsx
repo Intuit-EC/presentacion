@@ -4,6 +4,7 @@ import { ProductCard } from "@/components/ProductCard";
 import { Seo } from "@/components/Seo";
 import { useProducts } from "@/hooks/useProducts";
 import { DEFAULT_COMPANY, absoluteUrl, canonicalUrl } from "@/lib/site";
+import { getProductPath } from "@shared/catalog";
 
 const landingPages = {
   "/flores-guayaquil": {
@@ -155,6 +156,21 @@ export default function SeoLandingPage() {
         },
         areaServed: ["Guayaquil"],
       },
+      ...(highlightedProducts.length > 0
+        ? [
+            {
+              "@type": "ItemList",
+              "@id": `${canonicalUrl(page.path)}#itemlist`,
+              name: `${page.h1} - productos recomendados`,
+              itemListElement: highlightedProducts.map((product, index) => ({
+                "@type": "ListItem",
+                position: index + 1,
+                url: canonicalUrl(getProductPath(product)),
+                name: product.name,
+              })),
+            },
+          ]
+        : []),
     ],
   };
 
