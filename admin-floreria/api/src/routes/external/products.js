@@ -3,6 +3,62 @@ const { db: prisma } = require('../../lib/prisma');
 
 const router = express.Router();
 
+const MOJIBAKE_REPLACEMENTS = [
+  ['Ã¡', 'á'],
+  ['Ã©', 'é'],
+  ['Ã­', 'í'],
+  ['Ã³', 'ó'],
+  ['Ãº', 'ú'],
+  ['Ã±', 'ñ'],
+  ['Ã‘', 'Ñ'],
+];
+
+function normalizeDisplayText(value) {
+  if (!value) return '';
+
+  return MOJIBAKE_REPLACEMENTS.reduce(
+    (text, [broken, fixed]) => text.replaceAll(broken, fixed),
+    String(value),
+  ).replace(/\s+/g, ' ').trim();
+}
+
+function slugify(value) {
+  return normalizeDisplayText(value)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+function toReadableTitleCase(value) {
+  const smallWords = new Set(['a', 'al', 'con', 'de', 'del', 'en', 'la', 'las', 'para', 'por', 'y']);
+
+  return normalizeDisplayText(value)
+    .toLocaleLowerCase('es')
+    .split(' ')
+    .map((word, index) => {
+      if (index > 0 && smallWords.has(word)) return word;
+      return word.charAt(0).toLocaleUpperCase('es') + word.slice(1);
+    })
+    .join(' ');
+}
+
+function dedupeCategoriesBySlug(categories) {
+  const categoriesBySlug = new Map();
+
+  for (const category of categories) {
+    const normalized = normalizeDisplayText(category);
+    const slug = slugify(normalized);
+
+    if (!slug || slug === 'general' || categoriesBySlug.has(slug)) continue;
+
+    categoriesBySlug.set(slug, toReadableTitleCase(normalized));
+  }
+
+  return Array.from(categoriesBySlug.values()).sort((a, b) => a.localeCompare(b, 'es'));
+}
+
 /**
  * GET /api/external/products
  * Route pública para que la tienda pueda obtener productos activos.
@@ -86,12 +142,9 @@ router.get('/categories', async (req, res) => {
     const categories = await prisma.product.findMany({
       where: { isActive: true, isDeleted: false },
       select: { name: true, description: true, category: true, price: true },
-      distinct: ['category'],
     });
 
-    const data = categories
-      .map((c) => c.category)
-      .filter((c) => c && c.trim() !== "");
+    const data = dedupeCategoriesBySlug(categories.map((c) => c.category));
 
     return res.status(200).json({ status: 'success', data });
   } catch (error) {

@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/breadcrumb";
 import {
   BEST_SELLERS_CATEGORY_SLUG,
+  areSameCategory,
   findCategoryNameBySlug,
   formatCategoryDisplayName,
   getCategoryDescription,
@@ -36,7 +37,7 @@ export default function CategoryPage() {
   const products = useMemo(() => {
     if (!categoryName) return [];
     if (isBestSellers) return allProducts.filter((product) => product.isBestSeller);
-    return allProducts.filter((product) => product.category === categoryName);
+    return allProducts.filter((product) => areSameCategory(product.category, categoryName));
   }, [allProducts, categoryName, isBestSellers]);
 
   const loading = isLoadingCategories || isLoadingProducts;

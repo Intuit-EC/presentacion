@@ -117,6 +117,26 @@ export function findCategoryNameBySlug(categories: string[], slug: string) {
   return categories.find((category) => getCategorySlug(category) === slug) || null;
 }
 
+export function dedupeCategoriesBySlug(categories: Array<string | null | undefined>) {
+  const categoriesBySlug = new Map<string, string>();
+
+  for (const category of categories) {
+    const normalized = normalizeDisplayText(category);
+    if (!normalized) continue;
+
+    const slug = getCategorySlug(normalized);
+    if (!slug || slug === "general" || categoriesBySlug.has(slug)) continue;
+
+    categoriesBySlug.set(slug, formatCategoryDisplayName(normalized));
+  }
+
+  return Array.from(categoriesBySlug.values()).sort((a, b) => a.localeCompare(b, "es"));
+}
+
+export function areSameCategory(a: string | null | undefined, b: string | null | undefined) {
+  return getCategorySlug(normalizeDisplayText(a)) === getCategorySlug(normalizeDisplayText(b));
+}
+
 export function getProductSlug(product: ProductLike) {
   return `${slugify(product.name)}-${product.id}`;
 }

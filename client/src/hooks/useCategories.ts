@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { resolveApiUrl } from "@/lib/api";
+import { dedupeCategoriesBySlug } from "@shared/catalog";
 
 const API_URL = "/api/external/products/categories";
 export const categoriesQueryKey = ["categories"] as const;
@@ -12,7 +13,7 @@ export async function fetchCategories(baseUrl?: string): Promise<string[]> {
     const json = await res.json();
     if (json.status !== "success") throw new Error("Respuesta invalida del servidor");
 
-    return json.data;
+    return dedupeCategoriesBySlug(json.data);
   } catch (error) {
     console.warn("Error fetching categories from API:", error);
     return [];

@@ -3,7 +3,7 @@ import { Link } from "wouter";
 import { CategorySidebar } from "@/components/CategorySidebar";
 import { ProductCard } from "@/components/ProductCard";
 import { useProducts } from "@/hooks/useProducts";
-import { formatCategoryDisplayName, getCategoryPath } from "@shared/catalog";
+import { formatCategoryDisplayName, getCategoryPath, getCategorySlug } from "@shared/catalog";
 import "./home-catalog.css";
 
 const HOME_PRODUCTS_PER_CATEGORY = 2;
@@ -20,18 +20,23 @@ export function HomeCatalogSection() {
 
     for (const product of allProducts) {
       const category = product.category || "General";
-      const existing = sections.get(category) || [];
+      const categoryKey = getCategorySlug(category);
+      const existing = sections.get(categoryKey) || [];
       existing.push(product);
-      sections.set(category, existing);
+      sections.set(categoryKey, existing);
     }
 
     return Array.from(sections.entries())
-      .map(([category, products]) => ({
-        category,
-        label: formatCategoryDisplayName(category),
-        href: getCategoryPath(category),
-        products: products.slice(0, HOME_PRODUCTS_PER_CATEGORY),
-      }))
+      .map(([categorySlug, products]) => {
+        const category = products[0]?.category || categorySlug;
+
+        return {
+          category: categorySlug,
+          label: formatCategoryDisplayName(category),
+          href: getCategoryPath(category),
+          products: products.slice(0, HOME_PRODUCTS_PER_CATEGORY),
+        };
+      })
       .slice(0, HOME_CATEGORY_LIMIT);
   }, [allProducts]);
 

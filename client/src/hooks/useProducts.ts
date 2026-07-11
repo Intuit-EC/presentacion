@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import type { Product } from "../data/mock";
 import { resolveApiUrl } from "@/lib/api";
 import { toPublicImageUrl } from "@/lib/media";
-import { isPublicCatalogProduct } from "@shared/catalog";
+import { areSameCategory, isPublicCatalogProduct } from "@shared/catalog";
 
 const API_URL = "/api/external/products";
 const CLIENT_PRODUCT_ROTATION_TOKEN =
@@ -65,7 +65,6 @@ export async function fetchProducts(
     const normalized = normalizeProductOptions(options);
     const params = new URLSearchParams();
 
-    if (normalized.category && normalized.category !== "all") params.set("category", normalized.category);
     if (normalized.featured) params.set("featured", "true");
 
     const query = params.toString();
@@ -90,7 +89,11 @@ export async function fetchProducts(
         size: p.size || "",
         includes: p.includes || p.description || "",
       }))
-      .filter(isPublicCatalogProduct);
+      .filter(isPublicCatalogProduct)
+      .filter((product: Product) => {
+        if (!normalized.category || normalized.category === "all") return true;
+        return areSameCategory(product.category, normalized.category);
+      });
 
     const visibleProducts = shouldRotateProductsInFrontend() ? shuffleProducts(products) : products;
 
