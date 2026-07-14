@@ -59,6 +59,11 @@ function dedupeCategoriesBySlug(categories) {
   return Array.from(categoriesBySlug.values()).sort((a, b) => a.localeCompare(b, 'es'));
 }
 
+function getCanonicalCategory(category) {
+  const normalized = normalizeDisplayText(category);
+  return normalized ? toReadableTitleCase(normalized) : 'General';
+}
+
 /**
  * GET /api/external/products
  * Route pública para que la tienda pueda obtener productos activos.
@@ -72,8 +77,8 @@ router.get('/', async (req, res) => {
       ? Math.max(1, Math.min(requestedLimit, 60))
       : undefined;
 
+    const requestedCategorySlug = category ? slugify(String(category)) : null;
     const where = { isActive: true, isDeleted: false };
-    if (category) where.category = category;
     if (featured === 'true') where.featured = true;
 
     const products = await prisma.product.findMany({
@@ -93,10 +98,14 @@ router.get('/', async (req, res) => {
       // Los productos recién creados aparecen primero. Antes, los mismos
       // destacados ocupaban siempre las primeras posiciones del catálogo.
       orderBy: [{ createdAt: 'desc' }, { featured: 'desc' }],
-      ...(limit ? { take: limit * 2 } : {}),
+      ...(limit && !requestedCategorySlug ? { take: limit * 2 } : {}),
     });
 
     const data = products
+      .filter((p) => {
+        if (!requestedCategorySlug) return true;
+        return slugify(p.category) === requestedCategorySlug;
+      })
       .slice(0, limit || products.length)
       .map((p) => {
       const defaultVariant = p.variants.find((v) => v.isDefault) || p.variants[0];
@@ -110,7 +119,7 @@ router.get('/', async (req, res) => {
         price: price ? `$${Number(price).toFixed(2)}` : '$0.00',
         rawPrice: price || 0,
         image: p.image || '',
-        category: p.category,
+        category: getCanonicalCategory(p.category),
         isBestSeller: p.featured,
         stock: p.stock,
         hasVariants: p.hasVariants,
