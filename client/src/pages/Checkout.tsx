@@ -16,6 +16,8 @@ import {
   Landmark,
   Smartphone,
   Globe2,
+  ShieldCheck,
+  BadgeCheck,
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
@@ -133,27 +135,50 @@ const CHECKOUT_STEPS: {
 const PAYMENT_METHODS: {
   label: PaymentMethod;
   description: string;
+  trustLabel: string;
   Icon: typeof CreditCard;
 }[] = [
   {
     label: "PayPal",
     description: "Pago internacional o con tarjeta de crédito",
+    trustLabel: "Pasarela segura",
     Icon: Globe2,
   },
   {
     label: "Payphone",
     description: "Pago local con tarjeta desde la pasarela segura",
+    trustLabel: "Tarjeta segura",
     Icon: Smartphone,
   },
   {
     label: "Banco",
     description: "Transferencia bancaria con comprobante",
+    trustLabel: "Validación manual",
     Icon: Landmark,
   },
   {
     label: "Zelle",
     description: "Pago por Zelle; el vendedor confirmará los datos",
+    trustLabel: "Validación manual",
     Icon: CreditCard,
+  },
+];
+
+const CHECKOUT_TRUST_BADGES = [
+  {
+    title: "Compra segura",
+    copy: "Tus datos se usan solo para confirmar y entregar el pedido.",
+    Icon: ShieldCheck,
+  },
+  {
+    title: "Confirmación directa",
+    copy: "El equipo DIFIORI valida la orden y coordina por WhatsApp.",
+    Icon: BadgeCheck,
+  },
+  {
+    title: "Entrega coordinada",
+    copy: "Revisamos sector, dirección y horario antes del despacho.",
+    Icon: Truck,
   },
 ];
 
@@ -971,6 +996,23 @@ export default function Checkout() {
           </a>
         </div>
 
+        <div className="mx-auto mb-5 grid max-w-4xl gap-3 sm:grid-cols-3">
+          {CHECKOUT_TRUST_BADGES.map(({ title, copy, Icon }) => (
+            <div
+              key={title}
+              className="rounded-2xl border border-[#E5D7EF] bg-white px-4 py-4 text-left shadow-[0_12px_32px_rgba(74,51,98,0.06)]"
+            >
+              <div className="mb-2 flex items-center gap-2 text-sm font-black uppercase tracking-[0.12em] text-[#4B1F6F]">
+                <Icon className="h-5 w-5 text-[#C6539B]" />
+                {title}
+              </div>
+              <p className="text-sm font-bold leading-relaxed text-[#4A3362]">
+                {copy}
+              </p>
+            </div>
+          ))}
+        </div>
+
         <div className="mb-5 grid grid-cols-3 gap-1.5 rounded-[1.25rem] border border-[#E5D7EF] bg-white p-1.5 shadow-[0_12px_32px_rgba(74,51,98,0.08)] sm:mb-8 sm:gap-2 sm:rounded-[1.5rem] sm:p-2">
           {CHECKOUT_STEPS.map((step, index) => {
             const isActive = step.id === activeStep;
@@ -1177,6 +1219,9 @@ export default function Checkout() {
                     `Confirmar pedido $${finalTotal.toFixed(2)}`
                   )}
                 </button>
+                <p className="mt-3 rounded-2xl bg-white px-4 py-3 text-center text-xs font-black leading-relaxed text-[#4A3362]">
+                  Al confirmar, registramos tu orden y te mostramos el siguiente paso según tu método de pago. Si elegiste banco, Zelle o PayPal con comprobante, el equipo valida el pago antes del despacho.
+                </p>
               </div>
             </div>
           </aside>
@@ -1387,7 +1432,7 @@ export default function Checkout() {
                   Tengo dudas sobre el pago
                 </a>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  {PAYMENT_METHODS.map(({ label, description, Icon }) => (
+                  {PAYMENT_METHODS.map(({ label, description, trustLabel, Icon }) => (
                     <button
                       key={label}
                       type="button"
@@ -1411,7 +1456,19 @@ export default function Checkout() {
                             : "text-[#4A3362]"
                         )}
                       />
-                      <span className="text-2xl font-black">{label}</span>
+                      <span className="flex w-full items-center justify-between gap-2 text-2xl font-black">
+                        {label}
+                        <span
+                          className={cn(
+                            "rounded-full px-2.5 py-1 text-[0.62rem] font-black uppercase tracking-[0.08em]",
+                            paymentMethod === label
+                              ? "bg-white/15 text-white"
+                              : "bg-[#FBF7FD] text-[#4B1F6F]"
+                          )}
+                        >
+                          {trustLabel}
+                        </span>
+                      </span>
                       <span
                         className={cn(
                           "text-base font-black leading-snug",
@@ -1573,6 +1630,9 @@ export default function Checkout() {
                     )}
                   </button>
                 </div>
+                <p className="rounded-2xl bg-[#FBF7FD] px-4 py-3 text-center text-sm font-black leading-relaxed text-[#4A3362]">
+                  Después de confirmar te guiamos al pago o guardamos tu comprobante. DIFIORI revisa la orden y coordina la entrega contigo.
+                </p>
               </div>
             </div>
           </div>
