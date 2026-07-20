@@ -1,6 +1,6 @@
 const FACEBOOK_PIXEL_ID = "1783051885578047";
 
-type FacebookPixel = ((action: string, eventName: string) => void) & {
+type FacebookPixel = ((action: string, eventName: string, params?: Record<string, unknown>) => void) & {
   callMethod?: (...args: unknown[]) => void;
   queue: unknown[];
   loaded?: boolean;
@@ -44,4 +44,10 @@ export function initFacebookPixel() {
 
   fbq("init", FACEBOOK_PIXEL_ID);
   fbq("track", "PageView");
+}
+
+export function trackFacebookEvent(eventName: string, params?: Record<string, unknown>) {
+  if (typeof window === "undefined" || typeof window.fbq !== "function") return;
+
+  window.fbq("track", eventName, params);
 }

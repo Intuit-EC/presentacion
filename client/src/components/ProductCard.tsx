@@ -5,6 +5,7 @@ import { Clock3, Loader2, MessageSquare, ShieldCheck, ShoppingBag, Truck } from 
 import { useCart } from "@/context/CartContext";
 import { useCompany } from "@/hooks/useCompany";
 import { useToast } from "@/hooks/use-toast";
+import { trackFacebookEvent } from "@/lib/facebook-pixel";
 import { getResponsiveImageSrcSet } from "@/lib/media";
 import { DEFAULT_COMPANY, canonicalUrl } from "@/lib/site";
 import { formatCategoryDisplayName, getNumericPriceValue, getProductPath, getProductSku } from "@shared/catalog";
@@ -39,6 +40,21 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
     }
 
     setIsBuying(true);
+    trackFacebookEvent("AddToCart", {
+      content_ids: [productSku],
+      content_name: product.name,
+      content_type: "product",
+      currency: "USD",
+      value: productPrice,
+    });
+    trackFacebookEvent("InitiateCheckout", {
+      content_ids: [productSku],
+      content_name: product.name,
+      content_type: "product",
+      currency: "USD",
+      num_items: 1,
+      value: productPrice,
+    });
     buyNow(product);
     window.location.assign("/checkout");
   };
@@ -117,15 +133,18 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
 
         <div className="mt-5 flex w-full flex-col gap-2.5">
           <div className="grid grid-cols-2 gap-2 text-[11px] font-extrabold uppercase tracking-[0.08em] text-foreground/65">
-            <span className="inline-flex items-center justify-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-2">
+            <span className="inline-flex items-center justify-center gap-1.5 rounded-full border border-primary/15 bg-white px-2.5 py-2 shadow-[0_8px_22px_rgba(74,51,98,0.06)]">
               <ShieldCheck className="h-3.5 w-3.5 text-accent" aria-hidden="true" />
               Pago seguro
             </span>
-            <span className="inline-flex items-center justify-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-2">
+            <span className="inline-flex items-center justify-center gap-1.5 rounded-full border border-primary/15 bg-white px-2.5 py-2 shadow-[0_8px_22px_rgba(74,51,98,0.06)]">
               <Truck className="h-3.5 w-3.5 text-accent" aria-hidden="true" />
               Guayaquil
             </span>
           </div>
+          <p className="rounded-2xl bg-[#FBF7FD] px-3 py-2 text-center text-[11px] font-bold leading-relaxed text-[#4A3362]/80">
+            Confirmamos tu pedido por WhatsApp antes del despacho.
+          </p>
           <button type="button" onClick={handleBuyNow} disabled={isBuying} className="ui-btn-primary w-full">
             {isBuying ? (
               <Loader2 className="h-4 w-4 animate-spin" />

@@ -40,7 +40,7 @@ const checks: SmokeCheck[] = [
   {
     name: "Checkout operativo",
     path: "/checkout",
-    mustContain: ["noindex", "checkout"],
+    mustContain: ["Checkout | DIFIORI", "noindex, nofollow", "canonical", "/assets/index"],
   },
 ];
 

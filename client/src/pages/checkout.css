@@ -7,7 +7,10 @@
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 1), rgba(250, 247, 252, 0.92));
+  background:
+    radial-gradient(circle at 12% 0%, rgba(198, 83, 155, 0.08), transparent 34rem),
+    radial-gradient(circle at 86% 14%, rgba(75, 31, 111, 0.07), transparent 30rem),
+    linear-gradient(180deg, rgba(255, 255, 255, 1), rgba(250, 247, 252, 0.92));
   pointer-events: none;
 }
 
@@ -20,7 +23,8 @@
   background: #ffffff;
   border-color: rgba(90, 63, 115, 0.16);
   box-shadow:
-    0 20px 54px rgba(74, 51, 98, 0.1),
+    0 22px 58px rgba(74, 51, 98, 0.09),
+    0 1px 0 rgba(255, 255, 255, 0.9),
     inset 0 1px 0 rgba(255, 255, 255, 0.85);
 }
 
@@ -28,7 +32,9 @@
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.55), transparent 56%);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.65), transparent 56%),
+    linear-gradient(180deg, rgba(251, 247, 253, 0.42), transparent 42%);
   pointer-events: none;
 }
 
@@ -45,7 +51,9 @@
   background: #ffffff;
   border-color: rgba(90, 63, 115, 0.22);
   color: #4b0082;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.8),
+    0 8px 18px rgba(74, 51, 98, 0.04);
 }
 
 .checkout-input::placeholder {
@@ -62,9 +70,11 @@
 }
 
 .checkout-subpanel {
-  background: #ffffff;
+  background: linear-gradient(180deg, #ffffff, rgba(251, 247, 253, 0.72));
   border: 1px solid rgba(90, 63, 115, 0.16);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
+  box-shadow:
+    0 16px 38px rgba(74, 51, 98, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55);
 }
 
 .checkout-field {

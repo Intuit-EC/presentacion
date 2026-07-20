@@ -23,6 +23,7 @@ import { Link, useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { apiUrl } from "@/lib/api-url";
+import { trackFacebookEvent } from "@/lib/facebook-pixel";
 import { useCart } from "@/context/CartContext";
 import { useCompany } from "@/hooks/useCompany";
 
@@ -136,30 +137,35 @@ const PAYMENT_METHODS: {
   label: PaymentMethod;
   description: string;
   trustLabel: string;
+  nextStep: string;
   Icon: typeof CreditCard;
 }[] = [
   {
     label: "PayPal",
     description: "Pago internacional o con tarjeta de crédito",
     trustLabel: "Pasarela segura",
+    nextStep: "Te llevamos a PayPal; DIFIORI no guarda los datos de tu tarjeta.",
     Icon: Globe2,
   },
   {
     label: "Payphone",
     description: "Pago local con tarjeta desde la pasarela segura",
     trustLabel: "Tarjeta segura",
+    nextStep: "Te redirigimos a Payphone para completar el pago con tarjeta.",
     Icon: Smartphone,
   },
   {
     label: "Banco",
     description: "Transferencia bancaria con comprobante",
     trustLabel: "Validación manual",
+    nextStep: "Guardamos tu orden y el equipo valida el comprobante antes del despacho.",
     Icon: Landmark,
   },
   {
     label: "Zelle",
     description: "Pago por Zelle; el vendedor confirmará los datos",
     trustLabel: "Validación manual",
+    nextStep: "El vendedor confirma los datos y valida el pago contigo.",
     Icon: CreditCard,
   },
 ];
@@ -307,6 +313,7 @@ export default function Checkout() {
   const observationsRef = useRef<HTMLTextAreaElement>(null);
 
   const abandonmentSent = useRef(false);
+  const checkoutStartedSent = useRef(false);
   const orderItemsPayload = useMemo(
     () =>
       items.map((item) => ({
@@ -377,10 +384,25 @@ export default function Checkout() {
   }, [formRevision, hasConfiguredShippingSectors, sectorInput]);
 
   const canConfirmOrder = items.length > 0 && checkoutReadiness.canChoosePayment && Boolean(paymentMethod);
+  const selectedPaymentDetails = PAYMENT_METHODS.find((method) => method.label === paymentMethod);
 
   const updateCheckoutProgress = () => {
     setFormRevision((current) => current + 1);
   };
+
+  useEffect(() => {
+    if (checkoutStartedSent.current || items.length === 0) return;
+
+    checkoutStartedSent.current = true;
+    trackFacebookEvent("InitiateCheckout", {
+      content_ids: items.map((item) => String(item.product.id)),
+      content_name: items.map((item) => item.product.name).join(", "),
+      content_type: "product",
+      currency: "USD",
+      num_items: items.reduce((total, item) => total + item.quantity, 0),
+      value: cartTotal,
+    });
+  }, [cartTotal, items]);
 
   useEffect(() => {
     const handleAbandonment = () => {
@@ -971,9 +993,12 @@ export default function Checkout() {
           <h1 className="text-3xl font-serif font-black text-[#4A3362] sm:text-5xl">
             Finaliza tu pedido
           </h1>
+          <p className="mt-3 max-w-2xl text-sm font-bold leading-relaxed text-[#4A3362]/75 sm:text-base">
+            Pedido protegido, datos privados y confirmación directa con nuestro equipo antes de coordinar la entrega.
+          </p>
         </div>
 
-        <p className="mx-auto mb-5 max-w-2xl rounded-2xl border border-[#E5D7EF] bg-white px-4 py-3 text-center text-sm font-black text-[#4A3362] shadow-[0_12px_32px_rgba(74,51,98,0.06)] sm:text-base">
+        <p className="mx-auto mb-5 max-w-2xl rounded-2xl border border-[#E5D7EF] bg-white/95 px-4 py-3 text-center text-sm font-black text-[#4A3362] shadow-[0_12px_32px_rgba(74,51,98,0.06)] sm:text-base">
           Todo está en una sola página: tus datos, entrega, pago y resumen. Completa de arriba hacia abajo y confirma al final.
         </p>
         <div className="mx-auto mb-5 flex max-w-2xl flex-col items-center justify-between gap-3 rounded-2xl border border-[#25D366]/25 bg-[#F2FFF7] px-4 py-4 text-center shadow-[0_12px_32px_rgba(37,211,102,0.10)] sm:flex-row sm:text-left">
@@ -1000,7 +1025,7 @@ export default function Checkout() {
           {CHECKOUT_TRUST_BADGES.map(({ title, copy, Icon }) => (
             <div
               key={title}
-              className="rounded-2xl border border-[#E5D7EF] bg-white px-4 py-4 text-left shadow-[0_12px_32px_rgba(74,51,98,0.06)]"
+              className="rounded-2xl border border-[#E5D7EF] bg-white/95 px-4 py-4 text-left shadow-[0_12px_32px_rgba(74,51,98,0.06)] ring-1 ring-white/70"
             >
               <div className="mb-2 flex items-center gap-2 text-sm font-black uppercase tracking-[0.12em] text-[#4B1F6F]">
                 <Icon className="h-5 w-5 text-[#C6539B]" />
@@ -1082,6 +1107,9 @@ export default function Checkout() {
                     {isCartOpening ? <Loader2 className="h-5 w-5 animate-spin" /> : null}
                     {isCartOpening ? "Abriendo..." : "Ver / cambiar"}
                   </button>
+                </div>
+                <div className="mb-4 rounded-2xl border border-[#DCC5E8] bg-white px-4 py-3 text-sm font-black leading-relaxed text-[#4A3362]">
+                  Tu pedido queda registrado antes del pago para que no pierdas los datos si la pasarela tarda o se recarga.
                 </div>
 
                 <div className="flex gap-3 overflow-x-auto pb-2">
@@ -1495,6 +1523,16 @@ export default function Checkout() {
                       <p className="text-base font-black text-[#4A3362]">
                         Cuando completes los datos obligatorios podrás elegir Banco, Zelle, Payphone o PayPal.
                       </p>
+                    )}
+                    {selectedPaymentDetails && (
+                      <div className="mb-5 rounded-2xl border border-[#DCC5E8] bg-[#FBF7FD] px-4 py-3">
+                        <p className="text-xs font-black uppercase tracking-[0.14em] text-[#4B1F6F]">
+                          Siguiente paso seguro
+                        </p>
+                        <p className="mt-1 text-sm font-bold leading-relaxed text-[#4A3362] sm:text-base">
+                          {selectedPaymentDetails.nextStep}
+                        </p>
+                      </div>
                     )}
                     {paymentMethod === "Banco" && (
                       <>
