@@ -46,6 +46,39 @@
   line-height: 1.6;
 }
 
+.home-trust-banner {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  max-width: 52rem;
+  margin: 0 auto 2rem;
+  border: 1px solid rgb(122 81 150 / 0.16);
+  border-radius: 1.4rem;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(250, 241, 255, 0.9));
+  padding: 1.05rem 1.2rem;
+  box-shadow: 0 16px 40px rgba(74, 51, 98, 0.07);
+}
+
+.home-trust-pill {
+  display: inline-flex;
+  width: fit-content;
+  border-radius: 999px;
+  background: rgba(90, 63, 115, 0.1);
+  padding: 0.35rem 0.7rem;
+  color: var(--color-accent);
+  font-size: 0.73rem;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.home-trust-banner p {
+  margin: 0;
+  color: rgb(74 51 98 / 0.78);
+  font-size: 0.98rem;
+  line-height: 1.6;
+}
+
 .home-discovery-grid {
   display: grid;
   gap: 0.8rem;

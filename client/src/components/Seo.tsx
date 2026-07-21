@@ -37,10 +37,10 @@ export interface SeoManager {
 }
 
 export const DEFAULT_SEO_STATE: SeoState = {
-  title: "Flores en Guayaquil | Floreria Guayaquil a Domicilio | DIFIORI",
+  title: "Flores y Ramos a Domicilio en Guayaquil | DIFIORI",
   description:
-    "Flores en Guayaquil y floreria Guayaquil con pedidos a domicilio. Compra ramos, arreglos florales y regalos con entrega en Guayaquil.",
-  keywords: "flores en Guayaquil, floreria Guayaquil, flores a domicilio Guayaquil, pedidos de flores Guayaquil, arreglos florales Guayaquil",
+    "Compra flores frescas, ramos y arreglos florales en Guayaquil con entrega a domicilio, pagos seguros y atención rápida por WhatsApp.",
+  keywords: "flores en guayaquil, floreria guayaquil, ramos de flores guayaquil, arreglos florales guayaquil, flores a domicilio guayaquil",
   path: "/",
   robots: INDEXABLE_ROBOTS,
   image: DEFAULT_SEO_IMAGE,
@@ -129,6 +129,10 @@ export function renderSeoTags(state: SeoState) {
     `<meta name="format-detection" content="telephone=no" />`,
     `<meta name="referrer" content="strict-origin-when-cross-origin" />`,
     `<meta name="theme-color" content="#ffffff" />`,
+    `<meta name="geo.region" content="EC-G" />`,
+    `<meta name="geo.placename" content="Guayaquil" />`,
+    `<meta name="geo.position" content="-2.170998;-79.922359" />`,
+    `<meta name="ICBM" content="-2.170998, -79.922359" />`,
     `<meta itemprop="name" content="${escapedTitle}" />`,
     `<meta itemprop="description" content="${escapedDescription}" />`,
     `<meta itemprop="image" content="${escapedImageUrl}" />`,
@@ -242,7 +246,7 @@ export function Seo({
     const imageUrl = absoluteUrl(seoState.image);
 
     document.title = seoState.title;
-    document.documentElement.lang = "es";
+    document.documentElement.lang = seoState.locale.toLowerCase().replace("_", "-");
 
     upsertMeta("name", "description", seoState.description);
     if (seoState.keywords) {

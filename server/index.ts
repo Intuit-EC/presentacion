@@ -360,6 +360,16 @@ function buildPublicConfigScript() {
 }
 
 function getFallbackSeoState(path: string): SeoState {
+  if (path === "/") {
+    return {
+      ...DEFAULT_SEO_STATE,
+      title: "Flores y Ramos a Domicilio en Guayaquil | DIFIORI",
+      description: "Compra flores frescas, ramos y arreglos florales en Guayaquil con entrega a domicilio, pagos seguros y atención rápida por WhatsApp.",
+      keywords: "flores en guayaquil, floreria guayaquil, ramos de flores guayaquil, arreglos florales guayaquil, flores a domicilio guayaquil",
+      path,
+    };
+  }
+
   if (path === "/checkout") {
     return {
       ...DEFAULT_SEO_STATE,

@@ -267,9 +267,9 @@ export default function Home() {
   return (
     <main className="min-h-screen overflow-clip bg-background scroll-smooth selection:bg-accent selection:text-white">
       <Seo
-        title="Flores en Guayaquil | Floreria Guayaquil a Domicilio | DIFIORI"
-        description="Flores en Guayaquil y floreria Guayaquil con pedidos a domicilio. Compra ramos, arreglos florales y regalos con entrega en Guayaquil."
-        keywords="flores en Guayaquil, floreria Guayaquil, flores a domicilio Guayaquil, pedidos de flores Guayaquil, arreglos florales Guayaquil"
+        title="Flores y Ramos a Domicilio en Guayaquil | DIFIORI"
+        description="Compra flores frescas, ramos y arreglos florales en Guayaquil con entrega a domicilio, pagos seguros y atención rápida por WhatsApp."
+        keywords="flores en guayaquil, floreria guayaquil, ramos de flores guayaquil, arreglos florales guayaquil, flores a domicilio guayaquil"
         path="/"
         schema={homeSchema}
       />
@@ -282,9 +282,14 @@ export default function Home() {
       <div className="home-shell-main">
         <section className="home-discovery" aria-labelledby="home-discovery-title">
           <div className="home-discovery-heading">
-            <span className="home-discovery-kicker">Encuentra algo inolvidable</span>
-            <h2 id="home-discovery-title">¿Qué quieres hacer sentir hoy?</h2>
-            <p>Empieza por la ocasión. Nosotros te ayudamos a llegar al detalle perfecto.</p>
+            <span className="home-discovery-kicker">Confianza, estilo y entrega rápida</span>
+            <h2 id="home-discovery-title">Elige el detalle perfecto para tu momento</h2>
+            <p>Desde un ramo romántico hasta un arreglo elegante para una celebración, te guiamos para comprar con total seguridad y sin complicaciones.</p>
+          </div>
+
+          <div className="home-trust-banner" role="note">
+            <span className="home-trust-pill">Compra segura</span>
+            <p>Confirmamos tu pedido por WhatsApp, entregamos en Guayaquil y cuidamos cada detalle para que tu regalo llegue impecable.</p>
           </div>
 
           <div className="home-discovery-grid">

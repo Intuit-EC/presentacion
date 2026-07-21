@@ -143,7 +143,7 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
             </span>
           </div>
           <p className="rounded-2xl bg-[#FBF7FD] px-3 py-2 text-center text-[11px] font-bold leading-relaxed text-[#4A3362]/80">
-            Confirmamos tu pedido por WhatsApp antes del despacho.
+            Confirmamos tu pedido por WhatsApp y lo coordinamos con entrega en Guayaquil.
           </p>
           <button type="button" onClick={handleBuyNow} disabled={isBuying} className="ui-btn-primary w-full">
             {isBuying ? (
@@ -151,7 +151,7 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
             ) : (
               <ShoppingBag className="h-4 w-4" />
             )}
-            {isBuying ? "Cargando..." : "Comprar Ahora"}
+            {isBuying ? "Cargando..." : "Comprar ahora"}
           </button>
           <a
             href={`https://wa.me/${DEFAULT_COMPANY.phoneDigits}?text=Hola!%20Me%20interesa%20el%20producto%20${encodeURIComponent(product.name)}`}

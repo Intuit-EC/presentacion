@@ -8,9 +8,9 @@ import "./banner.css";
 const FIXED_BANNER = {
   mobileImage: "/assets/banner_collage_mobile.webp",
   desktopImage: "/assets/banner_collage_desktop.webp",
-  title: "Sorprende hoy. Nosotros lo entregamos por ti.",
-  subtitle: "Flores frescas, entrega en Guayaquil y una dedicatoria hecha para esa persona especial.",
-  cta: "Elegir mi regalo",
+  title: "Regala una emoción que se recuerda.",
+  subtitle: "Entregamos flores frescas, ramos y arreglos florales en Guayaquil con confirmación rápida por WhatsApp.",
+  cta: "Comprar ahora",
   href: "/#catalogo",
 };
 
@@ -184,8 +184,9 @@ export function Banner({ onProductsClick }: BannerProps) {
               </p>
 
               <div className="hero-banner-proof" aria-label="Beneficios de compra">
-                <span><Check className="h-4 w-4" /> Flores seleccionadas</span>
-                <span><Check className="h-4 w-4" /> Compra segura</span>
+                <span><Check className="h-4 w-4" /> Flores frescas</span>
+                <span><Check className="h-4 w-4" /> Entrega confiable</span>
+                <span><Check className="h-4 w-4" /> Confirmación por WhatsApp</span>
               </div>
 
               <div className="hero-banner-actions">
@@ -205,7 +206,7 @@ export function Banner({ onProductsClick }: BannerProps) {
                   className="hero-banner-btn hero-banner-btn-whatsapp"
                 >
                   <MessageCircle className="h-5 w-5 sm:h-6 sm:w-6" />
-                  Ayúdame a elegir
+                  Hablar por WhatsApp
                 </a>
               </div>
             </div>

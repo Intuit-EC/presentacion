@@ -44,8 +44,8 @@ export function HomeDeferredSections() {
         <div className="home-testimonials-accent" />
 
         <div className="home-deferred-heading">
-          <h2 className="section-title">Lo que dicen de nosotros</h2>
-          <p className="section-copy">Tu satisfaccion es nuestra mayor recompensa.</p>
+          <h2 className="section-title">Lo que dicen quienes eligieron DIFIORI</h2>
+          <p className="section-copy">Compras seguras, entregas puntuales y detalles que dejan una impresión duradera.</p>
         </div>
         <div className="home-deferred-action">
           <button type="button" onClick={() => setShowForm(!showForm)} className="ui-btn-primary">
