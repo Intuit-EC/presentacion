@@ -50,7 +50,7 @@ export function HomeCatalogSection() {
         <div id="catalogo" className="home-catalog-header">
           <div className="home-catalog-line" />
           <h2 className="home-catalog-title">
-            Elige el detalle perfecto
+            Colecciones pensadas para sorprender
           </h2>
           <div className="home-catalog-line" />
         </div>
@@ -67,7 +67,7 @@ export function HomeCatalogSection() {
                   <div>
                     <h2 className="home-catalog-group-title">{section.label}</h2>
                     <p className="home-catalog-group-copy">
-                      Opciones favoritas de {section.label.toLowerCase()} listas para sorprender en Guayaquil.
+                      Opciones favoritas de {section.label.toLowerCase()} preparadas para regalar con estilo en Guayaquil.
                     </p>
                   </div>
                   <Link href={section.href} className="ui-btn-secondary home-catalog-cta">
@@ -95,7 +95,7 @@ export function HomeCatalogSection() {
 
         <div className="home-catalog-footer">
           <Link href="/shop" className="ui-btn-secondary home-catalog-all">
-            Ver Coleccion Completa
+            Ver colección completa
           </Link>
         </div>
       </main>

@@ -11,7 +11,7 @@ const landingPages = {
     path: "/flores-guayaquil",
     title: "Flores en Guayaquil | Flores a Domicilio | DIFIORI",
     description:
-      "Compra flores en Guayaquil con pedidos a domicilio. DIFIORI entrega ramos de flores, arreglos florales y regalos en Guayaquil.",
+      "Compra flores frescas y ramos de flores en Guayaquil con entrega a domicilio, atención personalizada y opciones ideales para regalar.",
     keywords: "flores en Guayaquil, flores a domicilio Guayaquil, arreglos florales Guayaquil, comprar flores Guayaquil, pedidos de flores Guayaquil",
     h1: "Flores en Guayaquil",
     intro:
@@ -23,7 +23,7 @@ const landingPages = {
     path: "/floreria-guayaquil",
     title: "Floreria Guayaquil | Pedidos a Domicilio | DIFIORI",
     description:
-      "Floreria Guayaquil con pedidos a domicilio. En DIFIORI compra flores, ramos, arreglos florales y regalos con entrega en Guayaquil.",
+      "Florería Guayaquil con pedidos a domicilio, arreglos florales premium y atención directa para enviar un detalle elegante en pocos minutos.",
     keywords: "floreria Guayaquil, floreria en Guayaquil, flores en Guayaquil, flores a domicilio Guayaquil, ramos de flores Guayaquil",
     h1: "Floreria Guayaquil",
     intro:
@@ -47,7 +47,7 @@ const landingPages = {
     path: "/ramos-de-flores",
     title: "Ramos de Flores en Guayaquil | Ramos a Domicilio | DIFIORI",
     description:
-      "Encuentra ramos de flores en Guayaquil para cumpleanos, aniversarios y regalos romanticos. DIFIORI entrega ramos y arreglos florales a domicilio.",
+      "Encuentra ramos de flores en Guayaquil para cumpleaños, aniversarios y regalos románticos con entrega a domicilio y diseño elegante.",
     keywords: "ramos de flores, ramos de flores Guayaquil, ramos a domicilio Guayaquil, ramos de rosas Guayaquil",
     h1: "Ramos de flores",
     intro:
@@ -59,7 +59,7 @@ const landingPages = {
     path: "/arreglos-de-flores-guayaquil",
     title: "Arreglos de Flores en Guayaquil | Entrega a Domicilio | DIFIORI",
     description:
-      "Compra arreglos de flores en Guayaquil con entrega a domicilio. DIFIORI prepara arreglos florales, ramos y regalos para ocasiones especiales.",
+      "Compra arreglos de flores en Guayaquil con entrega a domicilio, diseño premium y opciones ideales para cumpleaños, amor y celebraciones especiales.",
     keywords: "arreglos de flores en Guayaquil, arreglos florales Guayaquil, arreglos de flores a domicilio Guayaquil, floreria Guayaquil",
     h1: "Arreglos de flores en Guayaquil",
     intro:

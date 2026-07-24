@@ -1,5 +1,5 @@
 import React, { Suspense, lazy, useEffect, useRef, useState } from "react";
-import { ArrowRight, CalendarHeart, Gift, Heart, Sparkles } from "lucide-react";
+import { ArrowRight, CalendarHeart, CheckCircle2, Clock3, Gift, Heart, MessageCircleMore, ShieldCheck, Sparkles } from "lucide-react";
 import { Banner } from "@/components/Banner";
 import { Seo } from "@/components/Seo";
 import { FAQS } from "@/data/mock";
@@ -226,18 +226,41 @@ export default function Home() {
         telephone: `+${DEFAULT_COMPANY.phoneDigits}`,
         email: DEFAULT_COMPANY.email,
         priceRange: "$$",
-        description: "Flores en Guayaquil y floreria Guayaquil con pedidos a domicilio. DIFIORI prepara ramos, arreglos florales y regalos para entrega en Guayaquil.",
+        description: "DIFIORI ofrece flores frescas, ramos de flores y arreglos florales a domicilio en Guayaquil con atención personalizada y pagos seguros.",
         address: {
           "@type": "PostalAddress",
           addressLocality: "Guayaquil",
           addressCountry: "EC",
         },
         areaServed: ["Guayaquil"],
+        paymentAccepted: "Cash, Credit Card, Transfer",
+        currenciesAccepted: "USD",
+        serviceArea: { "@type": "PostalAddress", addressLocality: "Guayaquil" },
         makesOffer: [
-          { "@type": "Offer", itemOffered: { "@type": "Product", name: "Flores en Guayaquil" } },
-          { "@type": "Offer", itemOffered: { "@type": "Product", name: "Ramos de flores" } },
-          { "@type": "Offer", itemOffered: { "@type": "Product", name: "Arreglos florales a domicilio" } },
+          { "@type": "Offer", itemOffered: { "@type": "Product", name: "Flores para regalar en Guayaquil" } },
+          { "@type": "Offer", itemOffered: { "@type": "Product", name: "Ramos de flores a domicilio" } },
+          { "@type": "Offer", itemOffered: { "@type": "Product", name: "Arreglos florales premium" } },
         ],
+      },
+      {
+        "@type": "LocalBusiness",
+        "@id": `${canonicalUrl("/")}#localbusiness`,
+        name: "DIFIORI",
+        url: canonicalUrl("/"),
+        image: absoluteUrl("/opengraph.jpg"),
+        telephone: `+${DEFAULT_COMPANY.phoneDigits}`,
+        address: {
+          "@type": "PostalAddress",
+          addressLocality: "Guayaquil",
+          addressCountry: "EC",
+        },
+        priceRange: "$$",
+        openingHoursSpecification: {
+          "@type": "OpeningHoursSpecification",
+          dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+          opens: "08:00",
+          closes: "20:00",
+        },
       },
       {
         "@type": "WebSite",
@@ -267,9 +290,9 @@ export default function Home() {
   return (
     <main className="min-h-screen overflow-clip bg-background scroll-smooth selection:bg-accent selection:text-white">
       <Seo
-        title="Flores y Ramos a Domicilio en Guayaquil | DIFIORI"
-        description="Compra flores frescas, ramos y arreglos florales en Guayaquil con entrega a domicilio, pagos seguros y atención rápida por WhatsApp."
-        keywords="flores en guayaquil, floreria guayaquil, ramos de flores guayaquil, arreglos florales guayaquil, flores a domicilio guayaquil"
+        title="Flores para Regalar en Guayaquil | Ramos y Arreglos a Domicilio | DIFIORI"
+        description="Compra flores frescas, ramos románticos y arreglos florales premium en Guayaquil con entrega a domicilio, pagos seguros y atención personalizada por WhatsApp."
+        keywords="flores para regalar guayaquil, flores en guayaquil, floreria guayaquil, ramos de flores guayaquil, arreglos florales guayaquil, regalos para sorprender guayaquil"
         path="/"
         schema={homeSchema}
       />
@@ -292,6 +315,24 @@ export default function Home() {
             <p>Confirmamos tu pedido por WhatsApp, entregamos en Guayaquil y cuidamos cada detalle para que tu regalo llegue impecable.</p>
           </div>
 
+          <div className="home-benefits" aria-label="Por qué elegir DIFIORI">
+            <article className="home-benefit-card">
+              <div className="home-benefit-icon"><CheckCircle2 aria-hidden="true" /></div>
+              <h3>Flores frescas y cuidadas</h3>
+              <p>Selección premium para que cada detalle se vea elegante desde el primer instante.</p>
+            </article>
+            <article className="home-benefit-card">
+              <div className="home-benefit-icon"><Clock3 aria-hidden="true" /></div>
+              <h3>Entrega ágil en Guayaquil</h3>
+              <p>Coordinamos entregas con rapidez para que tu sorpresa llegue a tiempo.</p>
+            </article>
+            <article className="home-benefit-card">
+              <div className="home-benefit-icon"><ShieldCheck aria-hidden="true" /></div>
+              <h3>Compra con confianza</h3>
+              <p>Pago seguro, atención cercana y confirmación personal antes del despacho.</p>
+            </article>
+          </div>
+
           <div className="home-discovery-grid">
             <a href="/flores-guayaquil" className="home-discovery-card">
               <span className="home-discovery-icon"><Heart aria-hidden="true" /></span>
@@ -310,11 +351,23 @@ export default function Home() {
             </a>
             <a href="/#catalogo" className="home-discovery-card home-discovery-card-accent">
               <span className="home-discovery-icon"><Sparkles aria-hidden="true" /></span>
-              <span><strong>Explorar todo</strong><small>Déjate inspirar por DIFIORI</small></span>
+              <span><strong>Explorar todo</strong><small>Descubre opciones ideales para regalar</small></span>
               <ArrowRight aria-hidden="true" />
             </a>
           </div>
         </section>
+
+        <div className="home-conversion-cta" role="note">
+          <div>
+            <p className="home-conversion-kicker">Asesoría rápida</p>
+            <h2>¿No sabes qué elegir?</h2>
+            <p>Te ayudamos a encontrar un regalo elegante y adecuado para la ocasión.</p>
+          </div>
+          <a href={`https://wa.me/${DEFAULT_COMPANY.phoneDigits}?text=${encodeURIComponent("Hola, necesito ayuda para elegir un detalle floral perfecto.")}`} target="_blank" rel="noreferrer" className="ui-btn-primary">
+            <MessageCircleMore className="h-4 w-4" />
+            Pedir asesoría
+          </a>
+        </div>
 
         <div
           ref={catalogTriggerRef}
