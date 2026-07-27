@@ -4,6 +4,7 @@ import { Banner } from "@/components/Banner";
 import { Seo } from "@/components/Seo";
 import { FAQS } from "@/data/mock";
 import { DEFAULT_COMPANY, absoluteUrl, canonicalUrl } from "@/lib/site";
+import { getMerchantOrganizationSchema } from "@/lib/merchant-seo";
 import "./home-shell.css";
 
 const HomeCatalogSection = lazy(() =>
@@ -218,24 +219,7 @@ export default function Home() {
     "@context": "https://schema.org",
     "@graph": [
       {
-        "@type": "Florist",
-        "@id": `${canonicalUrl("/")}#organization`,
-        name: "DIFIORI",
-        url: canonicalUrl("/"),
-        image: absoluteUrl("/opengraph.jpg"),
-        telephone: `+${DEFAULT_COMPANY.phoneDigits}`,
-        email: DEFAULT_COMPANY.email,
-        priceRange: "$$",
-        description: "DIFIORI ofrece flores frescas, ramos de flores y arreglos florales a domicilio en Guayaquil con atención personalizada y pagos seguros.",
-        address: {
-          "@type": "PostalAddress",
-          addressLocality: "Guayaquil",
-          addressCountry: "EC",
-        },
-        areaServed: ["Guayaquil"],
-        paymentAccepted: "Cash, Credit Card, Transfer",
-        currenciesAccepted: "USD",
-        serviceArea: { "@type": "PostalAddress", addressLocality: "Guayaquil" },
+        ...getMerchantOrganizationSchema(),
         makesOffer: [
           { "@type": "Offer", itemOffered: { "@type": "Product", name: "Flores para regalar en Guayaquil" } },
           { "@type": "Offer", itemOffered: { "@type": "Product", name: "Ramos de flores a domicilio" } },

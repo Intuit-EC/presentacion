@@ -963,10 +963,7 @@ app.get("/robots.txt", (_req, res) => {
     "Disallow: /payment-result",
     "Disallow: /admin",
     "Disallow: /v2",
-    "Disallow: /?*",
-    "",
-    "User-agent: Googlebot",
-    "Allow: /",
+    "Disallow: /*?*",
     "",
     `Sitemap: ${buildSiteUrl("/sitemap.xml")}`,
   ].join("\n"));

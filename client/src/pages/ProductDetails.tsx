@@ -11,6 +11,12 @@ import { useToast } from "@/hooks/use-toast";
 import { Seo } from "@/components/Seo";
 import { DEFAULT_COMPANY, absoluteUrl, canonicalUrl } from "@/lib/site";
 import {
+  MERCHANT_ORGANIZATION_ID,
+  getMerchantOrganizationSchema,
+  getMerchantReturnPolicySchema,
+  getOfferShippingDetailsSchema,
+} from "@/lib/merchant-seo";
+import {
   Breadcrumb,
   BreadcrumbItem,
   BreadcrumbList,
@@ -176,12 +182,14 @@ export default function ProductDetails() {
           price: priceValue,
           availability: "https://schema.org/InStock",
           itemCondition: "https://schema.org/NewCondition",
+          shippingDetails: getOfferShippingDetailsSchema(),
+          hasMerchantReturnPolicy: getMerchantReturnPolicySchema(),
           seller: {
-            "@type": "Organization",
-            name: "DIFIORI",
+            "@id": MERCHANT_ORGANIZATION_ID,
           },
         },
       },
+      getMerchantOrganizationSchema(),
       {
         "@type": "BreadcrumbList",
         itemListElement: [

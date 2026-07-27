@@ -35,7 +35,7 @@ const checks: SmokeCheck[] = [
   {
     name: "Robots",
     path: "/robots.txt",
-    mustContain: ["User-agent", "Sitemap:"],
+    mustContain: ["User-agent", "Disallow: /*?*", "Sitemap:"],
   },
   {
     name: "Checkout operativo",
