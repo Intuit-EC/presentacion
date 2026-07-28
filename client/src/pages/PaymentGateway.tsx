@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { Loader2, AlertCircle } from "lucide-react";
+import { Loader2, AlertCircle, ShieldCheck, CreditCard, MessageSquare } from "lucide-react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { Seo } from "@/components/Seo";
+import { DEFAULT_COMPANY } from "@/lib/site";
 
 declare global {
   interface Window {
@@ -227,17 +228,20 @@ export default function PaymentGateway() {
 
   if (gatewayState === "preparing") {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center px-6">
+      <div className="min-h-screen bg-[#FBF7FD] flex items-center justify-center px-6">
         <Seo
           title="Preparando pago | DIFIORI"
           description="Preparando el botón de pago PayPhone."
           path="/payment-gateway"
           robots="noindex, nofollow"
         />
-        <div className="text-center text-foreground max-w-md">
-          <Loader2 className="w-16 h-16 animate-spin mx-auto mb-4 text-accent" />
-          <h2 className="text-3xl font-serif font-bold mb-3">Preparando tu pago</h2>
-          <p className="text-foreground/70">Generando la sesión segura. Esto puede tardar unos segundos.</p>
+        <div className="rounded-[2rem] border border-[#E5D7EF] bg-white p-8 text-center text-[#4A3362] shadow-[0_22px_58px_rgba(74,51,98,0.09)] max-w-md">
+          <Loader2 className="w-16 h-16 animate-spin mx-auto mb-4 text-[#C6539B]" />
+          <h2 className="text-3xl font-serif font-black mb-3">Preparando tu pago seguro</h2>
+          <p className="text-[#4A3362]/75 font-bold">Estamos generando la sesión protegida. Normalmente toma pocos segundos.</p>
+          <div className="mt-5 rounded-2xl bg-[#FBF7FD] px-4 py-3 text-sm font-black">
+            No actualices la página; tus datos del pedido ya están guardados.
+          </div>
         </div>
       </div>
     );
@@ -245,7 +249,7 @@ export default function PaymentGateway() {
 
   if (gatewayState === "error") {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center px-6">
+      <div className="min-h-screen bg-[#FBF7FD] flex items-center justify-center px-6">
         <Seo
           title="Error de pago | DIFIORI"
           description="No se pudo preparar el Payment Box."
@@ -255,7 +259,7 @@ export default function PaymentGateway() {
         <motion.div
           initial={{ opacity: 0, scale: 0.96 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="bg-white p-10 rounded-[2.5rem] shadow-2xl border border-red-500/20 text-center max-w-lg w-full"
+          className="bg-white p-8 sm:p-10 rounded-[2.5rem] shadow-2xl border border-red-500/20 text-center max-w-lg w-full"
         >
           <AlertCircle className="w-20 h-20 text-red-400 mx-auto mb-5" />
           <h2 className="text-3xl font-serif font-bold text-foreground mb-3">No se pudo iniciar el pago</h2>
@@ -267,6 +271,15 @@ export default function PaymentGateway() {
             >
               Reintentar pago
             </button>
+            <a
+              href={`https://wa.me/${DEFAULT_COMPANY.phoneDigits}?text=${encodeURIComponent("Hola, necesito ayuda con mi pago DIFIORI.")}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full inline-flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#1ebe5d] text-white py-4 rounded-3xl font-black text-base transition-all shadow-xl"
+            >
+              <MessageSquare className="h-4 w-4" />
+              Ayuda por WhatsApp
+            </a>
             <button
               onClick={goBackToCheckout}
               className="w-full border border-accent/25 text-accent py-4 rounded-3xl font-bold text-sm transition-all hover:bg-primary/30"
@@ -280,7 +293,7 @@ export default function PaymentGateway() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center px-6 py-12">
+    <div className="min-h-screen bg-[#FBF7FD] flex items-center justify-center px-6 py-12">
       <Seo
         title="Pago con tarjeta | DIFIORI"
         description="Completa tu pago con PayPhone."
@@ -290,14 +303,25 @@ export default function PaymentGateway() {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-white p-6 sm:p-10 rounded-[2.5rem] shadow-2xl border border-primary w-full max-w-2xl"
+        className="bg-white p-6 sm:p-10 rounded-[2.5rem] shadow-2xl border border-[#E5D7EF] w-full max-w-2xl"
       >
-        <div className="text-center text-foreground mb-8">
-          <h1 className="text-3xl font-serif font-bold mb-2">Pago con tarjeta</h1>
-          <p className="text-foreground/70">
-            Completa tu pago con PayPhone desde esta misma página.
+        <div className="text-center text-[#4A3362] mb-8">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#4B1F6F] text-white shadow-lg shadow-[#4B1F6F]/20">
+            <CreditCard className="h-7 w-7" />
+          </div>
+          <h1 className="text-3xl font-serif font-black mb-2">Pago con tarjeta</h1>
+          <p className="text-[#4A3362]/75 font-bold">
+            Completa tu pago con PayPhone desde esta página protegida.
           </p>
-          {reference ? <p className="text-[#D8C3F0] font-semibold mt-4">{reference}</p> : null}
+          <div className="mt-5 grid gap-2 sm:grid-cols-3">
+            {["Sesión segura", "Pedido guardado", "Soporte DIFIORI"].map((label) => (
+              <span key={label} className="inline-flex items-center justify-center gap-1.5 rounded-full border border-[#E5D7EF] bg-[#FBF7FD] px-3 py-2 text-xs font-black text-[#4B1F6F]">
+                <ShieldCheck className="h-3.5 w-3.5 text-[#C6539B]" />
+                {label}
+              </span>
+            ))}
+          </div>
+          {reference ? <p className="text-[#4B1F6F] font-black mt-4">{reference}</p> : null}
           {clientTransactionId ? (
             <p className="text-foreground/45 text-xs mt-1 break-all">{clientTransactionId}</p>
           ) : null}
@@ -308,7 +332,7 @@ export default function PaymentGateway() {
             <div className="absolute inset-0 z-10 flex min-h-[180px] flex-col items-center justify-center rounded-2xl bg-white text-center">
               <Loader2 className="mb-3 h-10 w-10 animate-spin text-accent" />
               <p className="font-bold text-foreground">Cargando formulario seguro…</p>
-              <p className="mt-1 text-sm text-foreground/60">No actualices ni cierres esta página.</p>
+              <p className="mt-1 text-sm text-foreground/60">La sesión ya fue creada; esperamos a PayPhone.</p>
             </div>
           ) : null}
           <div id="pp-button" className="min-h-[180px]" />

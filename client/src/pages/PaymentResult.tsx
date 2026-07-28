@@ -1,10 +1,11 @@
 import { useEffect, useState, useRef } from "react";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
-import { CheckCircle, XCircle, Loader2 } from "lucide-react";
+import { CheckCircle, XCircle, Loader2, MessageSquare, ShieldCheck } from "lucide-react";
 import { Seo } from "@/components/Seo";
 import { useCart } from "@/context/CartContext";
 import { apiUrl } from "@/lib/api-url";
+import { DEFAULT_COMPANY } from "@/lib/site";
 
 type ResultStatus = "loading" | "success" | "failed" | "cancelled" | "error";
 
@@ -189,17 +190,20 @@ export default function PaymentResult() {
 
   if (status === "loading") {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center px-6">
+      <div className="min-h-screen bg-[#FBF7FD] flex items-center justify-center px-6">
         <Seo
           title="Resultado de pago | DIFIORI"
           description="Resultado del proceso de pago."
           path="/payment-result"
           robots="noindex, nofollow"
         />
-        <div className="text-center text-foreground">
-          <Loader2 className="w-16 h-16 animate-spin mx-auto mb-4 text-accent" />
-          <p className="font-bold text-lg">Confirmando tu pago...</p>
-          <p className="text-foreground/60 text-sm mt-2">Por favor no cierres esta ventana</p>
+        <div className="rounded-[2rem] border border-[#E5D7EF] bg-white p-8 text-center text-[#4A3362] shadow-[0_22px_58px_rgba(74,51,98,0.09)]">
+          <Loader2 className="w-16 h-16 animate-spin mx-auto mb-4 text-[#C6539B]" />
+          <p className="font-black text-lg">Confirmando tu pago...</p>
+          <p className="text-[#4A3362]/70 text-sm mt-2 font-bold">Por favor no cierres esta ventana.</p>
+          <p className="mt-4 rounded-2xl bg-[#FBF7FD] px-4 py-3 text-xs font-black text-[#4A3362]">
+            Estamos validando la transacción y protegiendo tu pedido.
+          </p>
         </div>
       </div>
     );
@@ -245,7 +249,7 @@ export default function PaymentResult() {
 
   if (status === "cancelled") {
     return (
-      <div className="min-h-screen bg-[#3D2852] flex items-center justify-center px-6">
+      <div className="min-h-screen bg-[#FBF7FD] flex items-center justify-center px-6">
         <Seo
           title="Pago cancelado | DIFIORI"
           description="Resultado del proceso de pago."
@@ -255,12 +259,12 @@ export default function PaymentResult() {
         <motion.div
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="bg-[#2A1B38]/80 backdrop-blur-3xl p-14 rounded-[3rem] shadow-2xl border-2 border-[#5A3F73]/40 text-center max-w-lg w-full"
+          className="bg-white p-8 sm:p-12 rounded-[2.5rem] shadow-2xl border border-[#E5D7EF] text-center max-w-lg w-full"
         >
           <XCircle className="w-24 h-24 text-yellow-400 mx-auto mb-6" />
-          <h2 className="text-3xl font-serif font-bold text-[#E6E6E6] mb-3">Pago cancelado</h2>
-          <p className="text-[#E6E6E6]/60 text-sm mb-8">
-            Cancelaste el proceso de pago. Tu pedido no fue completado.
+          <h2 className="text-3xl font-serif font-black text-[#4A3362] mb-3">Pago cancelado</h2>
+          <p className="text-[#4A3362]/70 text-sm font-bold mb-8">
+            Cancelaste el proceso de pago. Puedes volver al checkout y elegir otro método sin iniciar desde cero.
           </p>
           <Link href="/checkout">
             <button className="w-full bg-[#5A3F73] hover:bg-[#4A3362] text-white py-5 rounded-3xl font-black text-base transition-all shadow-xl">
@@ -274,7 +278,7 @@ export default function PaymentResult() {
 
   // failed o error
   return (
-    <div className="min-h-screen bg-[#3D2852] flex items-center justify-center px-6">
+    <div className="min-h-screen bg-[#FBF7FD] flex items-center justify-center px-6">
       <Seo
         title="Error de pago | DIFIORI"
         description="Resultado del proceso de pago."
@@ -284,18 +288,22 @@ export default function PaymentResult() {
       <motion.div
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="bg-[#2A1B38]/80 backdrop-blur-3xl p-14 rounded-[3rem] shadow-2xl border-2 border-red-500/30 text-center max-w-lg w-full"
+        className="bg-white p-8 sm:p-12 rounded-[2.5rem] shadow-2xl border border-red-500/20 text-center max-w-lg w-full"
       >
         <XCircle className="w-24 h-24 text-red-400 mx-auto mb-6" />
-        <h2 className="text-3xl font-serif font-bold text-[#E6E6E6] mb-3">
+        <h2 className="text-3xl font-serif font-black text-[#4A3362] mb-3">
           {status === "failed" ? "Pago rechazado" : "Error en el pago"}
         </h2>
-        <p className="text-[#E6E6E6]/60 text-sm mb-8">
+        <p className="text-[#4A3362]/70 text-sm font-bold mb-6">
           {status === "failed" ? (
             resultMessage || "Tu tarjeta fue rechazada. Verifica los datos o intenta con otra tarjeta."
           ) : (
             resultMessage || "Ocurrió un error al procesar el pago. Por favor contáctanos."
           )}
+        </p>
+        <p className="mb-8 inline-flex items-center justify-center gap-2 rounded-2xl bg-[#FBF7FD] px-4 py-3 text-xs font-black text-[#4A3362]">
+          <ShieldCheck className="h-4 w-4 text-[#C6539B]" />
+          Tu pedido no se pierde; podemos ayudarte a terminarlo.
         </p>
         <div className="flex flex-col gap-3">
           <Link href="/checkout">
@@ -303,8 +311,17 @@ export default function PaymentResult() {
               Intentar de nuevo
             </button>
           </Link>
+          <a
+            href={`https://wa.me/${DEFAULT_COMPANY.phoneDigits}?text=${encodeURIComponent("Hola, necesito ayuda para finalizar mi pago DIFIORI.")}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full inline-flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#1ebe5d] text-white py-5 rounded-3xl font-black text-base transition-all shadow-xl"
+          >
+            <MessageSquare className="h-4 w-4" />
+            Ayuda por WhatsApp
+          </a>
           <Link href="/">
-            <button className="w-full bg-transparent border border-[#5A3F73]/40 text-[#E6E6E6]/60 py-4 rounded-3xl font-bold text-sm transition-all hover:border-[#5A3F73]">
+            <button className="w-full bg-transparent border border-[#5A3F73]/25 text-[#4A3362] py-4 rounded-3xl font-bold text-sm transition-all hover:border-[#5A3F73]">
               Volver a la tienda
             </button>
           </Link>

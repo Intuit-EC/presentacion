@@ -40,6 +40,9 @@ type CheckoutFocusable = HTMLInputElement | HTMLTextAreaElement | HTMLSelectElem
 
 const CHECKOUT_REQUEST_TIMEOUT_MS = 30000;
 const PAYPAL_PROOF_UPLOAD_TIMEOUT_MS = 20000;
+const PAYPHONE_SDK_ORIGIN = "https://cdn.payphonetodoesposible.com";
+const PAYPHONE_SDK_URL = `${PAYPHONE_SDK_ORIGIN}/box/v1.1/payphone-payment-box.js`;
+const PAYPHONE_CSS_URL = `${PAYPHONE_SDK_ORIGIN}/box/v1.1/payphone-payment-box.css`;
 
 async function fetchJsonWithTimeout(
   input: RequestInfo | URL,
@@ -105,6 +108,22 @@ function normalizeSectorName(value: string) {
     .trim()
     .toLowerCase()
     .replace(/\s+/g, " ");
+}
+
+function prewarmExternalResource(rel: "preconnect" | "dns-prefetch" | "preload", href: string, as?: "script" | "style") {
+  if (typeof document === "undefined") return;
+
+  const selector = as
+    ? `link[rel="${rel}"][href="${href}"][as="${as}"]`
+    : `link[rel="${rel}"][href="${href}"]`;
+  if (document.head.querySelector(selector)) return;
+
+  const link = document.createElement("link");
+  link.rel = rel;
+  link.href = href;
+  if (as) link.as = as;
+  link.crossOrigin = "anonymous";
+  document.head.appendChild(link);
 }
 
 const CHECKOUT_STEPS: {
@@ -479,6 +498,15 @@ export default function Checkout() {
       setPaymentMethod("");
     }
   }, [checkoutReadiness.canChoosePayment, paymentMethod]);
+
+  useEffect(() => {
+    if (paymentMethod !== "Payphone") return;
+
+    prewarmExternalResource("preconnect", PAYPHONE_SDK_ORIGIN);
+    prewarmExternalResource("dns-prefetch", PAYPHONE_SDK_ORIGIN);
+    prewarmExternalResource("preload", PAYPHONE_SDK_URL, "script");
+    prewarmExternalResource("preload", PAYPHONE_CSS_URL, "style");
+  }, [paymentMethod]);
 
   const cartSubtotal = cartTotal;
   const shippingCost = shippingResolution.cost;
