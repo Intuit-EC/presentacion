@@ -287,6 +287,15 @@ export default function Home() {
       </section>
 
       <div className="home-shell-main">
+        <div
+          ref={catalogTriggerRef}
+          style={{ minHeight: 1 }}
+          aria-hidden="true"
+        />
+        <Suspense fallback={<CatalogFallback />}>
+          {shouldLoadCatalog ? <HomeCatalogSection /> : <CatalogFallback />}
+        </Suspense>
+
         <section className="home-discovery" aria-labelledby="home-discovery-title">
           <div className="home-discovery-heading">
             <span className="home-discovery-kicker">Confianza, estilo y entrega rápida</span>
@@ -352,16 +361,6 @@ export default function Home() {
             Pedir asesoría
           </a>
         </div>
-
-        <div
-          ref={catalogTriggerRef}
-          id="catalogo"
-          style={{ minHeight: 1 }}
-          aria-hidden="true"
-        />
-        <Suspense fallback={<CatalogFallback />}>
-          {shouldLoadCatalog ? <HomeCatalogSection /> : <CatalogFallback />}
-        </Suspense>
 
         <section className="home-guide" aria-label="Explora nuestras colecciones">
           <a href="/flores-guayaquil" className="home-guide-card">

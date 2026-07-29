@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, X, ArrowRight, Sparkles } from "lucide-react";
 import { useProducts } from "@/hooks/useProducts";
@@ -12,16 +12,29 @@ interface SearchOverlayProps {
 
 export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
   const [query, setQuery] = useState("");
-  const { data: allProducts = [] } = useProducts();
+  const { data: allProducts = [], isLoading, isError } = useProducts();
   const [, setLocation] = useLocation();
 
+  const normalizedQuery = normalizeSearchText(query);
+
   // Filtrado de productos en tiempo real
-  const filteredProducts = query.trim() === "" 
-    ? [] 
-    : allProducts.filter(p => 
-        p.name.toLowerCase().includes(query.toLowerCase()) || 
-        p.category?.toLowerCase().includes(query.toLowerCase())
-      ).slice(0, 6);
+  const filteredProducts = useMemo(() => {
+    if (!normalizedQuery) return [];
+
+    return allProducts
+      .filter((product) => {
+        const searchableText = normalizeSearchText([
+          product.name,
+          product.category,
+          product.description,
+          product.price,
+          formatCategoryDisplayName(product.category),
+        ].filter(Boolean).join(" "));
+
+        return searchableText.includes(normalizedQuery);
+      })
+      .slice(0, 8);
+  }, [allProducts, normalizedQuery]);
 
   // Bloquear scroll cuando está abierto
   useEffect(() => {
@@ -55,6 +68,11 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
   const handleSelectProduct = (productPath: string) => {
     onClose();
     setLocation(productPath);
+  };
+
+  const handleGoToCatalog = () => {
+    onClose();
+    window.location.href = "/#catalogo";
   };
 
   return (
@@ -92,7 +110,7 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
                   placeholder="¿Qué arreglo buscas hoy?..."
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  className="w-full bg-transparent text-4xl md:text-6xl font-serif text-foreground outline-none placeholder:text-foreground/20"
+                  className="w-full bg-transparent text-3xl md:text-6xl font-serif text-foreground outline-none placeholder:text-foreground/20"
                 />
               </div>
             </div>
@@ -100,7 +118,24 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
             {/* Results Area */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
               <AnimatePresence mode="popLayout">
-                {filteredProducts.map((product) => (
+                {isLoading && normalizedQuery ? (
+                  <div className="col-span-full rounded-[2rem] border border-primary/50 bg-white p-8 text-center shadow-sm">
+                    <p className="text-[#5A3F73] text-sm font-black uppercase tracking-[0.18em]">Buscando productos...</p>
+                    <p className="mt-2 text-foreground/60 text-sm font-bold">Estamos cargando el catálogo DIFIORI.</p>
+                  </div>
+                ) : null}
+
+                {isError && (
+                  <div className="col-span-full rounded-[2rem] border border-red-500/20 bg-white p-8 text-center shadow-sm">
+                    <p className="text-red-500 text-sm font-black uppercase tracking-[0.18em]">No pudimos cargar el buscador</p>
+                    <p className="mt-2 text-foreground/60 text-sm font-bold">Puedes ir al catálogo y explorar los productos disponibles.</p>
+                    <button type="button" onClick={handleGoToCatalog} className="ui-btn-primary mt-5">
+                      Ver catálogo
+                    </button>
+                  </div>
+                )}
+
+                {!isLoading && !isError && filteredProducts.map((product) => (
                   <motion.div
                     key={product.id}
                     layout
@@ -125,16 +160,19 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
                 ))}
               </AnimatePresence>
 
-              {query.trim() !== "" && filteredProducts.length === 0 && (
-                <div className="col-span-full py-20 text-center">
-                   <p className="text-foreground/50 text-2xl font-serif italic">No hemos encontrado resultados para "{query}"</p>
+              {normalizedQuery && !isLoading && !isError && filteredProducts.length === 0 && (
+                <div className="col-span-full py-16 text-center">
+                   <p className="text-foreground/50 text-2xl font-serif italic">No encontramos resultados para "{query}"</p>
+                   <button type="button" onClick={handleGoToCatalog} className="ui-btn-secondary mt-6">
+                    Ver catálogo completo
+                   </button>
                 </div>
               )}
 
-              {query.trim() === "" && (
+              {!normalizedQuery && (
                  <div className="col-span-full py-10 flex flex-col items-center">
                    <Sparkles className="w-12 h-12 text-[#5A3F73]/30 mb-6 animate-pulse" />
-                   <p className="text-foreground/45 text-xs font-black uppercase tracking-[0.4em]">Explora nuestra colección exclusiva</p>
+                   <p className="text-foreground/45 text-xs font-black uppercase tracking-[0.4em]">Busca por producto, ocasión, categoría o precio</p>
                  </div>
               )}
             </div>
@@ -143,4 +181,13 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
       )}
     </AnimatePresence>
   );
+}
+
+function normalizeSearchText(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ");
 }
