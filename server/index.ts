@@ -909,6 +909,15 @@ const SEO_LANDING_PATHS = [
   "/arreglos-florales-guayaquil",
 ];
 
+const LEGACY_STORE_PATHS = new Set([
+  "/san-valentin-",
+  "/navidad-2024",
+  "/cumpleanos",
+  "/desayunos",
+  "/ofrendas",
+  "/ocasiones.php",
+]);
+
 async function fetchPublicProducts(): Promise<PublicProduct[]> {
   try {
     const response = await fetch(buildBackendUrl("/api/external/products"));
@@ -972,14 +981,14 @@ app.use(async (req, res, next) => {
     return res.redirect(301, newUrl || "/");
   }
 
-  // Redirect legacy PHP URLs: producto.php?id=...
-  if (req.path === "/producto.php" && req.query.id) {
-    return redirectLegacyProductRequest(req, res);
+  // The former store used PHP product IDs. A redirect must never depend on the
+  // product API being available: every old ID has a stable catalog fallback.
+  if (req.path === "/producto.php" || req.path === "/product.php") {
+    return res.redirect(301, "/shop");
   }
 
-  // Redirect legacy PHP URLs: product.php?id=...
-  if (req.path === "/product.php" && req.query.id) {
-    return redirectLegacyProductRequest(req, res);
+  if (LEGACY_STORE_PATHS.has(req.path)) {
+    return res.redirect(301, "/shop");
   }
 
   // Redirect legacy v2 URLs
@@ -1032,11 +1041,11 @@ app.get("/producto/:slug", async (req, res, next) => {
 
 // Catch-all for any other legacy product URLs that weren't caught
 app.get("/producto.php", async (req, res) => {
-  return redirectLegacyProductRequest(req, res);
+  return res.redirect(301, "/shop");
 });
 
 app.get("/product.php", async (req, res) => {
-  return redirectLegacyProductRequest(req, res);
+  return res.redirect(301, "/shop");
 });
 
 app.get(/.*\.php$/, (req, res) => {

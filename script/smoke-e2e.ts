@@ -46,8 +46,13 @@ const checks: SmokeCheck[] = [
     mustContain: ["User-agent", "Disallow: /checkout", "Sitemap:"],
   },
   {
-    name: "Legacy producto.php",
-    path: "/producto.php?id=2280",
+    name: "Legacy producto.php (cualquier ID)",
+    path: "/producto.php?id=521",
+    mustContain: ["Catálogo", "canonical"],
+  },
+  {
+    name: "Categoría antigua",
+    path: "/navidad-2024",
     mustContain: ["Catálogo", "canonical"],
   },
   {
