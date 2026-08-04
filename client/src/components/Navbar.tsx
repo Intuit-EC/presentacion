@@ -66,7 +66,7 @@ export function Navbar() {
 
   const navPhrase = "Realiza tu pedido floral en Guayaquil y sorprende hoy";
   const rightLinks = [
-    { href: "/#catalogo", label: "Catálogo" },
+    { href: "/shop", label: "Catálogo" },
     { href: "/#contacto", label: "Contacto" },
   ];
 
@@ -80,7 +80,7 @@ export function Navbar() {
         <div className="site-nav-shell">
           <div className="site-nav-desktop">
             <div className="site-nav-desktop-left">
-              <a href="/#catalogo" className="site-nav-phrase">
+              <a href="/shop" className="site-nav-phrase">
                 {navPhrase}
               </a>
             </div>
@@ -192,7 +192,7 @@ export function Navbar() {
 
             <div className="site-nav-mobile-menu-links">
               <a
-                href="/#catalogo"
+                href="/shop"
                 className="site-nav-mobile-menu-phrase"
                 onClick={() => setIsOpen(false)}
               >

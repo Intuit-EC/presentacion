@@ -72,7 +72,7 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
 
   const handleGoToCatalog = () => {
     onClose();
-    window.location.href = "/#catalogo";
+    window.location.href = "/shop";
   };
 
   return (

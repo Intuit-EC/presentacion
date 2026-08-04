@@ -11,7 +11,7 @@ const FIXED_BANNER = {
   title: "Regala una emoción que se recuerda.",
   subtitle: "Entregamos flores frescas, ramos y arreglos florales en Guayaquil con confirmación rápida por WhatsApp.",
   cta: "Comprar ahora",
-  href: "/#catalogo",
+  href: "/shop",
 };
 
 type BannerImage = {

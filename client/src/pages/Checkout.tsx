@@ -1039,7 +1039,7 @@ export default function Checkout() {
       <div className="container relative mx-auto max-w-6xl">
         <div className="mb-6 flex flex-col items-center text-center sm:mb-10">
           <Link
-            href="/#catalogo"
+            href="/shop"
             className="group mb-5 inline-flex items-center gap-2 font-black text-[#4A3362] transition-colors hover:text-[#4A3362]"
           >
             <ChevronLeft className="h-5 w-5 transition-transform group-hover:translate-x-[-5px]" />

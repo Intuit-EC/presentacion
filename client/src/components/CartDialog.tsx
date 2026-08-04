@@ -85,7 +85,7 @@ export function CartDialog() {
                 Confirmar Cambios <ShoppingBag className="w-4 h-4" />
               </button>
               
-              <Link href="/#catalogo" onClick={() => setIsCartOpen(false)}>
+              <Link href="/shop" onClick={() => setIsCartOpen(false)}>
                 <button 
                   className="w-full bg-transparent border-2 border-[#5A3F73]/40 text-[#5A3F73] hover:bg-[#5A3F73] hover:text-white py-5 rounded-2xl font-black text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2"
                 >

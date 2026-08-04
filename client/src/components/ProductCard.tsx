@@ -14,9 +14,10 @@ import { formatCategoryDisplayName, getNumericPriceValue, getProductPath, getPro
 interface ProductCardProps {
   product: Product;
   priority?: boolean;
+  showBestSellerBadge?: boolean;
 }
 
-export function ProductCard({ product, priority = false }: ProductCardProps) {
+export function ProductCard({ product, priority = false, showBestSellerBadge = true }: ProductCardProps) {
   const { buyNow } = useCart();
   const { data: company } = useCompany();
   const { toast } = useToast();
@@ -100,7 +101,7 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
           className="h-full w-full object-contain object-center"
         />
 
-        {product.isBestSeller && (
+        {product.isBestSeller && showBestSellerBadge && (
           <div className="absolute top-6 left-6 z-10 rounded-full bg-accent px-4 py-1.5 text-[9px] font-black uppercase tracking-widest text-white shadow-lg">
             Mas Vendido
           </div>

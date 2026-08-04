@@ -23,6 +23,8 @@ import {
   getProductPath,
 } from "@shared/catalog";
 
+const BEST_SELLERS_VISIBLE_LIMIT = 10;
+
 export default function CategoryPage() {
   const [location] = useLocation();
   const routePath = getCleanRoutePath(location);
@@ -37,7 +39,7 @@ export default function CategoryPage() {
 
   const products = useMemo(() => {
     if (!categoryName) return [];
-    if (isBestSellers) return allProducts.filter((product) => product.isBestSeller);
+    if (isBestSellers) return allProducts.filter((product) => product.isBestSeller).slice(0, BEST_SELLERS_VISIBLE_LIMIT);
     return allProducts.filter((product) => areSameCategory(product.category, categoryName));
   }, [allProducts, categoryName, isBestSellers]);
 
@@ -160,8 +162,12 @@ export default function CategoryPage() {
                   </div>
                 ) : products.length > 0 ? (
                   <div className="product-grid">
-                    {products.map((product) => (
-                      <ProductCard key={product.id} product={product} />
+                    {products.map((product, index) => (
+                      <ProductCard
+                        key={product.id}
+                        product={product}
+                        showBestSellerBadge={!isBestSellers || index < BEST_SELLERS_VISIBLE_LIMIT}
+                      />
                     ))}
                   </div>
                 ) : (

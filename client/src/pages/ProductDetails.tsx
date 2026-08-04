@@ -152,6 +152,7 @@ export default function ProductDetails() {
   );
   const normalizedDescription = (product.description || "").trim().toLowerCase();
   const normalizedIncludes = (product.includes || "").trim().toLowerCase();
+  const normalizedSize = normalizeProductDetailValue(product.size);
   const detailItems = [
     normalizedIncludes && normalizedIncludes !== normalizedDescription
       ? {
@@ -159,10 +160,10 @@ export default function ProductDetails() {
           content: product.includes,
         }
       : null,
-    product.size
+    normalizedSize
       ? {
           title: "Dimensiones",
-          content: product.size,
+          content: normalizedSize,
         }
       : null,
     product.deliveryTime
@@ -412,4 +413,13 @@ function getCleanRoutePath(location: string) {
   }
 
   return String(location || "/").split("?")[0].split("#")[0] || "/";
+}
+
+function normalizeProductDetailValue(value?: string | null) {
+  const normalized = String(value || "").trim();
+  if (!normalized || normalized === "-" || normalized === "—" || normalized.toLowerCase() === "n/a") {
+    return "";
+  }
+
+  return normalized;
 }

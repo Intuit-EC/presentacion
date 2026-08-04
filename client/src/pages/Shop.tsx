@@ -4,6 +4,7 @@ import { CategorySidebar } from "@/components/CategorySidebar";
 import { Seo } from "@/components/Seo";
 import { absoluteUrl, canonicalUrl } from "@/lib/site";
 import { getProductPath } from "@shared/catalog";
+import { useMemo, useState } from "react";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -13,8 +14,18 @@ import {
 } from "@/components/ui/breadcrumb";
 import { Link } from "wouter";
 
+const INITIAL_VISIBLE_PRODUCTS = 20;
+const LOAD_MORE_PRODUCTS = 16;
+const BEST_SELLER_BADGE_LIMIT = 10;
+
 export default function Shop() {
   const { data: allProducts = [], isLoading } = useProducts();
+  const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE_PRODUCTS);
+  const visibleProducts = useMemo(
+    () => allProducts.slice(0, visibleCount),
+    [allProducts, visibleCount],
+  );
+  const hasMoreProducts = visibleCount < allProducts.length;
   const shopSchema = {
     "@context": "https://schema.org",
     "@graph": [
@@ -91,7 +102,9 @@ export default function Shop() {
         <div className="page-header">
           <div className="page-kicker">Tienda oficial</div>
           <h1 className="page-title">Nuestro Catálogo</h1>
-          <p className="page-copy">Arreglos florales diseñados para trascender.</p>
+          <p className="page-copy">
+            Empieza con una selección curada y carga más productos solo si quieres seguir explorando.
+          </p>
         </div>
 
         <div className="flex flex-col gap-10 lg:flex-row xl:gap-8">
@@ -107,11 +120,31 @@ export default function Shop() {
                 ))}
               </div>
             ) : allProducts.length > 0 ? (
-              <div className="product-grid">
-                {allProducts.map((product) => (
-                  <ProductCard key={product.id} product={product} />
-                ))}
-              </div>
+              <>
+                <div className="mb-6 rounded-2xl border border-primary/15 bg-white/80 px-5 py-4 text-sm font-bold text-[#4A3362] shadow-sm">
+                  Mostrando {visibleProducts.length} de {allProducts.length} productos. Usa categorías o carga más para explorar el catálogo completo.
+                </div>
+                <div className="product-grid">
+                  {visibleProducts.map((product, index) => (
+                    <ProductCard
+                      key={product.id}
+                      product={product}
+                      showBestSellerBadge={index < BEST_SELLER_BADGE_LIMIT}
+                    />
+                  ))}
+                </div>
+                {hasMoreProducts ? (
+                  <div className="mt-10 flex justify-center">
+                    <button
+                      type="button"
+                      className="ui-btn-secondary"
+                      onClick={() => setVisibleCount((current) => current + LOAD_MORE_PRODUCTS)}
+                    >
+                      Cargar más productos
+                    </button>
+                  </div>
+                ) : null}
+              </>
             ) : (
               <div className="empty-state">
                 <p className="empty-state-title">No hay productos disponibles en este momento.</p>

@@ -119,12 +119,6 @@ export default function Home() {
     });
   };
 
-  const handleProductsClick = () => {
-    window.requestAnimationFrame(() => {
-      window.setTimeout(() => scrollToSection("catalogo"), 0);
-    });
-  };
-
   useEffect(() => {
     if (shouldLoadCatalog) return;
 
@@ -283,7 +277,7 @@ export default function Home() {
       <h1 className="sr-only">DIFIORI Flores en Guayaquil - Floreria Guayaquil con Pedidos de Flores a Domicilio</h1>
 
       <section className="home-shell-banner-slot">
-        <Banner onProductsClick={handleProductsClick} />
+        <Banner />
       </section>
 
       <div className="home-shell-main">
@@ -342,7 +336,7 @@ export default function Home() {
               <span><strong>Celebrar una fecha</strong><small>Cumpleaños y momentos únicos</small></span>
               <ArrowRight aria-hidden="true" />
             </a>
-            <a href="/#catalogo" className="home-discovery-card home-discovery-card-accent">
+            <a href="/shop" className="home-discovery-card home-discovery-card-accent">
               <span className="home-discovery-icon"><Sparkles aria-hidden="true" /></span>
               <span><strong>Explorar todo</strong><small>Descubre opciones ideales para regalar</small></span>
               <ArrowRight aria-hidden="true" />
