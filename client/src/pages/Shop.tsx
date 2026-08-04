@@ -4,7 +4,7 @@ import { CategorySidebar } from "@/components/CategorySidebar";
 import { Seo } from "@/components/Seo";
 import { absoluteUrl, canonicalUrl } from "@/lib/site";
 import { getProductPath } from "@shared/catalog";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -18,14 +18,60 @@ const INITIAL_VISIBLE_PRODUCTS = 20;
 const LOAD_MORE_PRODUCTS = 16;
 const BEST_SELLER_BADGE_LIMIT = 10;
 
+const OCCASION_FILTERS = [
+  { value: "all", label: "Todas las ocasiones", terms: [] },
+  { value: "amor", label: "Amor y aniversario", terms: ["amor", "aniversario", "romantic", "rosa"] },
+  { value: "cumpleanos", label: "Cumpleaños", terms: ["cumple", "15 anos", "quince"] },
+  { value: "nacimiento", label: "Nacimiento", terms: ["nacimiento", "bebe", "baby"] },
+  { value: "condolencias", label: "Condolencias", terms: ["ofrenda", "condolencia", "funeral", "velacion"] },
+] as const;
+
+const PRICE_FILTERS = [
+  { value: "all", label: "Cualquier precio", min: 0, max: Number.POSITIVE_INFINITY },
+  { value: "under-35", label: "Hasta $35", min: 0, max: 35 },
+  { value: "35-55", label: "$35 a $55", min: 35, max: 55 },
+  { value: "over-55", label: "Más de $55", min: 55, max: Number.POSITIVE_INFINITY },
+] as const;
+
+function getNumericPrice(price: string) {
+  const parsed = Number.parseFloat(price.replace(/[^0-9.,]/g, "").replace(",", "."));
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function normalizeSearchText(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLocaleLowerCase("es");
+}
+
 export default function Shop() {
   const { data: allProducts = [], isLoading } = useProducts();
   const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE_PRODUCTS);
+  const [occasion, setOccasion] = useState<(typeof OCCASION_FILTERS)[number]["value"]>("all");
+  const [priceRange, setPriceRange] = useState<(typeof PRICE_FILTERS)[number]["value"]>("all");
+  const filteredProducts = useMemo(() => {
+    const occasionFilter = OCCASION_FILTERS.find((filter) => filter.value === occasion)!;
+    const priceFilter = PRICE_FILTERS.find((filter) => filter.value === priceRange)!;
+
+    return allProducts.filter((product) => {
+      const text = normalizeSearchText(`${product.name} ${product.category} ${product.description}`);
+      const matchesOccasion = occasionFilter.terms.length === 0 || occasionFilter.terms.some((term) => text.includes(term));
+      const price = getNumericPrice(product.price);
+      const matchesPrice = price >= priceFilter.min && price <= priceFilter.max;
+      return matchesOccasion && matchesPrice;
+    });
+  }, [allProducts, occasion, priceRange]);
+
+  useEffect(() => {
+    setVisibleCount(INITIAL_VISIBLE_PRODUCTS);
+  }, [occasion, priceRange]);
+
   const visibleProducts = useMemo(
-    () => allProducts.slice(0, visibleCount),
-    [allProducts, visibleCount],
+    () => filteredProducts.slice(0, visibleCount),
+    [filteredProducts, visibleCount],
   );
-  const hasMoreProducts = visibleCount < allProducts.length;
+  const hasMoreProducts = visibleCount < filteredProducts.length;
   const shopSchema = {
     "@context": "https://schema.org",
     "@graph": [
@@ -121,18 +167,44 @@ export default function Shop() {
               </div>
             ) : allProducts.length > 0 ? (
               <>
+                <div className="mb-6 grid gap-3 rounded-2xl border border-primary/15 bg-white/80 p-4 shadow-sm sm:grid-cols-2">
+                  <label className="grid gap-2 text-sm font-bold text-[#4A3362]">
+                    Ocasión
+                    <select
+                      value={occasion}
+                      onChange={(event) => setOccasion(event.target.value as typeof occasion)}
+                      className="h-11 rounded-xl border border-primary/20 bg-white px-3 font-medium text-foreground outline-none focus:border-primary"
+                    >
+                      {OCCASION_FILTERS.map((filter) => <option key={filter.value} value={filter.value}>{filter.label}</option>)}
+                    </select>
+                  </label>
+                  <label className="grid gap-2 text-sm font-bold text-[#4A3362]">
+                    Precio
+                    <select
+                      value={priceRange}
+                      onChange={(event) => setPriceRange(event.target.value as typeof priceRange)}
+                      className="h-11 rounded-xl border border-primary/20 bg-white px-3 font-medium text-foreground outline-none focus:border-primary"
+                    >
+                      {PRICE_FILTERS.map((filter) => <option key={filter.value} value={filter.value}>{filter.label}</option>)}
+                    </select>
+                  </label>
+                </div>
                 <div className="mb-6 rounded-2xl border border-primary/15 bg-white/80 px-5 py-4 text-sm font-bold text-[#4A3362] shadow-sm">
-                  Mostrando {visibleProducts.length} de {allProducts.length} productos. Usa categorías o carga más para explorar el catálogo completo.
+                  Mostrando {visibleProducts.length} de {filteredProducts.length} productos. Usa los filtros o carga más para explorar el catálogo completo.
                 </div>
-                <div className="product-grid">
-                  {visibleProducts.map((product, index) => (
-                    <ProductCard
-                      key={product.id}
-                      product={product}
-                      showBestSellerBadge={index < BEST_SELLER_BADGE_LIMIT}
-                    />
-                  ))}
-                </div>
+                {visibleProducts.length > 0 ? (
+                  <div className="product-grid">
+                    {visibleProducts.map((product, index) => (
+                      <ProductCard
+                        key={product.id}
+                        product={product}
+                        showBestSellerBadge={index < BEST_SELLER_BADGE_LIMIT}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="empty-state"><p className="empty-state-title">No encontramos productos con esos filtros.</p></div>
+                )}
                 {hasMoreProducts ? (
                   <div className="mt-10 flex justify-center">
                     <button

@@ -325,6 +325,40 @@ function getCompanyFallback() {
   };
 }
 
+/**
+ * The company endpoint is hydrated into the public HTML, so it must be treated
+ * as a browser-facing API. Keep operational payment secrets in the backend and
+ * expose only the checkout details a customer actually needs.
+ */
+function getPublicCompanyInfo(value: unknown) {
+  const company = value && typeof value === "object" ? value as Record<string, unknown> : {};
+  const settings = company.settings && typeof company.settings === "object"
+    ? company.settings as Record<string, unknown>
+    : {};
+  const paymentSettings = settings.paymentSettings && typeof settings.paymentSettings === "object"
+    ? settings.paymentSettings as Record<string, unknown>
+    : {};
+
+  return {
+    name: typeof company.name === "string" ? company.name : DEFAULT_COMPANY.name,
+    email: typeof company.email === "string" ? company.email : DEFAULT_COMPANY.email,
+    phone: typeof company.phone === "string" ? company.phone : DEFAULT_COMPANY.phoneDisplay,
+    address: typeof company.address === "string" ? company.address : `${DEFAULT_COMPANY.city}, ${DEFAULT_COMPANY.country}`,
+    ...(typeof company.logo === "string" && company.logo ? { logo: company.logo } : {}),
+    settings: {
+      acceptOrders: settings.acceptOrders !== false,
+      paymentSettings: {
+        ...(typeof paymentSettings.transferInstructions === "string"
+          ? { transferInstructions: paymentSettings.transferInstructions }
+          : {}),
+        ...(Array.isArray(paymentSettings.shippingSectorRates)
+          ? { shippingSectorRates: paymentSettings.shippingSectorRates }
+          : {}),
+      },
+    },
+  };
+}
+
 function getReviewsFallback() {
   return TESTIMONIALS.map((review, index) => ({
     id: `fallback-review-${index + 1}`,
@@ -490,17 +524,10 @@ async function prefetchSsrRouteData(queryClient: QueryClient, path: string, base
   }
 
   if (path === "/shop") {
-    await Promise.all([
-      queryClient.prefetchQuery({
-        queryKey: productsQueryKey(),
-        queryFn: () => fetchProducts(undefined, baseUrl),
-      }),
-      queryClient.prefetchQuery({
-        queryKey: categoriesQueryKey,
-        queryFn: () => fetchCategories(baseUrl),
-      }),
-    ]);
-
+    // The catalog loads its first 20 products in the browser. Avoid embedding
+    // the whole inventory and its descriptions into the initial HTML response.
+    // That keeps the route crawlable through its own product URLs while making
+    // the storefront substantially lighter for visitors and crawlers.
     return 200;
   }
 
@@ -571,6 +598,17 @@ async function proxyToBackend(req: Request, res: Response) {
       signal: abortController.signal,
       body: ["POST", "PUT", "PATCH"].includes(req.method) ? JSON.stringify(req.body) : undefined,
     }, PUBLIC_PROXY_TIMEOUT_MS);
+
+    // Do not proxy the raw admin configuration into the browser or SSR state.
+    if (req.method === "GET" && (req.originalUrl.split("?")[0] || req.path) === "/api/external/company") {
+      const payload = await response.json().catch(() => null) as { status?: string; data?: unknown } | null;
+      if (!payload || !response.ok) {
+        return res.status(response.status).json(payload || { status: "error", message: "No se pudo obtener la información de la empresa." });
+      }
+
+      res.setHeader("Cache-Control", getPublicApiCacheControl("/api/external/company"));
+      return res.status(response.status).json(createSuccessPayload(getPublicCompanyInfo(payload.data)));
+    }
 
     response.headers.forEach((value, key) => {
       if (["content-length", "transfer-encoding", "connection"].includes(key.toLowerCase())) {

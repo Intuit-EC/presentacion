@@ -4,6 +4,7 @@ type SmokeCheck = {
   expectedStatus?: number;
   mustContain?: string[];
   maxRedirects?: number;
+  maxBodyBytes?: number;
 };
 
 const DEFAULT_BASE_URL = "https://difiori.com.ec";
@@ -15,12 +16,19 @@ const checks: SmokeCheck[] = [
   {
     name: "Home",
     path: "/",
-    mustContain: ["DIFIORI", "canonical", "application/ld+json"],
+    mustContain: [
+      "DIFIORI",
+      "canonical",
+      "application/ld+json",
+      'href="/shop" class="site-nav-link',
+      'href="/shop" class="home-discovery-card home-discovery-card-accent"',
+    ],
   },
   {
     name: "Catálogo",
     path: "/shop",
     mustContain: ["Catálogo", "product-list", "canonical"],
+    maxBodyBytes: 100_000,
   },
   {
     name: "Landing flores Guayaquil",
@@ -98,15 +106,20 @@ async function runCheck(check: SmokeCheck) {
   }
 
   const body = await response.text();
+  const bytes = Buffer.byteLength(body, "utf8");
   if (check.mustContain?.length) {
     assertContains(body, check.mustContain, check.name);
+  }
+
+  if (check.maxBodyBytes && bytes > check.maxBodyBytes) {
+    throw new Error(`${check.name}: respuesta demasiado pesada (${bytes} bytes; máximo ${check.maxBodyBytes})`);
   }
 
   return {
     name: check.name,
     url,
     status: response.status,
-    bytes: Buffer.byteLength(body),
+    bytes,
   };
 }
 

@@ -17,6 +17,7 @@ const landingPages = {
     intro:
       "DIFIORI prepara flores frescas, ramos y arreglos florales para entregas a domicilio en Guayaquil. Creamos detalles para cumpleanos, aniversarios, amor, condolencias y regalos especiales.",
     focus: ["Flores frescas seleccionadas", "Entrega a domicilio en Guayaquil", "Pedidos por tienda online o WhatsApp"],
+    preferredCategories: ["Ramo de Flores", "Arreglo con Frutas", "Flores para Aniversario", "Nacimiento"],
     productTerms: ["flor", "gerbera", "girasol", "rosa", "lirio"],
     serviceCards: [
       ["Flores para hoy", "Priorizamos arreglos listos para coordinar entregas rápidas en Guayaquil."],
@@ -40,6 +41,7 @@ const landingPages = {
     intro:
       "DIFIORI es una floreria en Guayaquil con flores frescas, diseno floral, pedidos a domicilio y atencion directa para enviar detalles elegantes en la ciudad.",
     focus: ["Arreglos florales personalizados", "Atencion directa por WhatsApp", "Entrega a domicilio en Guayaquil"],
+    preferredCategories: ["Ramo de Flores", "Arreglo con Frutas", "Flores para Aniversario", "Nacimiento"],
     productTerms: ["flor", "rosa", "arreglo", "ramo"],
     serviceCards: [
       ["Atención local", "Te atendemos con asesoría directa para elegir el detalle correcto según ocasión."],
@@ -63,6 +65,7 @@ const landingPages = {
     intro:
       "Si buscas florerias en Guayaquil, DIFIORI combina diseno floral, flores frescas y atencion directa para ayudarte a enviar un detalle elegante el mismo dia o en fecha programada.",
     focus: ["Arreglos florales personalizados", "Atencion directa por WhatsApp", "Entrega a domicilio en Guayaquil"],
+    preferredCategories: ["Ramo de Flores", "Arreglo con Frutas", "Flores para Aniversario", "Nacimiento"],
     productTerms: ["flor", "arreglo", "ramo", "rosa"],
     serviceCards: [
       ["Comparar opciones", "Encuentra ramos, cajas y arreglos sin saltar entre varias tiendas."],
@@ -86,6 +89,7 @@ const landingPages = {
     intro:
       "Nuestros ramos de flores estan pensados para regalar emociones: rosas, flores mixtas y composiciones elegantes listas para enviar en Guayaquil.",
     focus: ["Ramos para amor y aniversario", "Ramos de rosas y flores mixtas", "Opciones con regalos complementarios"],
+    preferredCategories: ["Ramo de Flores"],
     productTerms: ["ramo", "bouquet", "rosa", "rosas", "aniversario"],
     serviceCards: [
       ["Ramos románticos", "Opciones con rosas, flores mixtas y estilos elegantes para amor y aniversario."],
@@ -109,6 +113,7 @@ const landingPages = {
     intro:
       "En DIFIORI encuentras arreglos de flores en Guayaquil para cumpleaños, amor, aniversarios, condolencias y regalos especiales, con pedidos online y entrega a domicilio.",
     focus: ["Arreglos de flores frescas", "Entrega a domicilio en Guayaquil", "Pedidos rápidos por tienda o WhatsApp"],
+    preferredCategories: ["Arreglo con Frutas", "Flores para Aniversario"],
     productTerms: ["arreglo", "caja", "frutas", "desayuno", "chocolate", "fresas"],
     serviceCards: [
       ["Cajas y composiciones", "Arreglos en caja, bases y combinaciones florales con presencia premium."],
@@ -132,6 +137,7 @@ const landingPages = {
     intro:
       "DIFIORI diseña arreglos florales en Guayaquil con flores frescas, composición elegante y atención directa para que tu detalle llegue a domicilio.",
     focus: ["Diseños florales para regalar", "Flores frescas en Guayaquil", "Compra online o por WhatsApp"],
+    preferredCategories: ["Arreglo con Frutas", "Flores para Aniversario", "Ramo de Flores"],
     productTerms: ["arreglo", "floral", "flores", "rosas", "condolencias"],
     serviceCards: [
       ["Diseño floral", "Composiciones cuidadas para transmitir amor, gratitud, condolencias o celebración."],
@@ -148,6 +154,14 @@ const landingPages = {
 } as const;
 
 type LandingPath = keyof typeof landingPages;
+
+function normalizeCatalogText(value: string | null | undefined) {
+  return (value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLocaleLowerCase("es")
+    .trim();
+}
 
 function useCurrentLandingPage() {
   const [floresMatch] = useRoute("/flores-guayaquil");
@@ -173,11 +187,15 @@ export default function SeoLandingPage() {
   const page = useCurrentLandingPage();
   const { data: products = [], isLoading } = useProducts();
   const relatedPages = page.related.map((path) => landingPages[path]);
-  const highlightedProducts = products
-    .filter((product) => {
-      const text = `${product.name} ${product.category} ${product.description}`.toLowerCase();
-      return page.productTerms.some((term) => text.includes(term));
-    })
+  const preferredCategories = page.preferredCategories.map(normalizeCatalogText);
+  const categoryMatches = products.filter((product) =>
+    preferredCategories.includes(normalizeCatalogText(product.category)),
+  );
+  const highlightedProducts = (page.path === "/floreria-guayaquil"
+    ? [...categoryMatches.filter((product) => product.isBestSeller), ...categoryMatches]
+    : categoryMatches
+  )
+    .filter((product, index, list) => list.findIndex((candidate) => candidate.id === product.id) === index)
     .slice(0, 6);
   const pageSchema = {
     "@context": "https://schema.org",
