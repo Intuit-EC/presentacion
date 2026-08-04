@@ -23,6 +23,7 @@ import { Link, useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { apiUrl } from "@/lib/api-url";
+import { buildGaItem, trackGaEvent } from "@/lib/analytics";
 import { trackFacebookEvent } from "@/lib/facebook-pixel";
 import { useCart } from "@/context/CartContext";
 import { useCompany } from "@/hooks/useCompany";
@@ -30,6 +31,7 @@ import { useCompany } from "@/hooks/useCompany";
 import { CartDialog } from "@/components/CartDialog";
 import { Seo } from "@/components/Seo";
 import { DEFAULT_COMPANY } from "@/lib/site";
+import { formatCategoryDisplayName, getNumericPriceValue, getProductSku } from "@shared/catalog";
 
 type OrderStatus = "idle" | "loading" | "success" | "error";
 type PaymentMethod = "PayPal" | "Payphone" | "Banco" | "Zelle";
@@ -413,6 +415,20 @@ export default function Checkout() {
     if (checkoutStartedSent.current || items.length === 0) return;
 
     checkoutStartedSent.current = true;
+    const gaItems = items.map((item) =>
+      buildGaItem({
+        id: getProductSku(item.product),
+        name: item.product.name,
+        category: formatCategoryDisplayName(item.product.category),
+        price: getNumericPriceValue(item.product.price),
+        quantity: item.quantity,
+      }),
+    );
+    trackGaEvent("begin_checkout", {
+      currency: "USD",
+      value: cartTotal,
+      items: gaItems,
+    });
     trackFacebookEvent("InitiateCheckout", {
       content_ids: items.map((item) => String(item.product.id)),
       content_name: items.map((item) => item.product.name).join(", "),
@@ -858,6 +874,12 @@ export default function Checkout() {
         }
         clearCart();
       } else {
+        trackGaEvent("purchase_error", {
+          payment_method: paymentMethod,
+          error_message: data.message || "store_order_failed",
+          value: finalTotal,
+          currency: "USD",
+        });
         setErrorMsg(
           data.message ||
             "Hubo un error al procesar tu orden. Contáctanos por WhatsApp."
@@ -867,6 +889,12 @@ export default function Checkout() {
       }
     } catch (error) {
       console.error("Error en checkout:", error);
+      trackGaEvent("purchase_error", {
+        payment_method: paymentMethod,
+        error_message: error instanceof Error ? error.message : "unexpected_checkout_error",
+        value: finalTotal,
+        currency: "USD",
+      });
       setOrderStatus("error");
       setErrorMsg(
         error instanceof Error

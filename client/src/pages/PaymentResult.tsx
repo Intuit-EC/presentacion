@@ -5,6 +5,7 @@ import { CheckCircle, XCircle, Loader2, MessageSquare, ShieldCheck } from "lucid
 import { Seo } from "@/components/Seo";
 import { useCart } from "@/context/CartContext";
 import { apiUrl } from "@/lib/api-url";
+import { trackGaEvent } from "@/lib/analytics";
 import { DEFAULT_COMPANY } from "@/lib/site";
 
 type ResultStatus = "loading" | "success" | "failed" | "cancelled" | "error";
@@ -160,10 +161,20 @@ export default function PaymentResult() {
         setOrderNumber(data.data?.orderNumber || data.data?.reference || finalClientTxId || "");
 
         if (ps === "PAID") {
+          trackGaEvent("purchase", {
+            transaction_id: data.data?.orderNumber || data.data?.reference || finalClientTxId,
+            currency: "USD",
+            value: Number(data.data?.total || data.data?.amount || 0) || undefined,
+            payment_method: isPaypalFlow ? "PayPal" : "Payphone",
+          });
           setStatus("success");
           clearCart();
           if (!isPaypalFlow) clearPayphoneDraft();
         } else if (ps === "CANCELLED") {
+          trackGaEvent("payment_error", {
+            payment_method: isPaypalFlow ? "PayPal" : "Payphone",
+            error_message: "payment_cancelled",
+          });
           setStatus("cancelled");
           if (!isPaypalFlow) clearPayphoneDraft();
         } else {
@@ -172,10 +183,17 @@ export default function PaymentResult() {
               "El correo de PayPal que pago no coincide con el correo ingresado en el checkout."
             );
           }
+          trackGaEvent("payment_error", {
+            payment_method: isPaypalFlow ? "PayPal" : "Payphone",
+            error_message: data.data?.emailMismatch ? "paypal_email_mismatch" : "payment_failed",
+          });
           setStatus("failed");
           if (!isPaypalFlow) clearPayphoneDraft();
         }
       } catch (error) {
+        trackGaEvent("payment_error", {
+          error_message: error instanceof Error ? error.message : "payment_confirmation_error",
+        });
         setStatus("error");
         setResultMessage(
           error instanceof Error

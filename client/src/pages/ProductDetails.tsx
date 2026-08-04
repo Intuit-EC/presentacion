@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link, useLocation, useRoute } from "wouter";
+import { Link, useLocation } from "wouter";
 import { MessageSquare, Truck, ShieldCheck, Clock, ShoppingBag, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -9,6 +9,7 @@ import { useCompany } from "@/hooks/useCompany";
 import { useCart } from "@/context/CartContext";
 import { useToast } from "@/hooks/use-toast";
 import { Seo } from "@/components/Seo";
+import { buildGaItem, trackGaEvent } from "@/lib/analytics";
 import { DEFAULT_COMPANY, absoluteUrl, canonicalUrl } from "@/lib/site";
 import {
   MERCHANT_ORGANIZATION_ID,
@@ -37,21 +38,23 @@ export default function ProductDetails() {
     void import("./product-details.css");
   }, []);
 
-  const [canonicalMatch, canonicalParams] = useRoute("/producto/:slug");
-  const [legacyMatch, legacyParams] = useRoute("/product/:id");
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
   const { data: allProducts = [], isLoading } = useProducts();
   const { data: company } = useCompany();
   const { buyNow } = useCart();
   const { toast } = useToast();
 
-  const routeValue = canonicalMatch ? canonicalParams?.slug || "" : legacyParams?.id || "";
-  const routePath = canonicalMatch ? `/producto/${routeValue}` : `/product/${routeValue}`;
+  const routePath = getCleanRoutePath(location);
+  const canonicalMatch = routePath.startsWith("/producto/");
+  const legacyMatch = routePath.startsWith("/product/");
+  const routeValue = decodeURIComponent(
+    routePath.replace(/^\/producto\//, "").replace(/^\/product\//, ""),
+  );
   const product = allProducts.find((item) => {
     if (!routeValue) return false;
 
     if (legacyMatch) {
-      return String(item.id) === String(legacyParams?.id || "");
+      return String(item.id) === String(routeValue);
     }
 
     return isProductSlugMatch(item, routeValue);
@@ -61,6 +64,23 @@ export default function ProductDetails() {
 
   React.useEffect(() => {
     if (product) setSelectedImage(product.image);
+  }, [product]);
+
+  React.useEffect(() => {
+    if (!product) return;
+
+    trackGaEvent("view_item", {
+      currency: "USD",
+      value: getNumericPriceValue(product.price),
+      items: [
+        buildGaItem({
+          id: getProductSku(product),
+          name: product.name,
+          category: formatCategoryDisplayName(product.category),
+          price: getNumericPriceValue(product.price),
+        }),
+      ],
+    });
   }, [product]);
 
   React.useEffect(() => {
@@ -384,4 +404,12 @@ export default function ProductDetails() {
       </div>
     </div>
   );
+}
+
+function getCleanRoutePath(location: string) {
+  if (typeof window !== "undefined") {
+    return window.location.pathname || "/";
+  }
+
+  return String(location || "/").split("?")[0].split("#")[0] || "/";
 }

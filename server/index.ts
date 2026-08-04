@@ -123,7 +123,7 @@ const BACKEND_ORIGIN = normalizeUrl(
 );
 const SITE_URL =
   normalizeUrl(process.env.APP_PUBLIC_SITE_URL || process.env.SITE_URL || process.env.VITE_SITE_URL) ||
-  "https://difiori.com";
+  "https://difiori.com.ec";
 const ASSET_BASE_URL =
   normalizeUrl(process.env.APP_PUBLIC_ASSET_URL || process.env.ASSET_BASE_URL || process.env.VITE_ASSET_BASE_URL) ||
   "";
@@ -167,6 +167,30 @@ function formatPayphonePhone(rawPhone: unknown) {
 
 function buildRequestOrigin(req: Request) {
   return `${req.protocol}://${req.get("host")}`;
+}
+
+function getCanonicalHost() {
+  try {
+    return new URL(SITE_URL).host.toLowerCase();
+  } catch {
+    return "";
+  }
+}
+
+function shouldRedirectToCanonicalHost(req: Request) {
+  const canonicalHost = getCanonicalHost();
+  const requestHost = String(req.get("host") || "").toLowerCase();
+
+  if (!canonicalHost || !requestHost) return false;
+  if (requestHost === canonicalHost) return false;
+  if (requestHost.startsWith("localhost") || requestHost.startsWith("127.0.0.1")) return false;
+
+  return requestHost === `www.${canonicalHost}` || requestHost.endsWith(`.${canonicalHost}`);
+}
+
+function buildCanonicalHostUrl(req: Request) {
+  const path = req.originalUrl || req.url || "/";
+  return `${SITE_URL}${path.startsWith("/") ? path : `/${path}`}`;
 }
 
 function escapeXml(value: string) {
@@ -877,9 +901,31 @@ async function fetchPublicProducts(): Promise<PublicProduct[]> {
   }
 }
 
-app.use((req, res, next) => {
+async function redirectLegacyProductRequest(req: Request, res: Response) {
+  const productId = String(req.query.id || req.query.product_id || req.query.prod_id || "").trim();
+
+  if (!productId) {
+    return res.redirect(301, "/shop");
+  }
+
+  try {
+    const products = await fetchPublicProducts();
+    const product = products.find((item) => String(item.id) === productId);
+
+    return res.redirect(301, product ? getProductPath(product) : "/shop");
+  } catch (error) {
+    console.warn("Could not resolve legacy product URL.", error);
+    return res.redirect(301, "/shop");
+  }
+}
+
+app.use(async (req, res, next) => {
   if (req.method !== "GET" && req.method !== "HEAD") {
     return next();
+  }
+
+  if (shouldRedirectToCanonicalHost(req)) {
+    return res.redirect(301, buildCanonicalHostUrl(req));
   }
 
   if (req.path !== "/" && req.path.endsWith("/") && !req.path.includes(".") && !req.path.startsWith("/api") && !req.path.startsWith("/image-proxy") && !req.path.startsWith("/uploads/")) {
@@ -890,14 +936,12 @@ app.use((req, res, next) => {
 
   // Redirect legacy PHP URLs: producto.php?id=...
   if (req.path === "/producto.php" && req.query.id) {
-    const productId = String(req.query.id);
-    return res.redirect(301, `/product/${encodeURIComponent(productId)}`);
+    return redirectLegacyProductRequest(req, res);
   }
 
   // Redirect legacy PHP URLs: product.php?id=...
   if (req.path === "/product.php" && req.query.id) {
-    const productId = String(req.query.id);
-    return res.redirect(301, `/product/${encodeURIComponent(productId)}`);
+    return redirectLegacyProductRequest(req, res);
   }
 
   // Redirect legacy v2 URLs
@@ -927,26 +971,34 @@ app.get("/product/:id", async (req, res, next) => {
     }
   } catch (error) {
     console.warn("Could not redirect legacy product URL.", error);
+    return next();
+  }
+
+  return res.redirect(301, "/shop");
+});
+
+app.get("/producto/:slug", async (req, res, next) => {
+  try {
+    const products = await fetchPublicProducts();
+    const product = products.find((item) => isProductSlugMatch(item, req.params.slug));
+
+    if (!product) {
+      return res.redirect(301, "/shop");
+    }
+  } catch (error) {
+    console.warn("Could not validate canonical product URL.", error);
   }
 
   return next();
 });
 
 // Catch-all for any other legacy product URLs that weren't caught
-app.get("/producto.php", (req, res) => {
-  const productId = req.query.id || req.query.product_id || req.query.prod_id;
-  if (productId) {
-    return res.redirect(301, `/product/${encodeURIComponent(String(productId))}`);
-  }
-  return res.redirect(301, "/shop");
+app.get("/producto.php", async (req, res) => {
+  return redirectLegacyProductRequest(req, res);
 });
 
-app.get("/product.php", (req, res) => {
-  const productId = req.query.id || req.query.product_id || req.query.prod_id;
-  if (productId) {
-    return res.redirect(301, `/product/${encodeURIComponent(String(productId))}`);
-  }
-  return res.redirect(301, "/shop");
+app.get("/product.php", async (req, res) => {
+  return redirectLegacyProductRequest(req, res);
 });
 
 app.get(/.*\.php$/, (req, res) => {
@@ -963,7 +1015,6 @@ app.get("/robots.txt", (_req, res) => {
     "Disallow: /payment-result",
     "Disallow: /admin",
     "Disallow: /v2",
-    "Disallow: /*?*",
     "",
     `Sitemap: ${buildSiteUrl("/sitemap.xml")}`,
   ].join("\n"));

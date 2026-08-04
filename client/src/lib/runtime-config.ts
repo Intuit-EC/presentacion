@@ -9,7 +9,7 @@ declare global {
   }
 }
 
-const DEFAULT_SITE_URL = "https://difiori.com";
+const DEFAULT_SITE_URL = "https://difiori.com.ec";
 
 function normalizeUrl(value?: string | null) {
   const normalized = String(value || "").trim();

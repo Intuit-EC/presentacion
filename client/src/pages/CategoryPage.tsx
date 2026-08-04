@@ -1,4 +1,4 @@
-import { Link, useRoute } from "wouter";
+import { Link, useLocation } from "wouter";
 import { useMemo } from "react";
 import { ProductCard } from "@/components/ProductCard";
 import { CategorySidebar } from "@/components/CategorySidebar";
@@ -24,8 +24,9 @@ import {
 } from "@shared/catalog";
 
 export default function CategoryPage() {
-  const [, params] = useRoute("/categoria/:slug");
-  const slug = params?.slug || "";
+  const [location] = useLocation();
+  const routePath = getCleanRoutePath(location);
+  const slug = decodeURIComponent(routePath.replace(/^\/categoria\//, ""));
   const { data: categories = [], isLoading: isLoadingCategories } = useCategories();
   const categoryName = useMemo(() => findCategoryNameBySlug(categories, slug), [categories, slug]);
   const categoryLabel = categoryName ? formatCategoryDisplayName(categoryName) : null;
@@ -187,4 +188,12 @@ export default function CategoryPage() {
       </div>
     </div>
   );
+}
+
+function getCleanRoutePath(location: string) {
+  if (typeof window !== "undefined") {
+    return window.location.pathname || "/";
+  }
+
+  return String(location || "/").split("?")[0].split("#")[0] || "/";
 }

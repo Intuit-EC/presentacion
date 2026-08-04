@@ -5,6 +5,7 @@ import { Clock3, Loader2, MessageSquare, ShieldCheck, ShoppingBag, Truck } from 
 import { useCart } from "@/context/CartContext";
 import { useCompany } from "@/hooks/useCompany";
 import { useToast } from "@/hooks/use-toast";
+import { buildGaItem, trackGaEvent } from "@/lib/analytics";
 import { trackFacebookEvent } from "@/lib/facebook-pixel";
 import { getResponsiveImageSrcSet } from "@/lib/media";
 import { DEFAULT_COMPANY, canonicalUrl } from "@/lib/site";
@@ -40,6 +41,22 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
     }
 
     setIsBuying(true);
+    const gaItem = buildGaItem({
+      id: productSku,
+      name: product.name,
+      category: categoryLabel,
+      price: productPrice,
+    });
+    trackGaEvent("add_to_cart", {
+      currency: "USD",
+      value: productPrice,
+      items: [gaItem],
+    });
+    trackGaEvent("begin_checkout", {
+      currency: "USD",
+      value: productPrice,
+      items: [gaItem],
+    });
     trackFacebookEvent("AddToCart", {
       content_ids: [productSku],
       content_name: product.name,
