@@ -149,7 +149,7 @@ export default function Shop() {
           <div className="page-kicker">Tienda oficial</div>
           <h1 className="page-title">Nuestro Catálogo</h1>
           <p className="page-copy">
-            Empieza con una selección curada y carga más productos solo si quieres seguir explorando.
+            Encuentra detalles para cada ocasión y presupuesto; explora a tu ritmo o usa los filtros para elegir más fácil.
           </p>
         </div>
 

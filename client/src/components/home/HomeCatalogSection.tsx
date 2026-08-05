@@ -67,7 +67,7 @@ export function HomeCatalogSection() {
                   <div>
                     <h2 className="home-catalog-group-title">{section.label}</h2>
                     <p className="home-catalog-group-copy">
-                      Opciones favoritas de {section.label.toLowerCase()} preparadas para regalar con estilo en Guayaquil.
+                      Opciones de {section.label.toLowerCase()} para regalar en Guayaquil, con alternativas para distintos presupuestos.
                     </p>
                   </div>
                   <Link href={section.href} className="ui-btn-secondary home-catalog-cta">

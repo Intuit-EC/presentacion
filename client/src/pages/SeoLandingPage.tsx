@@ -35,11 +35,11 @@ const landingPages = {
     path: "/floreria-guayaquil",
     title: "Floreria Guayaquil | Pedidos a Domicilio | DIFIORI",
     description:
-      "Florería Guayaquil con pedidos a domicilio, arreglos florales premium y atención directa para enviar un detalle elegante en pocos minutos.",
+      "Florería en Guayaquil con pedidos a domicilio, flores y regalos para distintas ocasiones y presupuestos, con atención directa para comprar fácilmente.",
     keywords: "floreria Guayaquil, floreria en Guayaquil, flores en Guayaquil, flores a domicilio Guayaquil, ramos de flores Guayaquil",
     h1: "Floreria Guayaquil",
     intro:
-      "DIFIORI es una floreria en Guayaquil con flores frescas, diseno floral, pedidos a domicilio y atencion directa para enviar detalles elegantes en la ciudad.",
+      "DIFIORI es una floreria en Guayaquil con flores frescas, pedidos a domicilio y atención directa para enviar detalles para cada ocasión.",
     focus: ["Arreglos florales personalizados", "Atencion directa por WhatsApp", "Entrega a domicilio en Guayaquil"],
     preferredCategories: ["Ramo de Flores", "Arreglo con Frutas", "Flores para Aniversario", "Nacimiento"],
     productTerms: ["flor", "rosa", "arreglo", "ramo"],
@@ -63,7 +63,7 @@ const landingPages = {
     keywords: "florerias en Guayaquil, floreria Guayaquil, floristeria Guayaquil, arreglos florales Guayaquil",
     h1: "Floreria en Guayaquil",
     intro:
-      "Si buscas florerias en Guayaquil, DIFIORI combina diseno floral, flores frescas y atencion directa para ayudarte a enviar un detalle elegante el mismo dia o en fecha programada.",
+      "Si buscas florerias en Guayaquil, DIFIORI combina flores frescas y atención directa para ayudarte a enviar un detalle el mismo día o en fecha programada.",
     focus: ["Arreglos florales personalizados", "Atencion directa por WhatsApp", "Entrega a domicilio en Guayaquil"],
     preferredCategories: ["Ramo de Flores", "Arreglo con Frutas", "Flores para Aniversario", "Nacimiento"],
     productTerms: ["flor", "arreglo", "ramo", "rosa"],
@@ -83,16 +83,16 @@ const landingPages = {
     path: "/ramos-de-flores",
     title: "Ramos de Flores en Guayaquil | Ramos a Domicilio | DIFIORI",
     description:
-      "Encuentra ramos de flores en Guayaquil para cumpleaños, aniversarios y regalos románticos con entrega a domicilio y diseño elegante.",
+      "Encuentra ramos de flores en Guayaquil para cumpleaños, aniversarios y regalos románticos con entrega a domicilio y opciones para distintos presupuestos.",
     keywords: "ramos de flores, ramos de flores Guayaquil, ramos a domicilio Guayaquil, ramos de rosas Guayaquil",
     h1: "Ramos de flores",
     intro:
-      "Nuestros ramos de flores estan pensados para regalar emociones: rosas, flores mixtas y composiciones elegantes listas para enviar en Guayaquil.",
+      "Nuestros ramos de flores están pensados para regalar emociones: rosas, flores mixtas y opciones listas para enviar en Guayaquil.",
     focus: ["Ramos para amor y aniversario", "Ramos de rosas y flores mixtas", "Opciones con regalos complementarios"],
     preferredCategories: ["Ramo de Flores"],
     productTerms: ["ramo", "bouquet", "rosa", "rosas", "aniversario"],
     serviceCards: [
-      ["Ramos románticos", "Opciones con rosas, flores mixtas y estilos elegantes para amor y aniversario."],
+      ["Ramos románticos", "Opciones con rosas y flores mixtas para amor y aniversario."],
       ["Celebraciones", "Ramos para cumpleaños, graduaciones y detalles que deben verse memorables."],
       ["Complementos", "Puedes combinar flores con chocolates, globos o peluches según disponibilidad."],
     ],
@@ -107,7 +107,7 @@ const landingPages = {
     path: "/arreglos-de-flores-guayaquil",
     title: "Arreglos de Flores en Guayaquil | Entrega a Domicilio | DIFIORI",
     description:
-      "Compra arreglos de flores en Guayaquil con entrega a domicilio, diseño premium y opciones ideales para cumpleaños, amor y celebraciones especiales.",
+      "Compra arreglos de flores en Guayaquil con entrega a domicilio y opciones para cumpleaños, amor y celebraciones especiales, en distintos presupuestos.",
     keywords: "arreglos de flores en Guayaquil, arreglos florales Guayaquil, arreglos de flores a domicilio Guayaquil, floreria Guayaquil",
     h1: "Arreglos de flores en Guayaquil",
     intro:
@@ -116,7 +116,7 @@ const landingPages = {
     preferredCategories: ["Arreglo con Frutas", "Flores para Aniversario"],
     productTerms: ["arreglo", "caja", "frutas", "desayuno", "chocolate", "fresas"],
     serviceCards: [
-      ["Cajas y composiciones", "Arreglos en caja, bases y combinaciones florales con presencia premium."],
+      ["Cajas y composiciones", "Arreglos en caja, bases y combinaciones florales para regalar en grande o con un detalle sencillo."],
       ["Regalos completos", "Opciones con frutas, chocolates, globos, desayunos y detalles complementarios."],
       ["Ocasiones especiales", "Cumpleaños, amor, condolencias, aniversarios y sorpresas programadas."],
     ],
@@ -135,7 +135,7 @@ const landingPages = {
     keywords: "arreglos florales Guayaquil, arreglos florales a domicilio Guayaquil, flores Guayaquil, floreria Guayaquil",
     h1: "Arreglos florales Guayaquil",
     intro:
-      "DIFIORI diseña arreglos florales en Guayaquil con flores frescas, composición elegante y atención directa para que tu detalle llegue a domicilio.",
+      "DIFIORI prepara arreglos florales en Guayaquil con flores frescas y atención directa para que tu detalle llegue a domicilio.",
     focus: ["Diseños florales para regalar", "Flores frescas en Guayaquil", "Compra online o por WhatsApp"],
     preferredCategories: ["Arreglo con Frutas", "Flores para Aniversario", "Ramo de Flores"],
     productTerms: ["arreglo", "floral", "flores", "rosas", "condolencias"],
@@ -146,7 +146,7 @@ const landingPages = {
     ],
     bodyTitle: "Arreglos florales con diseño y coordinación",
     bodyCopy: [
-      "Esta página se enfoca en diseño floral: arreglos elegantes, flores combinadas y presentaciones para distintas emociones.",
+      "Esta página se enfoca en arreglos florales, flores combinadas y presentaciones para distintas emociones y presupuestos.",
       "La prioridad es que el arreglo mantenga intención, estética y confianza desde la compra hasta la entrega.",
     ],
     related: ["/arreglos-de-flores-guayaquil", "/floreria-guayaquil", "/ramos-de-flores"],

@@ -217,7 +217,7 @@ export default function Home() {
         makesOffer: [
           { "@type": "Offer", itemOffered: { "@type": "Product", name: "Flores para regalar en Guayaquil" } },
           { "@type": "Offer", itemOffered: { "@type": "Product", name: "Ramos de flores a domicilio" } },
-          { "@type": "Offer", itemOffered: { "@type": "Product", name: "Arreglos florales premium" } },
+          { "@type": "Offer", itemOffered: { "@type": "Product", name: "Arreglos florales para cada ocasión" } },
         ],
       },
       {
@@ -232,7 +232,7 @@ export default function Home() {
           addressLocality: "Guayaquil",
           addressCountry: "EC",
         },
-        priceRange: "$$",
+        priceRange: "$–$$",
         openingHoursSpecification: {
           "@type": "OpeningHoursSpecification",
           dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
@@ -269,7 +269,7 @@ export default function Home() {
     <main className="min-h-screen overflow-clip bg-background scroll-smooth selection:bg-accent selection:text-white">
       <Seo
         title="Flores para Regalar en Guayaquil | Ramos y Arreglos a Domicilio | DIFIORI"
-        description="Compra flores frescas, ramos románticos y arreglos florales premium en Guayaquil con entrega a domicilio, pagos seguros y atención personalizada por WhatsApp."
+        description="Compra flores frescas, ramos románticos y arreglos florales en Guayaquil. Encuentra opciones para distintos presupuestos con entrega a domicilio y pagos seguros."
         keywords="flores para regalar guayaquil, flores en guayaquil, floreria guayaquil, ramos de flores guayaquil, arreglos florales guayaquil, regalos para sorprender guayaquil"
         path="/"
         schema={homeSchema}
@@ -292,9 +292,9 @@ export default function Home() {
 
         <section className="home-discovery" aria-labelledby="home-discovery-title">
           <div className="home-discovery-heading">
-            <span className="home-discovery-kicker">Confianza, estilo y entrega rápida</span>
-            <h2 id="home-discovery-title">Elige el detalle perfecto para tu momento</h2>
-            <p>Desde un ramo romántico hasta un arreglo elegante para una celebración, te guiamos para comprar con total seguridad y sin complicaciones.</p>
+            <span className="home-discovery-kicker">Regalos para cada ocasión y presupuesto</span>
+            <h2 id="home-discovery-title">Encuentra un detalle bonito para tu momento</h2>
+            <p>Desde un ramo romántico hasta un arreglo para una celebración, encuentra opciones para regalar sin complicaciones.</p>
           </div>
 
           <div className="home-trust-banner" role="note">
@@ -306,7 +306,7 @@ export default function Home() {
             <article className="home-benefit-card">
               <div className="home-benefit-icon"><CheckCircle2 aria-hidden="true" /></div>
               <h3>Flores frescas y cuidadas</h3>
-              <p>Selección premium para que cada detalle se vea elegante desde el primer instante.</p>
+              <p>Opciones bonitas y cuidadas para regalar en diferentes ocasiones.</p>
             </article>
             <article className="home-benefit-card">
               <div className="home-benefit-icon"><Clock3 aria-hidden="true" /></div>
@@ -348,9 +348,9 @@ export default function Home() {
           <div>
             <p className="home-conversion-kicker">Asesoría rápida</p>
             <h2>¿No sabes qué elegir?</h2>
-            <p>Te ayudamos a encontrar un regalo elegante y adecuado para la ocasión.</p>
+            <p>Te ayudamos a encontrar un regalo bonito que se ajuste a tu ocasión y presupuesto.</p>
           </div>
-          <a href={`https://wa.me/${DEFAULT_COMPANY.phoneDigits}?text=${encodeURIComponent("Hola, necesito ayuda para elegir un detalle floral perfecto.")}`} target="_blank" rel="noreferrer" className="ui-btn-primary">
+          <a href={`https://wa.me/${DEFAULT_COMPANY.phoneDigits}?text=${encodeURIComponent("Hola, necesito ayuda para elegir un detalle floral según mi ocasión y presupuesto.")}`} target="_blank" rel="noreferrer" className="ui-btn-primary">
             <MessageCircleMore className="h-4 w-4" />
             Pedir asesoría
           </a>
