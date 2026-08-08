@@ -1,6 +1,7 @@
 export interface PublicAppConfig {
   siteUrl: string;
   assetBaseUrl?: string;
+  gaMeasurementId?: string;
 }
 
 declare global {
@@ -59,8 +60,16 @@ export function getPublicAppConfig(): PublicAppConfig {
         readProcessEnv("VITE_ASSET_BASE_URL"),
     ) || readBrowserOrigin();
 
+  const gaMeasurementId = String(
+    browserConfig?.gaMeasurementId ||
+      readProcessEnv("GA_MEASUREMENT_ID") ||
+      readProcessEnv("VITE_GA_MEASUREMENT_ID") ||
+      "",
+  ).trim();
+
   return {
     siteUrl,
     assetBaseUrl: assetBaseUrl || undefined,
+    ...(gaMeasurementId ? { gaMeasurementId } : {}),
   };
 }

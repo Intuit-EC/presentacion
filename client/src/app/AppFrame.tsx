@@ -3,6 +3,8 @@ import { useLocation } from "wouter";
 import { Navbar } from "@/components/Navbar";
 import { useCompany } from "@/hooks/useCompany";
 import { useCart } from "@/context/CartContext";
+import { initGoogleAnalytics, trackGaEvent } from "@/lib/analytics";
+import { getPublicAppConfig } from "@/lib/runtime-config";
 
 const Toaster = lazy(() =>
   import("@/components/ui/toaster").then((module) => ({ default: module.Toaster })),
@@ -39,16 +41,31 @@ export function AppFrame({ Routes, fallback = <RouteFallback /> }: AppFrameProps
   const [location] = useLocation();
   const hasTrackedInitialPageView = useRef(false);
   const hasInitializedPixel = useRef(false);
+  const hasInitializedGa = useRef(false);
   const [shouldLoadToaster, setShouldLoadToaster] = useState(false);
   const [shouldFetchCompany, setShouldFetchCompany] = useState(false);
   const [shouldLoadFloatingWhatsApp, setShouldLoadFloatingWhatsApp] = useState(false);
   const { isCartOpen } = useCart();
+  const gaMeasurementId = getPublicAppConfig().gaMeasurementId;
   const hideNavbar = location === "/checkout" || location === "/payment-gateway" || location === "/payment-result";
   const { data: company } = useCompany(shouldFetchCompany && !hideNavbar);
   const showClosedStoreBanner = !hideNavbar && company?.settings?.acceptOrders === false;
   const appFrameStyle = {
     "--closed-store-banner-height": showClosedStoreBanner ? "38px" : "0px",
   } as CSSProperties;
+
+  useEffect(() => {
+    if (!hasInitializedGa.current) {
+      hasInitializedGa.current = initGoogleAnalytics(gaMeasurementId);
+    }
+    if (!hasInitializedGa.current) return;
+
+    trackGaEvent("page_view", {
+      page_location: window.location.href,
+      page_path: `${window.location.pathname}${window.location.search}`,
+      page_title: document.title,
+    });
+  }, [location, gaMeasurementId]);
 
   useEffect(() => {
     if (hasInitializedPixel.current || typeof window === "undefined") return;

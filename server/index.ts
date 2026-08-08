@@ -414,6 +414,9 @@ function buildPublicConfigScript() {
   return `<script>window.__APP_CONFIG__ = ${serializeForScript({
     siteUrl: SITE_URL,
     ...(ASSET_BASE_URL ? { assetBaseUrl: ASSET_BASE_URL } : {}),
+    ...(String(process.env.GA_MEASUREMENT_ID || process.env.VITE_GA_MEASUREMENT_ID || "").trim()
+      ? { gaMeasurementId: String(process.env.GA_MEASUREMENT_ID || process.env.VITE_GA_MEASUREMENT_ID).trim() }
+      : {}),
   })}</script>`;
 }
 
@@ -749,6 +752,35 @@ async function postJsonToBackend(path: string, payload: unknown) {
   }
 }
 
+async function confirmPayphoneTransaction(payload: { id: number; clientTransactionId: string }) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 20000);
+
+  try {
+    const response = await fetch("https://pay.payphonetodoesposible.com/api/button/V2/Confirm", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${PAYPHONE_WEB_TOKEN}`,
+      },
+      body: JSON.stringify({ id: payload.id, clientTxId: payload.clientTransactionId }),
+      signal: controller.signal,
+    });
+    const rawBody = await response.text();
+
+    let data: unknown = null;
+    try {
+      data = rawBody ? JSON.parse(rawBody) : null;
+    } catch {
+      data = null;
+    }
+
+    return { response, data };
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
 app.post("/api/payphone-web/box-prepare", async (req: Request, res: Response) => {
   try {
     if (!PAYPHONE_WEB_TOKEN) {
@@ -868,6 +900,72 @@ app.post("/api/payphone-web/finalize", async (req: Request, res: Response) => {
     return res.status(500).json({
       status: "error",
       message: "No se pudo finalizar el pago desde el servidor web.",
+    });
+  }
+});
+
+// Confirm PayPhone from the server, not from the customer's browser. This
+// prevents an interrupted redirect, ad blocker, or lost connection from
+// leaving a card payment in an inconsistent state.
+app.post("/api/payphone-web/confirm-and-finalize", async (req: Request, res: Response) => {
+  try {
+    const clientTransactionId = String(req.body?.clientTransactionId || req.body?.clientTxId || "").trim();
+    const transactionId = Number(req.body?.id);
+    const wasCancelled = req.body?.transactionStatus === "CANCELLED";
+
+    if (!clientTransactionId) {
+      return res.status(400).json({ status: "error", message: "Falta la referencia de la transacción." });
+    }
+
+    if (wasCancelled) {
+      const { response, data } = await postJsonToBackend("/api/external/payphone/finalize", {
+        id: Number.isFinite(transactionId) ? transactionId : undefined,
+        clientTransactionId,
+        transactionStatus: "CANCELLED",
+      });
+      return res.status(response.status).json(data);
+    }
+
+    if (!PAYPHONE_WEB_TOKEN) {
+      return res.status(503).json({ status: "error", message: "PayPhone no está configurado en el servidor." });
+    }
+
+    if (!Number.isSafeInteger(transactionId) || transactionId <= 0) {
+      return res.status(400).json({ status: "error", message: "La transacción de PayPhone no es válida." });
+    }
+
+    const confirmation = await confirmPayphoneTransaction({
+      id: transactionId,
+      clientTransactionId,
+    });
+    const confirmationData = confirmation.data as Record<string, unknown> | null;
+
+    if (!confirmation.response.ok || !confirmationData) {
+      console.error("[PAYPHONE_WEB][CONFIRM_FAILED]", {
+        status: confirmation.response.status,
+        transactionId,
+        clientTransactionId,
+      });
+      return res.status(502).json({
+        status: "error",
+        message: "No pudimos verificar el pago todavía. No se realizó ningún cambio en tu pedido; intenta de nuevo en unos minutos.",
+      });
+    }
+
+    const { response, data } = await postJsonToBackend("/api/external/payphone/finalize", {
+      id: transactionId,
+      clientTransactionId,
+      transactionStatus: confirmationData.transactionStatus,
+      amount: confirmationData.amount,
+      authorizationCode: confirmationData.authorizationCode,
+    });
+
+    return res.status(response.status).json(data);
+  } catch (error) {
+    console.error("[PAYPHONE_WEB][CONFIRM_AND_FINALIZE_ERROR]", error);
+    return res.status(502).json({
+      status: "error",
+      message: "No pudimos verificar el pago todavía. Tu pedido quedó pendiente de confirmación.",
     });
   }
 });

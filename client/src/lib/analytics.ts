@@ -2,9 +2,30 @@ type GtagEventParams = Record<string, unknown>;
 
 declare global {
   interface Window {
-    gtag?: (command: "event", eventName: string, params?: GtagEventParams) => void;
+    gtag?: (...args: unknown[]) => void;
     dataLayer?: unknown[];
   }
+}
+
+export function initGoogleAnalytics(measurementId: string | undefined) {
+  if (typeof window === "undefined" || typeof document === "undefined") return false;
+  const id = String(measurementId || "").trim();
+  if (!/^G-[A-Z0-9]+$/i.test(id)) return false;
+
+  window.dataLayer = window.dataLayer || [];
+  window.gtag = window.gtag || ((...args: unknown[]) => window.dataLayer?.push(args));
+  window.gtag("js", new Date());
+  window.gtag("config", id, { send_page_view: false });
+
+  if (!document.querySelector(`script[data-ga-measurement-id="${id}"]`)) {
+    const script = document.createElement("script");
+    script.async = true;
+    script.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(id)}`;
+    script.dataset.gaMeasurementId = id;
+    document.head.appendChild(script);
+  }
+
+  return true;
 }
 
 export function trackGaEvent(eventName: string, params?: GtagEventParams) {

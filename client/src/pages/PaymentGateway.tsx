@@ -109,9 +109,6 @@ export default function PaymentGateway() {
         }
 
         localStorage.setItem("pp_clientTxId", result.data.clientTransactionId);
-        const webToken = String(result.data.paymentBoxData?.token || "");
-        sessionStorage.setItem("pp_web_token", webToken);
-        localStorage.setItem("pp_web_token", webToken);
 
         setReference(result.data.reference || "");
         setClientTransactionId(result.data.clientTransactionId || "");

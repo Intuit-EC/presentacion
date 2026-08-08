@@ -78,14 +78,6 @@ export default function PaymentResult() {
     // Si no hay clientTransactionId en la URL, buscar en localStorage (fallback)
     const finalClientTxId = clientTransactionId || localStorage.getItem("pp_clientTxId");
 
-    const finalizePayphoneOrder = async (payload: Record<string, unknown>) => {
-      return fetchJsonWithTimeout("/api/payphone-web/finalize", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-    };
-
     const capturePaypalOrder = async () => {
       return fetchJsonWithTimeout(apiUrl("/api/external/paypal/capture"), {
         method: "POST",
@@ -98,45 +90,18 @@ export default function PaymentResult() {
       });
     };
 
-    const confirmWebBoxInBrowser = async () => {
-      if (!payphoneId || transactionStatus === "CANCELLED") {
-        return finalizePayphoneOrder({
+    const confirmPayphoneOrder = async () => fetchJsonWithTimeout(
+      "/api/payphone-web/confirm-and-finalize",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
           id: payphoneId,
           clientTransactionId: finalClientTxId,
-          transactionStatus: "CANCELLED",
-        });
-      }
-
-      const webToken =
-        sessionStorage.getItem("pp_web_token") ||
-        localStorage.getItem("pp_web_token");
-      if (!webToken) {
-        throw new Error("No se encontró el token web de PayPhone para confirmar el pago.");
-      }
-
-      const confirmData = await fetchJsonWithTimeout(
-        "https://pay.payphonetodoesposible.com/api/button/V2/Confirm",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${webToken}`,
-          },
-          body: JSON.stringify({
-            id: Number(payphoneId),
-            clientTxId: finalClientTxId,
-          }),
-        },
-      );
-
-      return finalizePayphoneOrder({
-        id: payphoneId,
-        clientTransactionId: finalClientTxId,
-        transactionStatus: confirmData.transactionStatus,
-        amount: confirmData.amount,
-        authorizationCode: confirmData.authorizationCode,
-      });
-    };
+          transactionStatus,
+        }),
+      },
+    );
 
     const confirmOrder = async () => {
       try {
@@ -150,7 +115,7 @@ export default function PaymentResult() {
           provider === "paypal" || Boolean(paypalOrderId) || paypalStatus === "cancelled";
         const data = isPaypalFlow
           ? await capturePaypalOrder()
-          : await confirmWebBoxInBrowser();
+          : await confirmPayphoneOrder();
 
         if (data.status !== "success") {
           setStatus("error");
