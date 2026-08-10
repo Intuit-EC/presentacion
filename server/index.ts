@@ -20,7 +20,6 @@ import { createAppQueryClient } from "../client/src/lib/queryClient";
 import { toPublicImageUrl } from "../client/src/lib/media";
 import { DEFAULT_SEO_STATE, renderSeoTags, type SeoState } from "../client/src/components/Seo";
 import { categoriesQueryKey, fetchCategories } from "../client/src/hooks/useCategories";
-import { cmsHomeHeroQueryKey, fetchHomeHero, type HomeHero } from "../client/src/hooks/useCMS";
 import { companyQueryKey, fetchCompany } from "../client/src/hooks/useCompany";
 import { productsQueryKey, fetchProducts } from "../client/src/hooks/useProducts";
 import { DEFAULT_COMPANY } from "../client/src/lib/site";
@@ -467,20 +466,6 @@ function getFallbackSeoState(path: string): SeoState {
   };
 }
 
-function getHomeHeroPreload(queryClient: QueryClient) {
-  const hero = queryClient.getQueryData<HomeHero | null>(cmsHomeHeroQueryKey);
-  const firstImage = Array.isArray(hero?.images) ? hero.images[0] : null;
-  const imageUrl = toPublicImageUrl(
-    typeof firstImage === "string" ? firstImage : firstImage?.url,
-  );
-
-  if (imageUrl) {
-    return `<link rel="preload" as="image" href="${escapeXml(imageUrl)}" fetchpriority="high" />`;
-  }
-
-  return `<link rel="preload" as="image" href="/assets/banner_collage_mobile.webp" type="image/webp" fetchpriority="high" imagesrcset="/assets/banner_collage_mobile.webp 767w, /assets/banner_collage_desktop.webp 768w" imagesizes="100vw" />`;
-}
-
 function shouldSsrPath(path: string) {
   return (
     path === "/" ||
@@ -509,11 +494,6 @@ async function prefetchSsrRouteData(queryClient: QueryClient, path: string, base
   });
 
   if (path === "/") {
-    await queryClient.prefetchQuery({
-      queryKey: cmsHomeHeroQueryKey,
-      queryFn: () => fetchHomeHero(baseUrl),
-    });
-
     return 200;
   }
 
@@ -1370,7 +1350,7 @@ app.use((req, res, next) => {
       });
 
       const page = injectHtml(template, {
-        head: `${renderSeoTags(seo)}${req.path === "/" ? getHomeHeroPreload(queryClient) : ""}`,
+        head: renderSeoTags(seo),
         appHtml,
         stateScript: `${buildPublicConfigScript()}<script>window.__REACT_QUERY_STATE__ = ${serializeForScript(dehydratedState)}</script>`,
       });

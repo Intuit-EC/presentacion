@@ -12,6 +12,10 @@
   padding: 2rem 1.5rem 5rem;
 }
 
+.home-shell-main-catalog-first {
+  padding-top: calc(6.5rem + var(--closed-store-banner-height, 0px));
+}
+
 .home-discovery {
   margin-bottom: 4.5rem;
 }
@@ -385,6 +389,10 @@
 @media (min-width: 1024px) {
   .home-shell-banner-slot {
     padding-top: 7rem;
+  }
+
+  .home-shell-main-catalog-first {
+    padding-top: calc(8.5rem + var(--closed-store-banner-height, 0px));
   }
 
   .home-shell-catalog-fallback {

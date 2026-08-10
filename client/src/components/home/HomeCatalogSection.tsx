@@ -8,12 +8,9 @@ import "./home-catalog.css";
 
 const HOME_PRODUCTS_PER_CATEGORY = 2;
 const HOME_CATEGORY_LIMIT = 4;
-const HOME_PRODUCT_LIMIT = HOME_PRODUCTS_PER_CATEGORY * HOME_CATEGORY_LIMIT;
 
 export function HomeCatalogSection() {
-  const { data: allProducts = [], isLoading: isLoadingAll } = useProducts({
-    limit: HOME_PRODUCT_LIMIT,
-  });
+  const { data: allProducts = [], isLoading: isLoadingAll } = useProducts();
 
   const categorySections = React.useMemo(() => {
     const sections = new Map<string, typeof allProducts>();
@@ -50,7 +47,7 @@ export function HomeCatalogSection() {
         <div id="catalogo" className="home-catalog-header">
           <div className="home-catalog-line" />
           <h2 className="home-catalog-title">
-            Colecciones pensadas para sorprender
+            Compra flores y regalos directamente
           </h2>
           <div className="home-catalog-line" />
         </div>
@@ -81,6 +78,7 @@ export function HomeCatalogSection() {
                       key={product.id}
                       product={product}
                       priority={sectionIndex === 0 && productIndex < 2}
+                      showBestSellerBadge={(sectionIndex * HOME_PRODUCTS_PER_CATEGORY) + productIndex < 4}
                     />
                   ))}
                 </div>

@@ -4,8 +4,8 @@
   display: flex;
   flex-direction: column;
   gap: 2.5rem;
-  padding-top: 2.5rem;
-  margin-bottom: 10rem;
+  padding-top: 0.5rem;
+  margin-bottom: 5rem;
 }
 
 .home-catalog-sidebar {
@@ -85,7 +85,7 @@
 @media (max-width: 639px) {
   .home-catalog-header { gap: 0.75rem; margin-bottom: 2rem; }
   .home-catalog-title { font-size: 0.72rem; letter-spacing: 0.14em; }
-  .home-catalog-section { margin-bottom: 6rem; }
+  .home-catalog-section { margin-bottom: 4rem; }
 }
 
 .home-catalog-cta {

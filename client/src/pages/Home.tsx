@@ -1,15 +1,11 @@
-import React, { Suspense, lazy, useEffect, useRef, useState } from "react";
+import { Suspense, lazy, useEffect, useRef, useState } from "react";
 import { ArrowRight, CalendarHeart, CheckCircle2, Clock3, Gift, Heart, MessageCircleMore, ShieldCheck, Sparkles } from "lucide-react";
-import { Banner } from "@/components/Banner";
 import { Seo } from "@/components/Seo";
+import { HomeCatalogSection } from "@/components/home/HomeCatalogSection";
 import { FAQS } from "@/data/mock";
 import { DEFAULT_COMPANY, absoluteUrl, canonicalUrl } from "@/lib/site";
 import { getMerchantOrganizationSchema } from "@/lib/merchant-seo";
 import "./home-shell.css";
-
-const HomeCatalogSection = lazy(() =>
-  import("@/components/home/HomeCatalogSection").then((module) => ({ default: module.HomeCatalogSection })),
-);
 
 const HomeDeferredSections = lazy(() =>
   import("@/components/home/HomeDeferredSections").then((module) => ({ default: module.HomeDeferredSections })),
@@ -17,35 +13,6 @@ const HomeDeferredSections = lazy(() =>
 
 const DEFERRED_HASH_SECTIONS = ["testimonios", "faq", "contacto"] as const;
 const HOME_HASH_SECTIONS = ["catalogo", ...DEFERRED_HASH_SECTIONS] as const;
-
-function CatalogFallback() {
-  return (
-    <section className="home-shell-catalog-fallback">
-      <aside className="home-shell-catalog-fallback-sidebar">
-        <div className="surface-card home-shell-catalog-fallback-desktop" />
-        <div className="home-shell-catalog-fallback-mobile" />
-      </aside>
-
-      <main className="home-shell-catalog-fallback-main">
-        <div id="catalogo" className="home-shell-catalog-fallback-head">
-          <div className="home-shell-catalog-fallback-line" />
-          <h2 className="home-shell-catalog-fallback-title">
-            Catalogo de Arreglos Florales
-          </h2>
-          <div className="home-shell-catalog-fallback-line" />
-        </div>
-
-        <div id="product-list" className="home-shell-catalog-fallback-list">
-          {Array(6)
-            .fill(0)
-            .map((_, i) => (
-              <div key={i} className="product-skeleton" />
-            ))}
-        </div>
-      </main>
-    </section>
-  );
-}
 
 function DeferredFallback() {
   return (
@@ -84,10 +51,8 @@ function DeferredFallback() {
 }
 
 export default function Home() {
-  const catalogTriggerRef = useRef<HTMLDivElement | null>(null);
   const deferredTriggerRef = useRef<HTMLDivElement | null>(null);
   const hashScrollTimeoutsRef = useRef<number[]>([]);
-  const [shouldLoadCatalog, setShouldLoadCatalog] = useState(false);
   const [shouldLoadDeferredSections, setShouldLoadDeferredSections] = useState(false);
 
   const clearHashScrollTimeouts = () => {
@@ -120,33 +85,9 @@ export default function Home() {
   };
 
   useEffect(() => {
-    if (shouldLoadCatalog) return;
-
-    const target = catalogTriggerRef.current;
-    if (!target || typeof IntersectionObserver === "undefined") {
-      setShouldLoadCatalog(true);
-      return;
-    }
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries.some((entry) => entry.isIntersecting)) {
-          setShouldLoadCatalog(true);
-          observer.disconnect();
-        }
-      },
-      { rootMargin: window.matchMedia("(max-width: 767px)").matches ? "700px 0px" : "900px 0px" },
-    );
-
-    observer.observe(target);
-    return () => observer.disconnect();
-  }, [shouldLoadCatalog]);
-
-  useEffect(() => {
     if (typeof window === "undefined") return;
     const hash = window.location.hash.replace("#", "");
     if (hash === "catalogo") {
-      setShouldLoadCatalog(true);
       scrollToSectionWithRetry("catalogo");
     }
   }, []);
@@ -190,10 +131,6 @@ export default function Home() {
     const handleHashChange = () => {
       const hash = window.location.hash.replace("#", "");
       if (!HOME_HASH_SECTIONS.includes(hash as (typeof HOME_HASH_SECTIONS)[number])) return;
-
-      if (hash === "catalogo") {
-        setShouldLoadCatalog(true);
-      }
 
       if (DEFERRED_HASH_SECTIONS.includes(hash as (typeof DEFERRED_HASH_SECTIONS)[number])) {
         setShouldLoadDeferredSections(true);
@@ -276,19 +213,8 @@ export default function Home() {
       />
       <h1 className="sr-only">DIFIORI Flores en Guayaquil - Floreria Guayaquil con Pedidos de Flores a Domicilio</h1>
 
-      <section className="home-shell-banner-slot">
-        <Banner />
-      </section>
-
-      <div className="home-shell-main">
-        <div
-          ref={catalogTriggerRef}
-          style={{ minHeight: 1 }}
-          aria-hidden="true"
-        />
-        <Suspense fallback={<CatalogFallback />}>
-          {shouldLoadCatalog ? <HomeCatalogSection /> : <CatalogFallback />}
-        </Suspense>
+      <div className="home-shell-main home-shell-main-catalog-first">
+        <HomeCatalogSection />
 
         <section className="home-discovery" aria-labelledby="home-discovery-title">
           <div className="home-discovery-heading">

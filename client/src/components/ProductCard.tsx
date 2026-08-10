@@ -1,6 +1,6 @@
 import React from "react";
 import type { Product } from "@/data/mock";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Clock3, Loader2, MessageSquare, ShieldCheck, ShoppingBag, Truck } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { useCompany } from "@/hooks/useCompany";
@@ -19,6 +19,7 @@ interface ProductCardProps {
 
 export function ProductCard({ product, priority = false, showBestSellerBadge = true }: ProductCardProps) {
   const { buyNow } = useCart();
+  const [, setLocation] = useLocation();
   const { data: company } = useCompany();
   const { toast } = useToast();
   const [isBuying, setIsBuying] = React.useState(false);
@@ -74,7 +75,7 @@ export function ProductCard({ product, priority = false, showBestSellerBadge = t
       value: productPrice,
     });
     buyNow(product);
-    window.location.assign("/checkout");
+    setLocation("/checkout");
   };
 
   return (
