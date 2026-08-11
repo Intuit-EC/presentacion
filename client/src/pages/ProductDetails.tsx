@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { MessageSquare, Truck, ShieldCheck, Clock, ShoppingBag, Loader2 } from "lucide-react";
+import { MessageSquare, Plus, Truck, ShieldCheck, Clock, ShoppingBag, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { getResponsiveImageSrcSet } from "@/lib/media";
@@ -10,6 +10,7 @@ import { useCart } from "@/context/CartContext";
 import { useToast } from "@/hooks/use-toast";
 import { Seo } from "@/components/Seo";
 import { buildGaItem, trackGaEvent } from "@/lib/analytics";
+import { trackFacebookEvent } from "@/lib/facebook-pixel";
 import { DEFAULT_COMPANY, absoluteUrl, canonicalUrl } from "@/lib/site";
 import {
   MERCHANT_ORGANIZATION_ID,
@@ -41,7 +42,7 @@ export default function ProductDetails() {
   const [location, setLocation] = useLocation();
   const { data: allProducts = [], isLoading } = useProducts();
   const { data: company } = useCompany();
-  const { buyNow } = useCart();
+  const { addItem, buyNow, setIsCartOpen } = useCart();
   const { toast } = useToast();
 
   const routePath = getCleanRoutePath(location);
@@ -81,6 +82,14 @@ export default function ProductDetails() {
         }),
       ],
     });
+    trackFacebookEvent("ViewContent", {
+      content_ids: [getProductSku(product)],
+      content_name: product.name,
+      content_category: formatCategoryDisplayName(product.category),
+      content_type: "product",
+      currency: "USD",
+      value: getNumericPriceValue(product.price),
+    });
   }, [product]);
 
   React.useEffect(() => {
@@ -92,18 +101,54 @@ export default function ProductDetails() {
     }
   }, [product, routePath, setLocation]);
 
+  const isStoreClosed = () => {
+    if (company?.settings?.acceptOrders !== false) return false;
+
+    toast({
+      title: "Tienda cerrada temporalmente",
+      description: "Por ahora no estamos recibiendo nuevos pedidos.",
+      duration: 4000,
+    });
+    return true;
+  };
+
+  const trackProductAddToCart = () => {
+    if (!product) return;
+
+    trackGaEvent("add_to_cart", {
+      currency: "USD",
+      value: getNumericPriceValue(product.price),
+      items: [
+        buildGaItem({
+          id: getProductSku(product),
+          name: product.name,
+          category: formatCategoryDisplayName(product.category),
+          price: getNumericPriceValue(product.price),
+        }),
+      ],
+    });
+    trackFacebookEvent("AddToCart", {
+      content_ids: [getProductSku(product)],
+      content_name: product.name,
+      content_type: "product",
+      currency: "USD",
+      value: getNumericPriceValue(product.price),
+    });
+  };
+
+  const handleAddToCart = () => {
+    if (!product || isStoreClosed()) return;
+
+    trackProductAddToCart();
+    addItem(product);
+    setIsCartOpen(true);
+  };
+
   const handleBuyNow = () => {
-    if (!product || isBuying) return;
-    if (company?.settings?.acceptOrders === false) {
-      toast({
-        title: "Tienda cerrada temporalmente",
-        description: "Por ahora no estamos recibiendo nuevos pedidos.",
-        duration: 4000,
-      });
-      return;
-    }
+    if (!product || isBuying || isStoreClosed()) return;
 
     setIsBuying(true);
+    trackProductAddToCart();
     buyNow(product);
     setLocation("/checkout");
   };
@@ -381,6 +426,9 @@ export default function ProductDetails() {
                   <ShoppingBag className="h-5 w-5" />
                 )}
                 {isBuying ? "Cargando..." : "Comprar ahora"}
+              </button>
+              <button type="button" onClick={handleAddToCart} className="ui-btn-secondary flex-1 py-5">
+                <Plus className="h-5 w-5" /> Agregar al carrito
               </button>
               <a
                 href={`https://wa.me/${DEFAULT_COMPANY.phoneDigits}?text=Hola!%20Deseo%20ordenar%20el%20arreglo:%20${encodeURIComponent(product.name)}`}

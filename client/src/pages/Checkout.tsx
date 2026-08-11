@@ -41,7 +41,10 @@ type ShippingSectorRate = { sector: string; cost: number };
 type CheckoutFocusable = HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
 
 const CHECKOUT_REQUEST_TIMEOUT_MS = 30000;
-const PAYPAL_PROOF_UPLOAD_TIMEOUT_MS = 20000;
+const PAYPAL_PROOF_UPLOAD_TIMEOUT_MS = 25000;
+const PROOF_UPLOAD_TIMEOUT_MS = 45000;
+const PROOF_COMPRESSION_THRESHOLD_BYTES = 900_000;
+const MAX_PROOF_FILE_BYTES = 15 * 1024 * 1024;
 const PAYPHONE_SDK_ORIGIN = "https://cdn.payphonetodoesposible.com";
 const PAYPHONE_SDK_URL = `${PAYPHONE_SDK_ORIGIN}/box/v1.1/payphone-payment-box.js`;
 const PAYPHONE_CSS_URL = `${PAYPHONE_SDK_ORIGIN}/box/v1.1/payphone-payment-box.css`;
@@ -101,6 +104,19 @@ async function withTimeout<T>(
   } finally {
     window.clearTimeout(timeoutId);
   }
+}
+
+/**
+ * Los sectores llegan del admin escritos a mano ("urdesa", "kenedy norte"). Se
+ * muestran capitalizados y con su costo para que el cliente vea el envio antes
+ * de elegir, en vez de descubrirlo despues en el total.
+ */
+function formatSectorLabel(value: string) {
+  return value
+    .trim()
+    .split(/\s+/)
+    .map((word) => (word ? word[0].toLocaleUpperCase("es") + word.slice(1) : word))
+    .join(" ");
 }
 
 function normalizeSectorName(value: string) {
@@ -383,17 +399,17 @@ export default function Checkout() {
       deliveryDateTime,
       address,
       sector,
-      cardMessage,
     } = readCheckoutFields();
     const hasValidSenderEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(senderEmail);
     const senderComplete = Boolean(senderName && senderEmail && senderPhone && hasValidSenderEmail);
+    // El mensaje de la tarjeta es opcional: bloqueaba el pago de productos que
+    // ni siquiera llevan tarjeta (perfumes, desayunos, regalos).
     const deliveryComplete = Boolean(
       receiverName &&
         receiverPhone &&
         (hasConfiguredShippingSectors ? sector : true) &&
         deliveryDateTime &&
-        address &&
-        cardMessage
+        address
     );
 
     return {
@@ -576,7 +592,6 @@ export default function Checkout() {
       receiverPhone,
       address,
       sector,
-      cardMessage,
       deliveryDateTime,
     } = readCheckoutFields();
     return [
@@ -585,7 +600,6 @@ export default function Checkout() {
       ...(hasConfiguredShippingSectors ? [[sector, "sector"] as const] : []),
       [deliveryDateTime, "hora de entrega"],
       [address, "dirección exacta"],
-      [cardMessage, "mensaje para la tarjeta"],
     ]
       .filter(([value]) => !value)
       .map(([, label]) => label);
@@ -623,7 +637,6 @@ export default function Checkout() {
       receiverPhone,
       address,
       sector,
-      cardMessage,
       deliveryDateTime,
     } = readCheckoutFields();
     const missingFields = getMissingReceiverFields();
@@ -640,8 +653,6 @@ export default function Checkout() {
         focusCheckoutField("receiver", dateTimeRef);
       } else if (!address) {
         focusCheckoutField("receiver", addressRef);
-      } else if (!cardMessage) {
-        focusCheckoutField("receiver", cardMessageRef);
       }
       return false;
     }
@@ -682,6 +693,31 @@ export default function Checkout() {
       setIsCartOpen(true);
       setIsCartOpening(false);
     }, 180);
+  };
+
+  const handleProofFileChange = (file: File | null) => {
+    if (!file) {
+      setSelectedProofFile(null);
+      setProofMessage("");
+      return;
+    }
+
+    if (!file.type.startsWith("image/")) {
+      setSelectedProofFile(null);
+      setProofMessage("El comprobante debe ser una imagen (captura o foto).");
+      return;
+    }
+
+    if (file.size > MAX_PROOF_FILE_BYTES) {
+      setSelectedProofFile(null);
+      setProofMessage(
+        "La imagen supera los 15 MB. Toma la captura de nuevo o envíala por WhatsApp y seguimos con tu pedido.",
+      );
+      return;
+    }
+
+    setSelectedProofFile(file);
+    setProofMessage("");
   };
 
   const handleValidateCoupon = async () => {
@@ -767,7 +803,10 @@ export default function Checkout() {
       shippingCost,
       cardMessage,
       observations,
-      total: finalTotal,
+      // Enviamos el total sin descontar el cupon: el backend valida el codigo
+      // contra la base y aplica el descuento. Si mandamos el total ya rebajado
+      // el descuento se resta dos veces y se cobra de menos.
+      total: cartSubtotal + shippingCost,
       couponCode: appliedCoupon?.code || null,
       storeUrl: window.location.origin,
     };
@@ -788,12 +827,9 @@ export default function Checkout() {
 
       if (paymentMethod === "PayPal") {
         const normalizedPaypalEmail = paypalPayerEmail.trim().toLowerCase();
-        if (!normalizedPaypalEmail) {
-          throw new Error("Ingresa el correo de la cuenta PayPal que usaras para pagar.");
-        }
 
-        // Validar correo de PayPal si se proporcionó
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedPaypalEmail)) {
+        // El correo es opcional; solo validamos el formato cuando lo escriben.
+        if (normalizedPaypalEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedPaypalEmail)) {
           throw new Error("El correo de PayPal no tiene un formato válido.");
         }
 
@@ -828,6 +864,10 @@ export default function Checkout() {
         const approveUrl = String(result.data?.approveUrl || "").trim();
 
         setOrderNumber(createdOrderNumber);
+        // Respaldo por si PayPal vuelve sin los parametros de la URL de retorno.
+        if (result.data?.clientTransactionId) {
+          localStorage.setItem("paypal_clientTxId", String(result.data.clientTransactionId));
+        }
 
         // Subir comprobante ANTES de redirigir a PayPal
         if (selectedProofFile) {
@@ -861,6 +901,31 @@ export default function Checkout() {
         const createdOrderNumber = data.data?.orderNumber || "DIFIORI-OK";
         setOrderNumber(createdOrderNumber);
         setOrderStatus("success");
+        // Banco y Zelle se confirman aqui mismo: sin este evento ni Analytics ni
+        // el pixel llegan a ver estas ventas y las campanas optimizan a ciegas.
+        trackGaEvent("purchase", {
+          transaction_id: createdOrderNumber,
+          currency: "USD",
+          value: finalTotal,
+          payment_method: paymentMethod,
+          items: items.map((item) =>
+            buildGaItem({
+              id: getProductSku(item.product),
+              name: item.product.name,
+              category: formatCategoryDisplayName(item.product.category),
+              price: getNumericPriceValue(item.product.price),
+              quantity: item.quantity,
+            }),
+          ),
+        });
+        trackFacebookEvent("Purchase", {
+          currency: "USD",
+          value: finalTotal,
+          content_ids: items.map((item) => getProductSku(item.product)),
+          content_type: "product",
+          num_items: items.reduce((total, item) => total + item.quantity, 0),
+          order_id: createdOrderNumber,
+        });
         if (
           (paymentMethod === "Banco" ||
             paymentMethod === "Zelle" ||
@@ -918,7 +983,7 @@ export default function Checkout() {
     setProofMessage("");
 
     try {
-      const dataUrl = await readFileAsDataUrl(proofFile);
+      const dataUrl = await compressProofImage(proofFile);
       const data = await fetchJsonWithTimeout(
         apiUrl(`/api/external/store-orders/${encodeURIComponent(targetOrderNumber)}/payment-proof`),
         {
@@ -929,7 +994,8 @@ export default function Checkout() {
             mimeType: proofFile.type,
             dataUrl,
           }),
-        }
+        },
+        PROOF_UPLOAD_TIMEOUT_MS,
       );
 
       if (data.status !== "success") {
@@ -1151,8 +1217,8 @@ export default function Checkout() {
             <div className="space-y-5 sm:space-y-6">
               <div>
                 <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                  <h3 className="flex min-w-0 items-center gap-2 text-2xl font-black tracking-tight text-[#4B1F6F] sm:gap-3 sm:text-4xl xl:text-5xl" style={{ fontFamily: '"Arial Black", Arial, sans-serif' }}>
-                    <ShoppingBag className="h-7 w-7 shrink-0 text-[#4B1F6F] sm:h-8 sm:w-8 xl:h-9 xl:w-9" /> <span className="min-w-0 break-words">Resumen</span>
+                  <h3 className="checkout-summary-title sm:gap-3">
+                    <ShoppingBag className="h-7 w-7 shrink-0 text-[#4B1F6F] sm:h-8 sm:w-8" /> <span className="min-w-0 break-words">Resumen</span>
                   </h3>
                   <button
                     type="button"
@@ -1186,15 +1252,9 @@ export default function Checkout() {
                           />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <h4 className="whitespace-normal break-words text-base font-black leading-tight text-[#4B1F6F] sm:text-[1.55rem]" style={{ fontFamily: '"Arial Black", Arial, sans-serif' }}>
-                            {item.product.name}
-                          </h4>
-                          <p className="mt-1 text-lg font-black text-[#4B1F6F] sm:mt-1.5 sm:text-[1.7rem]" style={{ fontFamily: '"Arial Black", Arial, sans-serif' }}>
-                            {item.product.price}
-                          </p>
-                          <p className="mt-1 text-[0.72rem] font-black uppercase tracking-[0.12em] text-[#4B1F6F] sm:mt-1.5 sm:text-[1.32rem] sm:tracking-[0.16em]" style={{ fontFamily: '"Arial Black", Arial, sans-serif' }}>
-                            Cant: {item.quantity}
-                          </p>
+                          <h4 className="checkout-item-name">{item.product.name}</h4>
+                          <p className="checkout-item-price">{item.product.price}</p>
+                          <p className="checkout-item-meta">Cant: {item.quantity}</p>
                         </div>
                       </div>
                     ))
@@ -1246,19 +1306,17 @@ export default function Checkout() {
                 </div>
 
                 <div className="space-y-3.5 border-t border-[#DCC5E8] pt-5">
-                  <div className="flex items-start justify-between gap-3 text-base font-black text-[#4B1F6F] sm:text-[1.42rem]" style={{ fontFamily: '"Arial Black", Arial, sans-serif' }}>
+                  <div className="checkout-summary-row">
                     <span>Subtotal</span>
                     <span>${cartSubtotal.toFixed(2)}</span>
                   </div>
-                  <div className="flex items-start justify-between gap-3 text-base font-black text-[#4B1F6F] sm:text-[1.42rem]" style={{ fontFamily: '"Arial Black", Arial, sans-serif' }}>
+                  <div className="checkout-summary-row">
                     <span>Sector</span>
-                    <span className="min-w-0 max-w-[58%] break-words text-right text-[#4B1F6F]">
-                      {sectorInput || "Pendiente"}
-                    </span>
+                    <span>{sectorInput ? formatSectorLabel(sectorInput) : "Pendiente"}</span>
                   </div>
-                  <div className="flex items-start justify-between gap-3 text-base font-black text-[#4B1F6F] sm:text-[1.42rem]" style={{ fontFamily: '"Arial Black", Arial, sans-serif' }}>
+                  <div className="checkout-summary-row">
                     <span>Envío</span>
-                    <span className="min-w-0 max-w-[58%] break-words text-right text-[#4B1F6F]">
+                    <span>
                       {shippingResolution.isMatched
                         ? `+$${shippingCost.toFixed(2)}`
                         : sectorInput
@@ -1266,25 +1324,29 @@ export default function Checkout() {
                           : "Ingresa tu sector"}
                     </span>
                   </div>
-                  <div className="flex items-start justify-between gap-3 text-base font-black text-[#4B1F6F] sm:text-[1.42rem]" style={{ fontFamily: '"Arial Black", Arial, sans-serif' }}>
+                  <div className="checkout-summary-row">
                     <span>Pago</span>
-                    <span className="text-[#4B1F6F]">{paymentMethod || "Pendiente"}</span>
+                    <span>{paymentMethod || "Pendiente"}</span>
                   </div>
                   {discountAmount > 0 && (
-                    <div className="flex justify-between text-[1rem] font-bold text-green-600">
+                    <div className="checkout-summary-row text-green-600">
                       <span>Descuento</span>
                       <span>-${discountAmount.toFixed(2)}</span>
                     </div>
                   )}
-                  <div className="flex items-end justify-between gap-3 border-t border-[#DCC5E8] pt-4 text-3xl font-black text-[#4B1F6F] sm:text-[2.65rem]" style={{ fontFamily: '"Arial Black", Arial, sans-serif' }}>
-                    <span className="font-serif">Total</span>
-                    <span className="min-w-0 break-words text-right text-[#4B1F6F]">
+                  <div className="checkout-summary-total">
+                    <span className="font-serif italic">Total</span>
+                    <span className="min-w-0 break-words text-right">
                       ${finalTotal.toFixed(2)}
                     </span>
                   </div>
-                  {shippingResolution.isMatched && (
+                  {shippingResolution.isMatched ? (
                     <p className="text-right text-[0.82rem] font-black text-[#4A3362]">
-                      Total con envío adicional de ${shippingCost.toFixed(2)} para {shippingResolution.matchedSector}.
+                      Total con envío adicional de ${shippingCost.toFixed(2)} para {formatSectorLabel(shippingResolution.matchedSector)}.
+                    </p>
+                  ) : (
+                    <p className="text-right text-[0.82rem] font-black text-[#4A3362]">
+                      El costo de envío de tu sector se confirma por WhatsApp antes del despacho.
                     </p>
                   )}
                 </div>
@@ -1427,7 +1489,7 @@ export default function Checkout() {
                         </option>
                         {shippingSectorRates.map((item) => (
                           <option key={item.sector} value={item.sector}>
-                            {item.sector}
+                            {formatSectorLabel(item.sector)} — ${item.cost.toFixed(2)}
                           </option>
                         ))}
                       </select>
@@ -1445,7 +1507,7 @@ export default function Checkout() {
                     )}
                     <span className="text-sm font-black text-[#4A3362]">
                       {shippingResolution.isMatched
-                        ? `Costo de envío para ${shippingResolution.matchedSector}: $${shippingCost.toFixed(2)}`
+                        ? `Costo de envío para ${formatSectorLabel(shippingResolution.matchedSector)}: $${shippingCost.toFixed(2)}`
                         : shippingSectorRates.length === 0
                           ? "Aún no hay sectores precargados. Escribe tu zona y te contactaremos para confirmar el envío."
                           : "Selecciona tu sector para calcular el envío."}
@@ -1473,12 +1535,12 @@ export default function Checkout() {
                   </label>
                   <label className="checkout-field">
                     <span>
-                      <MessageSquare className="h-5 w-5" /> Mensaje para la tarjeta *
+                      <MessageSquare className="h-5 w-5" /> Mensaje para la tarjeta
                     </span>
                     <textarea
                       ref={cardMessageRef}
                       className="checkout-input h-28 resize-none"
-                      placeholder="Escribe el mensaje que irá en la tarjeta"
+                      placeholder="Opcional: escríbelo aquí o coordínalo luego por WhatsApp"
                     />
                   </label>
                   <label className="checkout-field">
@@ -1630,10 +1692,9 @@ export default function Checkout() {
                           </div>
                         </div>
                         <label className="block text-sm font-black text-[#4A3362]">
-                          Correo PayPal *
+                          Correo PayPal (opcional)
                           <input
                             type="email"
-                            required
                             value={paypalPayerEmail}
                             onChange={(e) => setPaypalPayerEmail(e.target.value)}
                             placeholder="correo@ejemplo.com"
@@ -1650,10 +1711,7 @@ export default function Checkout() {
                             </p>
                           )}
                           <p className="mt-2 text-sm font-normal text-[#4A3362]">
-                            Ingresa el correo de la cuenta PayPal que usaras para pagar.
-                          </p>
-                          <p className="mt-1 text-xs font-semibold text-[#4A3362]">
-                            Debe coincidir con el correo de la cuenta PayPal que completara el pago.
+                            Si lo indicas, nos ayuda a identificar tu pago más rápido. Puedes dejarlo vacío y pagar con la cuenta que prefieras.
                           </p>
                         </label>
                       </div>
@@ -1687,10 +1745,7 @@ export default function Checkout() {
                         <input
                           type="file"
                           accept="image/*"
-                          onChange={(e) => {
-                            setSelectedProofFile(e.target.files?.[0] || null);
-                            setProofMessage("");
-                          }}
+                          onChange={(e) => handleProofFileChange(e.target.files?.[0] || null)}
                           className="mt-4 block w-full text-sm text-[#4A3362] file:mr-3 file:rounded-xl file:border-0 file:bg-[#4B1F6F] file:px-4 file:py-2 file:text-white"
                         />
                         <p className="mt-3 text-sm font-black text-[#4A3362]">
@@ -1744,4 +1799,49 @@ function readFileAsDataUrl(file: File): Promise<string> {
       reject(new Error("No se pudo leer el archivo seleccionado."));
     reader.readAsDataURL(file);
   });
+}
+
+function loadImageFromDataUrl(dataUrl: string) {
+  return new Promise<HTMLImageElement>((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error("No se pudo procesar la imagen."));
+    image.src = dataUrl;
+  });
+}
+
+/**
+ * Una foto de comprobante tomada con el celular pesa varios MB y en base64 crece
+ * un tercio mas. Reducirla antes de enviarla evita subidas eternas (o fallidas)
+ * con datos moviles, que es justo cuando el cliente ya pago y quiere terminar.
+ */
+async function compressProofImage(file: File): Promise<string> {
+  const originalDataUrl = await readFileAsDataUrl(file);
+
+  if (!file.type.startsWith("image/")) return originalDataUrl;
+
+  try {
+    const image = await loadImageFromDataUrl(originalDataUrl);
+    const maxSide = 1600;
+    const scale = Math.min(1, maxSide / Math.max(image.width, image.height));
+
+    if (scale === 1 && file.size <= PROOF_COMPRESSION_THRESHOLD_BYTES) {
+      return originalDataUrl;
+    }
+
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(image.width * scale);
+    canvas.height = Math.round(image.height * scale);
+
+    const context = canvas.getContext("2d");
+    if (!context) return originalDataUrl;
+
+    context.drawImage(image, 0, 0, canvas.width, canvas.height);
+    const compressed = canvas.toDataURL("image/jpeg", 0.82);
+
+    return compressed.length < originalDataUrl.length ? compressed : originalDataUrl;
+  } catch {
+    // Si algo falla preferimos subir el archivo original antes que perder el pago.
+    return originalDataUrl;
+  }
 }

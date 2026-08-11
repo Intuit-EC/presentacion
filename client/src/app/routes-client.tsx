@@ -6,6 +6,7 @@ const Shop = lazy(() => import("@/pages/Shop"));
 const CategoryPage = lazy(() => import("@/pages/CategoryPage"));
 const SeoLandingPage = lazy(() => import("@/pages/SeoLandingPage"));
 const ProductDetails = lazy(() => import("@/pages/ProductDetails"));
+const Contact = lazy(() => import("@/pages/Contact"));
 const NotFound = lazy(() => import("@/pages/not-found"));
 const Checkout = lazy(() => import("@/pages/Checkout"));
 const PaymentGateway = lazy(() => import("@/pages/PaymentGateway"));
@@ -25,6 +26,7 @@ export function BrowserRoutes() {
       <Route path="/categoria/:slug" component={CategoryPage} />
       <Route path="/producto/:slug" component={ProductDetails} />
       <Route path="/product/:id" component={ProductDetails} />
+      <Route path="/contacto" component={Contact} />
       <Route path="/checkout" component={Checkout} />
       <Route path="/payment-gateway" component={PaymentGateway} />
       <Route path="/payment-result" component={PaymentResult} />

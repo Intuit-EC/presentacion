@@ -69,10 +69,10 @@ export function CategorySidebar({
             <div className="min-w-0 flex items-center gap-3 text-left">
               <Filter className="h-5 w-5 shrink-0 text-[#6F4D95]" />
               <div className="min-w-0">
-                <span className="block text-[0.95rem] font-black uppercase tracking-[0.24em] text-[#4B1F6F]" style={{ fontFamily: '"Arial Black", Arial, sans-serif' }}>
+                <span className="block text-[0.95rem] font-black uppercase tracking-[0.24em] text-[#4B1F6F]">
                   Categorías
                 </span>
-                <span className="block truncate pt-1 text-[1.45rem] font-black text-[#4B1F6F]" style={{ fontFamily: '"Arial Black", Arial, sans-serif' }}>
+                <span className="block truncate pt-1 text-[1.45rem] font-black text-[#4B1F6F]">
                   {activeCategory ? formatCategoryDisplayName(activeCategory) : "Todas"}
                 </span>
               </div>
@@ -138,10 +138,10 @@ export function CategorySidebar({
           <div className="min-w-0 flex items-center gap-3 text-left">
             <Filter className="h-5 w-5 shrink-0 text-[#6F4D95]" />
             <div className="min-w-0">
-              <span className="block text-[0.95rem] font-black uppercase tracking-[0.24em] text-[#4B1F6F]" style={{ fontFamily: '"Arial Black", Arial, sans-serif' }}>
+              <span className="block text-[0.95rem] font-black uppercase tracking-[0.24em] text-[#4B1F6F]">
                 Categorías
               </span>
-              <span className="block truncate pt-1 text-[1.45rem] font-black text-[#4B1F6F]" style={{ fontFamily: '"Arial Black", Arial, sans-serif' }}>{activeCategoryLabel}</span>
+              <span className="block truncate pt-1 text-[1.45rem] font-black text-[#4B1F6F]">{activeCategoryLabel}</span>
             </div>
           </div>
           <ChevronDown className={cn("h-6 w-6 shrink-0 text-[#6F4D95] transition-transform duration-500", isOpen && "rotate-180")} />
@@ -158,7 +158,6 @@ export function CategorySidebar({
                     index === mobileOptions.length - 1 && "last:border-0",
                     activeCategory === option.value ? "text-[#4B1F6F] bg-primary/5" : "text-[#4B1F6F]",
                   )}
-                  style={{ fontFamily: '"Arial Black", Arial, sans-serif' }}
                   onClick={() => handleFilterSelection(option.value)}
                 >
                   {option.label}
@@ -176,7 +175,6 @@ export function CategorySidebar({
                     index === mobileOptions.length - 1 && "last:border-0",
                     activeCategory === option.value ? "text-[#4B1F6F] bg-primary/5" : "text-[#4B1F6F]",
                   )}
-                  style={{ fontFamily: '"Arial Black", Arial, sans-serif' }}
                 >
                   {option.label}
                 </Link>
@@ -187,7 +185,7 @@ export function CategorySidebar({
       </div>
 
       <div className="surface-card sticky top-32 hidden max-h-[calc(100vh-10rem)] flex-col gap-4 overflow-hidden p-6 lg:flex">
-        <h3 className="mb-6 flex items-center gap-3 px-2 text-3xl font-black text-[#4B1F6F]" style={{ fontFamily: '"Arial Black", Arial, sans-serif' }}>
+        <h3 className="mb-6 flex items-center gap-3 px-2 text-3xl font-black text-[#4B1F6F]">
           Colecciones
         </h3>
         <div className="flex flex-col gap-3 overflow-y-auto pr-1 no-scrollbar">
@@ -201,7 +199,6 @@ export function CategorySidebar({
                     ? "bg-primary/20 text-[#4B1F6F] shadow-sm"
                     : "text-[#4B1F6F] hover:bg-[#4B1F6F] hover:text-white border border-transparent",
                 )}
-                style={{ fontFamily: '"Arial Black", Arial, sans-serif' }}
                 onClick={() => setActiveCategory?.(option.value)}
               >
                 <span className="relative z-10">{option.label}</span>
@@ -226,7 +223,6 @@ export function CategorySidebar({
                     ? "bg-primary/20 text-[#4B1F6F] shadow-sm"
                     : "text-[#4B1F6F] hover:bg-[#4B1F6F] hover:text-white border border-transparent",
                 )}
-                style={{ fontFamily: '"Arial Black", Arial, sans-serif' }}
               >
                 <span className="relative z-10">{option.label}</span>
                 <div

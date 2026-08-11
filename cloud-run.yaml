@@ -9,7 +9,8 @@ spec:
     metadata:
       annotations:
         # Autoscaling configuration
-        autoscaling.knative.dev/minScale: "0"
+        # minScale 1 evita el arranque en frio que hacia fallar checkouts.
+        autoscaling.knative.dev/minScale: "1"
         autoscaling.knative.dev/maxScale: "10"
     spec:
       containerConcurrency: 80
@@ -26,6 +27,9 @@ spec:
               value: "production"
             - name: APP_PUBLIC_SITE_URL
               value: "https://difiori.com"
+            # Sin esta variable el sitio no carga Google Analytics.
+            - name: GA_MEASUREMENT_ID
+              value: "G-XXXXXXXXXX"
             # Opcional: si sirves imágenes desde otro dominio/CDN
             # - name: APP_PUBLIC_ASSET_URL
             #   value: "https://cdn.difiori.com"

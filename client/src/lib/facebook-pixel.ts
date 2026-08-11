@@ -47,7 +47,14 @@ export function initFacebookPixel() {
 }
 
 export function trackFacebookEvent(eventName: string, params?: Record<string, unknown>) {
-  if (typeof window === "undefined" || typeof window.fbq !== "function") return;
+  if (typeof window === "undefined") return;
 
-  window.fbq("track", eventName, params);
+  // El pixel arranca de forma diferida para no penalizar la carga. Si el visitante
+  // llega a un evento de venta antes de ese arranque lo inicializamos aqui: el
+  // stub encola los eventos y los envia en cuanto carga el script real.
+  if (typeof window.fbq !== "function") {
+    initFacebookPixel();
+  }
+
+  window.fbq?.("track", eventName, params);
 }

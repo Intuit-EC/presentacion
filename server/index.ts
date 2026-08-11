@@ -128,8 +128,15 @@ const ASSET_BASE_URL =
   "";
 const PAYPHONE_WEB_TOKEN = process.env.PAYPHONE_WEB_TOKEN || process.env.PAYPHONE_TOKEN;
 const PAYPHONE_WEB_STORE_ID = process.env.PAYPHONE_WEB_STORE_ID || process.env.PAYPHONE_STORE_ID;
+// Las lecturas publicas se cortan rapido porque tienen fallback local. Las
+// mutaciones (crear orden, subir comprobante, pagos) no lo tienen: si se cortan
+// el cliente ve un error aunque la orden ya se haya guardado en el backend.
 const PUBLIC_PROXY_TIMEOUT_MS = 3500;
+const MUTATION_PROXY_TIMEOUT_MS = 30000;
 const IMAGE_PROXY_TIMEOUT_MS = 6000;
+// El comprobante de pago viaja como data URL en base64, asi que el limite por
+// defecto de express (100kb) rechaza cualquier foto tomada con el celular.
+const JSON_BODY_LIMIT = "25mb";
 
 declare module "http" {
   interface IncomingMessage {
@@ -139,13 +146,14 @@ declare module "http" {
 
 app.use(
   express.json({
+    limit: JSON_BODY_LIMIT,
     verify: (req, _res, buf) => {
       req.rawBody = buf;
     },
   }),
 );
 
-app.use(express.urlencoded({ extended: false }));
+app.use(express.urlencoded({ limit: JSON_BODY_LIMIT, extended: false }));
 
 function buildBackendUrl(originalUrl: string) {
   return `${BACKEND_ORIGIN}${originalUrl}`;
@@ -430,6 +438,15 @@ function getFallbackSeoState(path: string): SeoState {
     };
   }
 
+  if (path === "/contacto") {
+    return {
+      ...DEFAULT_SEO_STATE,
+      title: "Contacto | Floreria DIFIORI en Guayaquil",
+      description: "Escríbenos por WhatsApp o correo para pedidos de flores, arreglos y regalos a domicilio en Guayaquil. Atención todos los días.",
+      path,
+    };
+  }
+
   if (path === "/checkout") {
     return {
       ...DEFAULT_SEO_STATE,
@@ -470,9 +487,25 @@ function shouldSsrPath(path: string) {
   return (
     path === "/" ||
     path === "/shop" ||
+    path === "/contacto" ||
     SEO_LANDING_PATHS.includes(path) ||
     path.startsWith("/categoria/") ||
     path.startsWith("/producto/")
+  );
+}
+
+const NON_SSR_APP_PATHS = [
+  "/contacto",
+  "/checkout",
+  "/payment-gateway",
+  "/payment-result",
+];
+
+function isKnownAppPath(path: string) {
+  return (
+    shouldSsrPath(path) ||
+    NON_SSR_APP_PATHS.includes(path) ||
+    path.startsWith("/product/")
   );
 }
 
@@ -493,7 +526,7 @@ async function prefetchSsrRouteData(queryClient: QueryClient, path: string, base
     queryFn: () => fetchCompany(baseUrl),
   });
 
-  if (path === "/") {
+  if (path === "/" || path === "/contacto") {
     return 200;
   }
 
@@ -553,6 +586,12 @@ async function prefetchSsrRouteData(queryClient: QueryClient, path: string, base
   return 200;
 }
 
+function getProxyTimeoutMs(req: Request) {
+  return req.method === "GET" || req.method === "HEAD"
+    ? PUBLIC_PROXY_TIMEOUT_MS
+    : MUTATION_PROXY_TIMEOUT_MS;
+}
+
 async function proxyToBackend(req: Request, res: Response) {
   const backendUrl = buildBackendUrl(req.originalUrl);
   const contentType = req.get("Content-Type");
@@ -580,7 +619,7 @@ async function proxyToBackend(req: Request, res: Response) {
       },
       signal: abortController.signal,
       body: ["POST", "PUT", "PATCH"].includes(req.method) ? JSON.stringify(req.body) : undefined,
-    }, PUBLIC_PROXY_TIMEOUT_MS);
+    }, getProxyTimeoutMs(req));
 
     // Do not proxy the raw admin configuration into the browser or SSR state.
     if (req.method === "GET" && (req.originalUrl.split("?")[0] || req.path) === "/api/external/company") {
@@ -631,6 +670,18 @@ async function proxyToBackend(req: Request, res: Response) {
     }
 
     console.error(`Proxy Error (Store -> Backend) [${req.method} ${backendUrl}]:`, error);
+
+    // En una mutacion cortada por tiempo la orden puede haberse guardado igual;
+    // evitamos que el cliente vuelva a enviarla y genere pedidos duplicados.
+    const isTimeout = error instanceof Error && error.name === "AbortError";
+    if (isTimeout && req.method !== "GET" && req.method !== "HEAD") {
+      return res.status(504).json({
+        status: "error",
+        message:
+          "Tu pedido esta tardando en confirmarse. No lo envies de nuevo: escribenos por WhatsApp y lo verificamos contigo.",
+      });
+    }
+
     const errorMessage = error instanceof Error ? error.message : "Error conectando con el servidor de backend";
     return res.status(500).json({ status: "error", message: errorMessage });
   } finally {
@@ -1214,6 +1265,7 @@ app.get("/sitemap.xml", async (_req, res) => {
       new Set([
         "/",
         "/shop",
+        "/contacto",
         ...SEO_LANDING_PATHS,
         ...categoryUrls,
         ...productUrls,
@@ -1337,7 +1389,12 @@ app.use((req, res, next) => {
           head: renderSeoTags(getFallbackSeoState(req.path)),
           stateScript: buildPublicConfigScript(),
         });
-        return res.status(200).type("text/html").send(page);
+        // Una ruta inexistente respondia 200, asi que Google indexaba paginas de
+        // error como si fueran contenido real de la tienda.
+        return res
+          .status(isKnownAppPath(req.path) ? 200 : 404)
+          .type("text/html")
+          .send(page);
       }
 
       const queryClient = createAppQueryClient();
@@ -1394,6 +1451,12 @@ app.use((req, res, next) => {
     () => {
       log(`serving on port ${port}`);
       log(`web config: BACKEND_URL=${BACKEND_ORIGIN} SITE_URL=${SITE_URL}${ASSET_BASE_URL ? ` ASSET_BASE_URL=${ASSET_BASE_URL}` : ""}`);
+
+      if (!String(process.env.GA_MEASUREMENT_ID || process.env.VITE_GA_MEASUREMENT_ID || "").trim()) {
+        log(
+          "AVISO: falta GA_MEASUREMENT_ID. La tienda no cargara Google Analytics y no se registrara ninguna visita, checkout ni compra.",
+        );
+      }
     },
   );
 })();

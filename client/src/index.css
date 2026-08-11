@@ -51,6 +51,27 @@
     @apply font-serif font-semibold;
   }
 
+  /* Foco visible para quien navega con teclado; antes no habia ninguna pista. */
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+    border-radius: 0.75rem;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
   /* Custom Premium Scrollbar */
   ::-webkit-scrollbar {
     width: 8px;
@@ -120,6 +141,15 @@
   @media (min-width: 1280px) {
     .product-grid {
       grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  /* En monitores anchos tres columnas dejaban las fichas enormes y obligaban a
+     desplazarse mucho para ver el catalogo completo. */
+  @media (min-width: 1600px) {
+    .product-grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 1.5rem;
     }
   }
 

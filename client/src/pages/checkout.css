@@ -117,3 +117,97 @@
     font-size: 1.125rem;
   }
 }
+
+/* Resumen del pedido.
+   Antes cada fila traia su propio style inline con "Arial Black" y tamanos que
+   no coincidian con ninguna otra pantalla de la tienda. Estas clases mantienen
+   la lectura grande y clara, pero con la tipografia del resto del sitio. */
+.checkout-summary-title {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  color: #4b1f6f;
+  font-size: 1.5rem;
+}
+
+.checkout-item-name {
+  font-size: 1.02rem;
+  font-weight: 800;
+  line-height: 1.25;
+  color: #4b1f6f;
+  overflow-wrap: anywhere;
+}
+
+.checkout-item-price {
+  margin-top: 0.25rem;
+  font-size: 1.1rem;
+  font-weight: 900;
+  color: #4b1f6f;
+}
+
+.checkout-item-meta {
+  margin-top: 0.25rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(75, 31, 111, 0.72);
+}
+
+.checkout-summary-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-size: 1.02rem;
+  font-weight: 800;
+  color: #4b1f6f;
+}
+
+.checkout-summary-row > span:last-child {
+  min-width: 0;
+  max-width: 58%;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.checkout-summary-total {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border-top: 1px solid #dcc5e8;
+  padding-top: 1rem;
+  font-size: 1.9rem;
+  font-weight: 900;
+  color: #4b1f6f;
+}
+
+@media (min-width: 640px) {
+  .checkout-summary-title {
+    font-size: 2rem;
+  }
+
+  .checkout-item-name {
+    font-size: 1.2rem;
+  }
+
+  .checkout-item-price {
+    font-size: 1.32rem;
+  }
+
+  .checkout-item-meta {
+    font-size: 0.82rem;
+  }
+
+  .checkout-summary-row {
+    font-size: 1.18rem;
+  }
+
+  .checkout-summary-total {
+    font-size: 2.35rem;
+  }
+}

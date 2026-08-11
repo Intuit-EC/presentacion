@@ -1,7 +1,7 @@
 import React from "react";
 import type { Product } from "@/data/mock";
 import { Link, useLocation } from "wouter";
-import { Clock3, Loader2, MessageSquare, ShieldCheck, ShoppingBag, Truck } from "lucide-react";
+import { Clock3, Loader2, MessageSquare, Plus, ShieldCheck, ShoppingBag, Truck } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { useCompany } from "@/hooks/useCompany";
 import { useToast } from "@/hooks/use-toast";
@@ -18,7 +18,7 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product, priority = false, showBestSellerBadge = true }: ProductCardProps) {
-  const { buyNow } = useCart();
+  const { addItem, buyNow, setIsCartOpen } = useCart();
   const [, setLocation] = useLocation();
   const { data: company } = useCompany();
   const { toast } = useToast();
@@ -30,6 +30,44 @@ export function ProductCard({ product, priority = false, showBestSellerBadge = t
   const productUrl = canonicalUrl(productPath);
   const productPrice = getNumericPriceValue(product.price);
   const productSku = getProductSku(product);
+
+  const trackAddToCart = () => {
+    const gaItem = buildGaItem({
+      id: productSku,
+      name: product.name,
+      category: categoryLabel,
+      price: productPrice,
+    });
+    trackGaEvent("add_to_cart", {
+      currency: "USD",
+      value: productPrice,
+      items: [gaItem],
+    });
+    trackFacebookEvent("AddToCart", {
+      content_ids: [productSku],
+      content_name: product.name,
+      content_type: "product",
+      currency: "USD",
+      value: productPrice,
+    });
+
+    return gaItem;
+  };
+
+  const handleAddToCart = () => {
+    if (!acceptOrders) {
+      toast({
+        title: "Tienda cerrada temporalmente",
+        description: "Por ahora no estamos recibiendo nuevos pedidos.",
+        duration: 4000,
+      });
+      return;
+    }
+
+    trackAddToCart();
+    addItem(product);
+    setIsCartOpen(true);
+  };
 
   const handleBuyNow = () => {
     if (isBuying) return;
@@ -43,28 +81,11 @@ export function ProductCard({ product, priority = false, showBestSellerBadge = t
     }
 
     setIsBuying(true);
-    const gaItem = buildGaItem({
-      id: productSku,
-      name: product.name,
-      category: categoryLabel,
-      price: productPrice,
-    });
-    trackGaEvent("add_to_cart", {
-      currency: "USD",
-      value: productPrice,
-      items: [gaItem],
-    });
+    const gaItem = trackAddToCart();
     trackGaEvent("begin_checkout", {
       currency: "USD",
       value: productPrice,
       items: [gaItem],
-    });
-    trackFacebookEvent("AddToCart", {
-      content_ids: [productSku],
-      content_name: product.name,
-      content_type: "product",
-      currency: "USD",
-      value: productPrice,
     });
     trackFacebookEvent("InitiateCheckout", {
       content_ids: [productSku],
@@ -114,7 +135,14 @@ export function ProductCard({ product, priority = false, showBestSellerBadge = t
           {categoryLabel}
         </span>
         <Link href={productPath} className="group/title mb-3 block">
-          <h3 itemProp="name" className="font-serif text-[1.65rem] font-bold leading-tight text-[#4A3362] transition-colors group-hover/title:text-accent">
+          {/* Los nombres vienen optimizados para buscadores y ocupan hasta cuatro
+              lineas. Se recortan visualmente (el texto completo sigue en el DOM
+              para Google) para que todas las fichas tengan la misma altura. */}
+          <h3
+            itemProp="name"
+            className="line-clamp-2 font-serif text-[1.45rem] font-bold leading-tight text-[#4A3362] transition-colors group-hover/title:text-accent"
+            title={product.name}
+          >
             {product.name}
           </h3>
         </Link>
@@ -151,18 +179,14 @@ export function ProductCard({ product, priority = false, showBestSellerBadge = t
         </div>
 
         <div className="mt-5 flex w-full flex-col gap-2.5">
-          <div className="grid grid-cols-2 gap-2 text-[11px] font-extrabold uppercase tracking-[0.08em] text-foreground/65">
-            <span className="inline-flex items-center justify-center gap-1.5 rounded-full border border-primary/15 bg-white px-2.5 py-2 shadow-[0_8px_22px_rgba(74,51,98,0.06)]">
-              <ShieldCheck className="h-3.5 w-3.5 text-accent" aria-hidden="true" />
-              Pago seguro
-            </span>
-            <span className="inline-flex items-center justify-center gap-1.5 rounded-full border border-primary/15 bg-white px-2.5 py-2 shadow-[0_8px_22px_rgba(74,51,98,0.06)]">
-              <Truck className="h-3.5 w-3.5 text-accent" aria-hidden="true" />
-              Guayaquil
-            </span>
-          </div>
-          <p className="rounded-2xl bg-[#FBF7FD] px-3 py-2 text-center text-[11px] font-bold leading-relaxed text-[#4A3362]/80">
-            Confirmamos tu pedido por WhatsApp y lo coordinamos con entrega en Guayaquil.
+          {/* Una linea de confianza en vez de dos cajas: la misma senal ocupando
+              la mitad de alto en una vitrina de mas de cien productos. */}
+          <p className="flex items-center justify-center gap-2 text-[10px] font-extrabold uppercase tracking-[0.1em] text-foreground/60">
+            <ShieldCheck className="h-3.5 w-3.5 text-accent" aria-hidden="true" />
+            Pago seguro
+            <span aria-hidden="true">·</span>
+            <Truck className="h-3.5 w-3.5 text-accent" aria-hidden="true" />
+            Entrega en Guayaquil
           </p>
           <button type="button" onClick={handleBuyNow} disabled={isBuying} className="ui-btn-primary w-full">
             {isBuying ? (
@@ -172,15 +196,27 @@ export function ProductCard({ product, priority = false, showBestSellerBadge = t
             )}
             {isBuying ? "Cargando..." : "Comprar ahora"}
           </button>
-          <a
-            href={`https://wa.me/${DEFAULT_COMPANY.phoneDigits}?text=Hola!%20Me%20interesa%20el%20producto%20${encodeURIComponent(product.name)}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="ui-btn-secondary w-full"
-          >
-            <MessageSquare className="h-4 w-4" />
-            Consultar por WhatsApp
-          </a>
+          {/* Acciones secundarias en una sola fila: tres botones apilados hacian
+              la ficha muy alta y diluian el boton principal. */}
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={handleAddToCart}
+              className="ui-btn-secondary w-full px-3 text-[11px] tracking-[0.1em]"
+            >
+              <Plus className="h-4 w-4 shrink-0" />
+              Agregar
+            </button>
+            <a
+              href={`https://wa.me/${DEFAULT_COMPANY.phoneDigits}?text=Hola!%20Me%20interesa%20el%20producto%20${encodeURIComponent(product.name)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="ui-btn-secondary w-full px-3 text-[11px] tracking-[0.1em]"
+            >
+              <MessageSquare className="h-4 w-4 shrink-0" />
+              WhatsApp
+            </a>
+          </div>
         </div>
       </div>
     </article>

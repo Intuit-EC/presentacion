@@ -111,27 +111,18 @@ export function HomeDeferredSections() {
                     <Star key={s} className="h-5 w-5 fill-accent text-accent" />
                   ))}
                 </div>
-                <p
-                  className="mb-8 text-[1.7rem] font-black leading-relaxed text-[#4B1F6F]"
-                  style={{ fontFamily: '"Arial Black", Arial, sans-serif' }}
-                >
-                  "{review.content}"
+                <p className="mb-8 font-serif text-[1.35rem] italic leading-relaxed text-[#4B1F6F]">
+                  &ldquo;{review.content}&rdquo;
                 </p>
                 <div className="home-review-card-meta">
                   <div className="home-review-avatar">
                     {review.name[0]}
                   </div>
                   <div>
-                    <h4
-                      className="text-[1.2rem] font-black uppercase tracking-[0.14em] text-[#4B1F6F]"
-                      style={{ fontFamily: '"Arial Black", Arial, sans-serif' }}
-                    >
+                    <h4 className="text-[0.95rem] font-black uppercase tracking-[0.14em] text-[#4B1F6F]">
                       {review.name}
                     </h4>
-                    <span
-                      className="text-[1rem] font-black uppercase tracking-[0.12em] text-[#4B1F6F]"
-                      style={{ fontFamily: '"Arial Black", Arial, sans-serif' }}
-                    >
+                    <span className="text-[0.8rem] font-bold uppercase tracking-[0.12em] text-[#4B1F6F]/65">
                       {review.role || "Cliente"}
                     </span>
                   </div>
@@ -150,13 +141,11 @@ export function HomeDeferredSections() {
         <div className="home-deferred-heading home-faq-heading">
           <h2
             className="home-faq-title"
-            style={{ fontFamily: '"Arial Black", Arial, sans-serif' }}
           >
             Preguntas frecuentes
           </h2>
           <p
             className="home-faq-copy"
-            style={{ fontFamily: "Arial, sans-serif" }}
           >
             Informacion clave sobre entregas, pagos y tiempos de atencion.
           </p>
@@ -167,13 +156,11 @@ export function HomeDeferredSections() {
             <article key={faq.question} className="surface-card home-faq-card">
               <h3
                 className="home-faq-card-title"
-                style={{ fontFamily: '"Arial Black", Arial, sans-serif' }}
               >
                 {faq.question}
               </h3>
               <p
                 className="home-faq-card-copy"
-                style={{ fontFamily: "Arial, sans-serif" }}
               >
                 {faq.answer}
               </p>
@@ -189,7 +176,6 @@ export function HomeDeferredSections() {
               <img src="/logo-footer.png" alt="DIFIORI" className="home-footer-logo" loading="lazy" />
               <p
                 className="home-footer-brand-copy"
-                style={{ fontFamily: '"Arial Black", Arial, sans-serif' }}
               >
                 Disenando emociones con las flores mas frescas de exportacion en Guayaquil.
               </p>
@@ -208,11 +194,10 @@ export function HomeDeferredSections() {
             <div>
               <h4
                 className="home-footer-title"
-                style={{ fontFamily: '"Arial Black", Arial, sans-serif' }}
               >
                 La Maison
               </h4>
-              <ul className="home-footer-links" style={{ fontFamily: '"Arial Black", Arial, sans-serif' }}>
+              <ul className="home-footer-links">
                 <li className="home-footer-link">Tienda</li>
                 <li className="home-footer-link">Contacto</li>
                 <li className="home-footer-link">Preguntas Frecuentes</li>
@@ -223,11 +208,10 @@ export function HomeDeferredSections() {
             <div>
               <h4
                 className="home-footer-title"
-                style={{ fontFamily: '"Arial Black", Arial, sans-serif' }}
               >
                 Soporte
               </h4>
-              <ul className="home-footer-links" style={{ fontFamily: '"Arial Black", Arial, sans-serif' }}>
+              <ul className="home-footer-links">
                 <li className="home-footer-link">Envios y Entregas</li>
                 <li className="home-footer-link">Cuidado de Flores</li>
                 <li className="home-footer-link">Politica de Privacidad</li>
@@ -238,7 +222,6 @@ export function HomeDeferredSections() {
             <div>
               <h4
                 className="home-footer-title"
-                style={{ fontFamily: '"Arial Black", Arial, sans-serif' }}
               >
                 Contacto Directo
               </h4>
@@ -249,7 +232,6 @@ export function HomeDeferredSections() {
                   </div>
                   <div
                     className="home-footer-contact-copy"
-                    style={{ fontFamily: '"Arial Black", Arial, sans-serif' }}
                   >
                     <span className="home-footer-contact-label">WhatsApp</span>
                     <a href={`https://wa.me/${companyPhoneDigits}`} className="home-footer-contact-link">
@@ -263,7 +245,6 @@ export function HomeDeferredSections() {
                   </div>
                   <div
                     className="home-footer-contact-copy"
-                    style={{ fontFamily: '"Arial Black", Arial, sans-serif' }}
                   >
                     <span className="home-footer-contact-label">Llamadas</span>
                     <span className="home-footer-contact-link">{companyPhoneDisplay}</span>
@@ -275,7 +256,6 @@ export function HomeDeferredSections() {
                   </div>
                   <div
                     className="home-footer-contact-copy"
-                    style={{ fontFamily: '"Arial Black", Arial, sans-serif' }}
                   >
                     <span className="home-footer-contact-label">Email</span>
                     <span className="home-footer-contact-link home-footer-email">{companyEmail}</span>
@@ -288,13 +268,11 @@ export function HomeDeferredSections() {
           <div className="home-footer-bottom">
             <p
               className="home-footer-bottom-copy"
-              style={{ fontFamily: '"Arial Black", Arial, sans-serif' }}
             >
               © 2026 DIFIORI Ecuador. Todos los derechos reservados.
             </p>
             <div
               className="home-footer-bottom-meta"
-              style={{ fontFamily: '"Arial Black", Arial, sans-serif' }}
             >
               <span className="home-footer-bottom-link">Guayaquil, Ecuador</span>
             </div>

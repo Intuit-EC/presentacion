@@ -368,14 +368,10 @@ async function createPaypalCheckoutOrder(prisma, payload) {
     throw error;
   }
 
-  // Validar formato del correo de PayPal si se proporcionó
-  if (!requiredPaypalPayerEmail) {
-    const error = new Error("Ingresa el correo de la cuenta PayPal que usara para pagar.");
-    error.statusCode = 400;
-    throw error;
-  }
-
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(requiredPaypalPayerEmail)) {
+  // El correo de PayPal es opcional: PayPal ya autentica al pagador y exigirlo
+  // frenaba compras de quien paga con una cuenta distinta a la que escribio.
+  // Cuando llega, se usa solo como verificacion extra al capturar el pago.
+  if (requiredPaypalPayerEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(requiredPaypalPayerEmail)) {
     const error = new Error("El correo de PayPal debe tener un formato válido (ejemplo@dominio.com).");
     error.statusCode = 400;
     throw error;

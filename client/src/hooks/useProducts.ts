@@ -5,10 +5,6 @@ import { toPublicImageUrl } from "@/lib/media";
 import { areSameCategory, isPublicCatalogProduct } from "@shared/catalog";
 
 const API_URL = "/api/external/products";
-const CLIENT_PRODUCT_ROTATION_TOKEN =
-  typeof window !== "undefined"
-    ? `${Date.now()}-${Math.random().toString(36).slice(2)}`
-    : "ssr";
 
 export interface ProductsQueryOptions {
   category?: string;
@@ -28,7 +24,6 @@ export const productsQueryKey = (options: string | ProductsQueryOptions = {}) =>
     normalized.category || "all",
     normalized.featured ? "featured" : "all",
     normalized.limit || "all",
-    CLIENT_PRODUCT_ROTATION_TOKEN,
   ] as const;
 };
 
@@ -42,19 +37,20 @@ function getImageUrl(imagePath: string | null | undefined): string {
   return toPublicImageUrl(imagePath) || PLACEHOLDER;
 }
 
-function shuffleProducts(products: Product[]) {
-  const shuffled = [...products];
+/**
+ * Orden estable del catalogo: primero lo que mas se vende. Antes se barajaba al
+ * azar en cada carga, asi que nadie veia dos veces la misma vitrina, los mejores
+ * productos podian quedar al final y el HTML del servidor no coincidia con el
+ * del navegador.
+ */
+function sortProductsForStorefront(products: Product[]) {
+  return [...products].sort((left, right) => {
+    if (left.isBestSeller !== right.isBestSeller) {
+      return left.isBestSeller ? -1 : 1;
+    }
 
-  for (let index = shuffled.length - 1; index > 0; index -= 1) {
-    const randomIndex = Math.floor(Math.random() * (index + 1));
-    [shuffled[index], shuffled[randomIndex]] = [shuffled[randomIndex], shuffled[index]];
-  }
-
-  return shuffled;
-}
-
-function shouldRotateProductsInFrontend() {
-  return typeof window !== "undefined";
+    return left.name.localeCompare(right.name, "es");
+  });
 }
 
 export async function fetchProducts(
@@ -95,7 +91,7 @@ export async function fetchProducts(
         return areSameCategory(product.category, normalized.category);
       });
 
-    const visibleProducts = shouldRotateProductsInFrontend() ? shuffleProducts(products) : products;
+    const visibleProducts = sortProductsForStorefront(products);
 
     return normalized.limit && normalized.limit > 0
       ? visibleProducts.slice(0, normalized.limit)
@@ -113,8 +109,9 @@ export function useProducts(options?: string | ProductsQueryOptions) {
     queryKey: productsQueryKey(options),
     queryFn: () => fetchProducts(options),
     enabled: normalized.enabled ?? true,
-    staleTime: 0,
-    refetchOnMount: "always",
+    // El backend ya cachea el catalogo 60s; volver a pedir 165KB de productos en
+    // cada navegacion solo hacia mas lenta la tienda.
+    staleTime: 60_000,
     retry: 1,
   });
 }
@@ -123,8 +120,9 @@ export function useFeaturedProducts() {
   return useQuery<Product[], Error>({
     queryKey: productsQueryKey({ featured: true }),
     queryFn: () => fetchProducts({ featured: true }),
-    staleTime: 0,
-    refetchOnMount: "always",
+    // El backend ya cachea el catalogo 60s; volver a pedir 165KB de productos en
+    // cada navegacion solo hacia mas lenta la tienda.
+    staleTime: 60_000,
     retry: 1,
   });
 }

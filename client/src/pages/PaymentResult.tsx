@@ -6,6 +6,7 @@ import { Seo } from "@/components/Seo";
 import { useCart } from "@/context/CartContext";
 import { apiUrl } from "@/lib/api-url";
 import { trackGaEvent } from "@/lib/analytics";
+import { trackFacebookEvent } from "@/lib/facebook-pixel";
 import { DEFAULT_COMPANY } from "@/lib/site";
 
 type ResultStatus = "loading" | "success" | "failed" | "cancelled" | "error";
@@ -74,9 +75,18 @@ export default function PaymentResult() {
       localStorage.removeItem("pp_web_token");
       sessionStorage.removeItem("pp_web_token");
     };
+    const clearPaypalDraft = () => {
+      localStorage.removeItem("paypal_clientTxId");
+    };
 
-    // Si no hay clientTransactionId en la URL, buscar en localStorage (fallback)
-    const finalClientTxId = clientTransactionId || localStorage.getItem("pp_clientTxId");
+    const isPaypalFlow =
+      provider === "paypal" || Boolean(paypalOrderId) || paypalStatus === "cancelled";
+
+    // Fallback por pasarela. Compartir la clave de Payphone permitia que un
+    // pago con PayPal se confirmara contra una transaccion anterior de Payphone.
+    const finalClientTxId =
+      clientTransactionId ||
+      localStorage.getItem(isPaypalFlow ? "paypal_clientTxId" : "pp_clientTxId");
 
     const capturePaypalOrder = async () => {
       return fetchJsonWithTimeout(apiUrl("/api/external/paypal/capture"), {
@@ -111,8 +121,6 @@ export default function PaymentResult() {
           return;
         }
 
-        const isPaypalFlow =
-          provider === "paypal" || Boolean(paypalOrderId) || paypalStatus === "cancelled";
         const data = isPaypalFlow
           ? await capturePaypalOrder()
           : await confirmPayphoneOrder();
@@ -126,22 +134,34 @@ export default function PaymentResult() {
         setOrderNumber(data.data?.orderNumber || data.data?.reference || finalClientTxId || "");
 
         if (ps === "PAID") {
+          const transactionId =
+            data.data?.orderNumber || data.data?.reference || finalClientTxId;
+          const purchaseValue = Number(data.data?.total || data.data?.amount || 0) || undefined;
+
           trackGaEvent("purchase", {
-            transaction_id: data.data?.orderNumber || data.data?.reference || finalClientTxId,
+            transaction_id: transactionId,
             currency: "USD",
-            value: Number(data.data?.total || data.data?.amount || 0) || undefined,
+            value: purchaseValue,
             payment_method: isPaypalFlow ? "PayPal" : "Payphone",
+          });
+          trackFacebookEvent("Purchase", {
+            currency: "USD",
+            value: purchaseValue ?? 0,
+            content_type: "product",
+            order_id: transactionId,
           });
           setStatus("success");
           clearCart();
-          if (!isPaypalFlow) clearPayphoneDraft();
+          if (isPaypalFlow) clearPaypalDraft();
+          else clearPayphoneDraft();
         } else if (ps === "CANCELLED") {
           trackGaEvent("payment_error", {
             payment_method: isPaypalFlow ? "PayPal" : "Payphone",
             error_message: "payment_cancelled",
           });
           setStatus("cancelled");
-          if (!isPaypalFlow) clearPayphoneDraft();
+          if (isPaypalFlow) clearPaypalDraft();
+          else clearPayphoneDraft();
         } else {
           if (data.data?.emailMismatch) {
             setResultMessage(
@@ -153,7 +173,8 @@ export default function PaymentResult() {
             error_message: data.data?.emailMismatch ? "paypal_email_mismatch" : "payment_failed",
           });
           setStatus("failed");
-          if (!isPaypalFlow) clearPayphoneDraft();
+          if (isPaypalFlow) clearPaypalDraft();
+          else clearPayphoneDraft();
         }
       } catch (error) {
         trackGaEvent("payment_error", {

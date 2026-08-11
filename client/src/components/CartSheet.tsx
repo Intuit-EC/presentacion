@@ -1,4 +1,5 @@
 import React from "react";
+import { useLocation } from "wouter";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from "@/components/ui/sheet";
 import { useCart } from "@/context/CartContext";
 import { useCompany } from "@/hooks/useCompany";
@@ -9,6 +10,7 @@ export function CartSheet() {
   const { isCartOpen, setIsCartOpen, items, updateQuantity, removeItem, cartTotal } = useCart();
   const { data: company } = useCompany();
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
 
   const handleCheckout = () => {
     if (company?.settings?.acceptOrders === false) {
@@ -21,7 +23,9 @@ export function CartSheet() {
     }
 
     setIsCartOpen(false);
-    window.location.href = "/checkout";
+    // Navegacion del router: recargar la pagina entera perdia varios segundos
+    // justo en el paso mas caro del embudo.
+    setLocation("/checkout");
   };
 
   return (

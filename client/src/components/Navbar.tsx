@@ -67,7 +67,7 @@ export function Navbar() {
   const navPhrase = "Realiza tu pedido floral en Guayaquil y sorprende hoy";
   const rightLinks = [
     { href: "/shop", label: "Catálogo" },
-    { href: "/#contacto", label: "Contacto" },
+    { href: "/contacto", label: "Contacto" },
   ];
 
   return (

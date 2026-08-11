@@ -67,25 +67,26 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
   }, [items, isInitialized]);
 
+  function mergeProductIntoItems(prev: CartItem[], product: Product, quantity: number) {
+    const existing = prev.find((item) => item.product.id === product.id);
+    if (existing) {
+      return prev.map((item) =>
+        item.product.id === product.id
+          ? { ...item, quantity: item.quantity + quantity }
+          : item
+      );
+    }
+
+    return [...prev, { product, quantity }];
+  }
+
   const addItem = (product: Product, quantity = 1) => {
     setItems((prev) => {
-      const nextItems = (() => {
-        const existing = prev.find((item) => item.product.id === product.id);
-        if (existing) {
-          return prev.map((item) =>
-            item.product.id === product.id
-              ? { ...item, quantity: item.quantity + quantity }
-              : item
-          );
-        }
-
-        return [...prev, { product, quantity }];
-      })();
-
+      const nextItems = mergeProductIntoItems(prev, product, quantity);
       persistCartItems(nextItems);
       return nextItems;
     });
-    
+
     toast({
       title: "Agregado al carrito",
       description: `${product.name} ha sido agregado.`,
@@ -93,10 +94,14 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
+  // Comprar ahora suma al carrito y lleva al checkout. Antes lo reemplazaba, asi
+  // que quien ya tenia productos elegidos los perdia al pulsar el boton.
   const buyNow = (product: Product) => {
-    const nextItems = [{ product, quantity: 1 }];
-    persistCartItems(nextItems);
-    setItems(nextItems);
+    setItems((prev) => {
+      const nextItems = mergeProductIntoItems(prev, product, 1);
+      persistCartItems(nextItems);
+      return nextItems;
+    });
   };
 
   const removeItem = (productId: string) => {

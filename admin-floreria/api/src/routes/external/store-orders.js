@@ -76,6 +76,40 @@ function parseDataUrl(dataUrl) {
 }
 
 /**
+ * Envia la alerta interna y la confirmacion al cliente sin bloquear la respuesta
+ * HTTP de la orden. Un fallo de SMTP no debe romper una venta ya registrada.
+ */
+function sendStoreOrderEmails(emailData, senderEmail, orderNumber) {
+  setImmediate(async () => {
+    try {
+      await emailService.sendNewOrderAlert(emailData);
+    } catch (emailError) {
+      businessError("ORDER", "ALERT_EMAIL_FAILED", emailError, { orderNumber });
+    }
+
+    if (!senderEmail) return;
+
+    try {
+      const activeCompany = await prisma.company.findFirst({
+        where: { isActive: true },
+        select: { name: true, email: true, phone: true },
+      });
+
+      await emailService.sendOrderConfirmation({
+        ...emailData,
+        orderNumber,
+        companyName: activeCompany?.name || process.env.COMPANY_NAME || "DIFIORI",
+        companyEmail:
+          activeCompany?.email || process.env.COMPANY_EMAIL || process.env.EMAIL_USER,
+        companyPhone: activeCompany?.phone || process.env.COMPANY_PHONE || "",
+      });
+    } catch (emailError) {
+      businessError("ORDER", "CONFIRMATION_EMAIL_FAILED", emailError, { orderNumber });
+    }
+  });
+}
+
+/**
  * POST /api/external/store-orders
  * Crear una orden desde la tienda publica.
  */
@@ -354,33 +388,9 @@ router.post("/", async (req, res) => {
       })),
     };
 
-    try {
-      await emailService.sendNewOrderAlert(emailData);
-    } catch (emailError) {
-      console.error("Store new order alert email error:", emailError);
-    }
-
-    if (storefrontDetails.senderEmail) {
-      try {
-        const activeCompany = await prisma.company.findFirst({
-          where: { isActive: true },
-          select: { name: true, email: true, phone: true },
-        });
-
-        const confirmationEmailData = {
-          ...emailData,
-          orderNumber: order.orderNumber,
-          companyName: activeCompany?.name || process.env.COMPANY_NAME || "DIFIORI",
-          companyEmail:
-            activeCompany?.email || process.env.COMPANY_EMAIL || process.env.EMAIL_USER,
-          companyPhone: activeCompany?.phone || process.env.COMPANY_PHONE || "",
-        };
-
-        await emailService.sendOrderConfirmation(confirmationEmailData);
-      } catch (emailError) {
-        console.error("Store order confirmation email error:", emailError);
-      }
-    }
+    // Los correos salen fuera del camino critico: SMTP puede tardar varios
+    // segundos y el comprador no debe esperar (ni ver un error) por eso.
+    sendStoreOrderEmails(emailData, storefrontDetails.senderEmail, order.orderNumber);
 
     businessLog("ORDER", "CREATED", {
       orderId: order.id,
