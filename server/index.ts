@@ -526,7 +526,18 @@ async function prefetchSsrRouteData(queryClient: QueryClient, path: string, base
     queryFn: () => fetchCompany(baseUrl),
   });
 
-  if (path === "/" || path === "/contacto") {
+  if (path === "/contacto") {
+    return 200;
+  }
+
+  if (path === "/") {
+    // Solo la lista de categorias: son unos cientos de bytes y permiten pintar
+    // las colecciones en el primer render, sin arrastrar todo el catalogo.
+    await queryClient.prefetchQuery({
+      queryKey: categoriesQueryKey,
+      queryFn: () => fetchCategories(baseUrl),
+    });
+
     return 200;
   }
 

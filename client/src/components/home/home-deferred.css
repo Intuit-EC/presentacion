@@ -4,11 +4,11 @@
   right: 50%;
   width: 100vw;
   transform: translateX(-50%);
-  margin-bottom: 8rem;
+  margin-bottom: 3.5rem;
   border-top: 1px solid #decdf0;
   border-bottom: 1px solid #decdf0;
   background: #f4ecfb;
-  padding: 5rem 1.5rem;
+  padding: 3rem 1.5rem;
 }
 
 .home-testimonials-accent {
@@ -22,7 +22,7 @@
 }
 
 .home-deferred-heading {
-  margin-bottom: 5rem;
+  margin-bottom: 2.25rem;
   text-align: center;
 }
 
@@ -136,11 +136,11 @@
 }
 
 .home-faq {
-  margin-bottom: 10rem;
+  margin-bottom: 3.5rem;
 }
 
 .home-faq-heading {
-  margin-bottom: 4rem;
+  margin-bottom: 2rem;
 }
 
 .home-faq-title {
@@ -196,8 +196,8 @@
 .home-footer-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 6rem;
-  margin-bottom: 9rem;
+  gap: 2.5rem;
+  margin-bottom: 3rem;
 }
 
 .home-footer-brand {
@@ -206,7 +206,7 @@
 
 .home-footer-logo {
   width: auto;
-  height: 9rem;
+  height: 6rem;
   object-fit: contain;
   margin-bottom: 3rem;
 }

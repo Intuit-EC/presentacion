@@ -1,5 +1,5 @@
 import { Suspense, lazy, useEffect, useRef, useState } from "react";
-import { ArrowRight, CalendarHeart, CheckCircle2, Clock3, Gift, Heart, MessageCircleMore, ShieldCheck, Sparkles } from "lucide-react";
+import { ArrowRight, CalendarHeart, CheckCircle2, Clock3, Flower2, Gift, Heart, MessageCircleMore, ShieldCheck, Sparkles } from "lucide-react";
 import { Seo } from "@/components/Seo";
 import { HomeCatalogSection } from "@/components/home/HomeCatalogSection";
 import { FAQS } from "@/data/mock";
@@ -262,6 +262,11 @@ export default function Home() {
               <span><strong>Celebrar una fecha</strong><small>Cumpleaños y momentos únicos</small></span>
               <ArrowRight aria-hidden="true" />
             </a>
+            <a href="/floreria-guayaquil" className="home-discovery-card">
+              <span className="home-discovery-icon"><Flower2 aria-hidden="true" /></span>
+              <span><strong>Floreria en Guayaquil</strong><small>Flores frescas y entrega a domicilio</small></span>
+              <ArrowRight aria-hidden="true" />
+            </a>
             <a href="/shop" className="home-discovery-card home-discovery-card-accent">
               <span className="home-discovery-icon"><Sparkles aria-hidden="true" /></span>
               <span><strong>Explorar todo</strong><small>Descubre opciones ideales para regalar</small></span>
@@ -281,33 +286,6 @@ export default function Home() {
             Pedir asesoría
           </a>
         </div>
-
-        <section className="home-guide" aria-label="Explora nuestras colecciones">
-          <a href="/flores-guayaquil" className="home-guide-card">
-            <h2 className="text-2xl font-semibold text-foreground">Flores en Guayaquil</h2>
-            <p className="mt-2 text-sm leading-relaxed text-foreground/80">
-              Flores frescas, ramos y arreglos florales con pedidos a domicilio en Guayaquil.
-            </p>
-          </a>
-          <a href="/arreglos-de-flores-guayaquil" className="home-guide-card">
-            <h2 className="text-2xl font-semibold text-foreground">Arreglos de flores</h2>
-            <p className="mt-2 text-sm leading-relaxed text-foreground/80">
-              Arreglos de flores en Guayaquil para cumpleaños, amor, condolencias y detalles especiales.
-            </p>
-          </a>
-          <a href="/floreria-guayaquil" className="home-guide-card">
-            <h2 className="text-2xl font-semibold text-foreground">Floreria Guayaquil</h2>
-            <p className="mt-2 text-sm leading-relaxed text-foreground/80">
-              Floreria DIFIORI para regalos, fechas especiales y entrega a domicilio.
-            </p>
-          </a>
-          <a href="/ramos-de-flores" className="home-guide-card">
-            <h2 className="text-2xl font-semibold text-foreground">Ramos de flores</h2>
-            <p className="mt-2 text-sm leading-relaxed text-foreground/80">
-              Ramos de rosas y flores mixtas para enviar en Guayaquil.
-            </p>
-          </a>
-        </section>
 
         <div ref={deferredTriggerRef} className="sr-only" aria-hidden="true" />
         <Suspense fallback={<DeferredFallback />}>
