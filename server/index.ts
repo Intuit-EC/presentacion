@@ -794,44 +794,8 @@ async function postJsonToBackend(path: string, payload: unknown) {
   }
 }
 
-async function confirmPayphoneTransaction(payload: { id: number; clientTransactionId: string }) {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 20000);
-
-  try {
-    const response = await fetch("https://pay.payphonetodoesposible.com/api/button/V2/Confirm", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${PAYPHONE_WEB_TOKEN}`,
-      },
-      body: JSON.stringify({ id: payload.id, clientTxId: payload.clientTransactionId }),
-      signal: controller.signal,
-    });
-    const rawBody = await response.text();
-
-    let data: unknown = null;
-    try {
-      data = rawBody ? JSON.parse(rawBody) : null;
-    } catch {
-      data = null;
-    }
-
-    return { response, data };
-  } finally {
-    clearTimeout(timeoutId);
-  }
-}
-
 app.post("/api/payphone-web/box-prepare", async (req: Request, res: Response) => {
   try {
-    if (!PAYPHONE_WEB_TOKEN) {
-      return res.status(503).json({
-        status: "error",
-        message: "PAYPHONE_WEB_TOKEN no está configurado en el servidor web.",
-      });
-    }
-
     const { response, data, rawBody } = await postJsonToBackend("/api/external/payphone/box-session", req.body);
     if (!response.ok || !data || typeof data !== "object" || !("status" in data) || data.status !== "success") {
       return res.status(response.ok ? 502 : response.status).json({
@@ -852,6 +816,9 @@ app.post("/api/payphone-web/box-prepare", async (req: Request, res: Response) =>
         tax: number;
         currency: string;
         reference: string;
+        payphoneToken?: string;
+        payphoneStoreId?: string;
+        payphoneEnvironment?: string;
       };
     }).data as {
       orderId: string;
@@ -863,8 +830,20 @@ app.post("/api/payphone-web/box-prepare", async (req: Request, res: Response) =>
       tax: number;
       currency: string;
       reference: string;
+      payphoneToken?: string;
+      payphoneStoreId?: string;
+      payphoneEnvironment?: string;
     };
     const phoneNumber = formatPayphonePhone(req.body?.phone);
+    const activeToken = sessionData.payphoneToken || PAYPHONE_WEB_TOKEN;
+    const activeStoreId = sessionData.payphoneStoreId || PAYPHONE_WEB_STORE_ID;
+
+    if (!activeToken || !activeStoreId) {
+      return res.status(503).json({
+        status: "error",
+        message: "PayPhone no tiene Token y Store ID completos en el administrador.",
+      });
+    }
 
     const paymentBoxData = {
       amount: sessionData.amount,
@@ -874,8 +853,8 @@ app.post("/api/payphone-web/box-prepare", async (req: Request, res: Response) =>
       service: 0,
       tip: 0,
       currency: sessionData.currency,
-      token: PAYPHONE_WEB_TOKEN,
-      ...(PAYPHONE_WEB_STORE_ID ? { storeId: PAYPHONE_WEB_STORE_ID } : {}),
+      token: activeToken,
+      storeId: activeStoreId,
       reference: sessionData.reference,
       lang: "es",
       defaultMethod: "card",
@@ -892,9 +871,12 @@ app.post("/api/payphone-web/box-prepare", async (req: Request, res: Response) =>
       orderNumber: sessionData.orderNumber,
       reference: sessionData.reference,
       clientTransactionId: sessionData.clientTransactionId,
+      environment: sessionData.payphoneEnvironment || "configured",
       paymentBoxData: {
-        ...paymentBoxData,
-        token: `${PAYPHONE_WEB_TOKEN.slice(0, 8)}...`,
+        amount: paymentBoxData.amount,
+        currency: paymentBoxData.currency,
+        storeIdConfigured: Boolean(activeStoreId),
+        tokenConfigured: Boolean(activeToken),
       },
     }, null, 2));
 
@@ -968,38 +950,13 @@ app.post("/api/payphone-web/confirm-and-finalize", async (req: Request, res: Res
       return res.status(response.status).json(data);
     }
 
-    if (!PAYPHONE_WEB_TOKEN) {
-      return res.status(503).json({ status: "error", message: "PayPhone no está configurado en el servidor." });
-    }
-
     if (!Number.isSafeInteger(transactionId) || transactionId <= 0) {
       return res.status(400).json({ status: "error", message: "La transacción de PayPhone no es válida." });
     }
 
-    const confirmation = await confirmPayphoneTransaction({
+    const { response, data } = await postJsonToBackend("/api/external/payphone/confirm", {
       id: transactionId,
       clientTransactionId,
-    });
-    const confirmationData = confirmation.data as Record<string, unknown> | null;
-
-    if (!confirmation.response.ok || !confirmationData) {
-      console.error("[PAYPHONE_WEB][CONFIRM_FAILED]", {
-        status: confirmation.response.status,
-        transactionId,
-        clientTransactionId,
-      });
-      return res.status(502).json({
-        status: "error",
-        message: "No pudimos verificar el pago todavía. No se realizó ningún cambio en tu pedido; intenta de nuevo en unos minutos.",
-      });
-    }
-
-    const { response, data } = await postJsonToBackend("/api/external/payphone/finalize", {
-      id: transactionId,
-      clientTransactionId,
-      transactionStatus: confirmationData.transactionStatus,
-      amount: confirmationData.amount,
-      authorizationCode: confirmationData.authorizationCode,
     });
 
     return res.status(response.status).json(data);
@@ -1010,6 +967,37 @@ app.post("/api/payphone-web/confirm-and-finalize", async (req: Request, res: Res
       message: "No pudimos verificar el pago todavía. Tu pedido quedó pendiente de confirmación.",
     });
   }
+});
+
+// PayPhone redirects here after charging. Confirm immediately during the HTTP
+// request so the transaction does not depend on React, JavaScript, or the user
+// keeping the tab open. PaymentResult retries idempotently on the client.
+app.get("/payment-result", async (req: Request, _res: Response, next: NextFunction) => {
+  const transactionId = Number(req.query.id);
+  const clientTransactionId = String(req.query.clientTransactionId || "").trim();
+
+  if (!Number.isSafeInteger(transactionId) || transactionId <= 0 || !clientTransactionId) {
+    return next();
+  }
+
+  try {
+    const { response } = await postJsonToBackend("/api/external/payphone/confirm", {
+      id: transactionId,
+      clientTransactionId,
+    });
+
+    if (!response.ok) {
+      console.error("[PAYPHONE_WEB][CALLBACK_CONFIRM_FAILED]", {
+        status: response.status,
+        transactionId,
+        clientTransactionId,
+      });
+    }
+  } catch (error) {
+    console.error("[PAYPHONE_WEB][CALLBACK_CONFIRM_ERROR]", error);
+  }
+
+  return next();
 });
 
 function sendGone(res: Response, path: string) {

@@ -60,6 +60,16 @@ const checks: SmokeCheck[] = [
     path: "/checkout",
     mustContain: ["Checkout | DIFIORI", "noindex, nofollow", "canonical", "/assets/index"],
   },
+  {
+    name: "PayPhone configurado",
+    path: "/api/external/payphone/health",
+    mustContain: [
+      '"provider":"PayPhone"',
+      '"tokenConfigured":true',
+      '"storeIdConfigured":true',
+      '"sdkVersion":"2.0"',
+    ],
+  },
 ];
 
 function normalizeBaseUrl(value: string) {

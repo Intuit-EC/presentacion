@@ -46,8 +46,8 @@ const PROOF_UPLOAD_TIMEOUT_MS = 45000;
 const PROOF_COMPRESSION_THRESHOLD_BYTES = 900_000;
 const MAX_PROOF_FILE_BYTES = 15 * 1024 * 1024;
 const PAYPHONE_SDK_ORIGIN = "https://cdn.payphonetodoesposible.com";
-const PAYPHONE_SDK_URL = `${PAYPHONE_SDK_ORIGIN}/box/v1.1/payphone-payment-box.js`;
-const PAYPHONE_CSS_URL = `${PAYPHONE_SDK_ORIGIN}/box/v1.1/payphone-payment-box.css`;
+const PAYPHONE_SDK_URL = `${PAYPHONE_SDK_ORIGIN}/box/v2.0/payphone-payment-box.js`;
+const PAYPHONE_CSS_URL = `${PAYPHONE_SDK_ORIGIN}/box/v2.0/payphone-payment-box.css`;
 
 async function fetchJsonWithTimeout(
   input: RequestInfo | URL,

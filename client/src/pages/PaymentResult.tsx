@@ -310,9 +310,18 @@ export default function PaymentResult() {
           Tu pedido no se pierde; podemos ayudarte a terminarlo.
         </p>
         <div className="flex flex-col gap-3">
+          {status === "error" && window.location.search && (
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="w-full bg-[#C6539B] hover:bg-[#AD3F85] text-white py-5 rounded-3xl font-black text-base transition-all shadow-xl"
+            >
+              Verificar mi pago nuevamente
+            </button>
+          )}
           <Link href="/checkout">
             <button className="w-full bg-[#5A3F73] hover:bg-[#4A3362] text-white py-5 rounded-3xl font-black text-base transition-all shadow-xl">
-              Intentar de nuevo
+              {status === "failed" ? "Intentar con otro método" : "Volver al checkout"}
             </button>
           </Link>
           <a

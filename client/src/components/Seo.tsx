@@ -127,7 +127,7 @@ export function renderSeoTags(state: SeoState) {
     `<meta name="author" content="${escapeHtml(DEFAULT_COMPANY.name)}" />`,
     `<meta name="application-name" content="${escapeHtml(DEFAULT_COMPANY.name)}" />`,
     `<meta name="format-detection" content="telephone=no" />`,
-    `<meta name="referrer" content="strict-origin-when-cross-origin" />`,
+    `<meta name="referrer" content="origin-when-cross-origin" />`,
     `<meta name="theme-color" content="#ffffff" />`,
     `<meta name="geo.region" content="EC-G" />`,
     `<meta name="geo.placename" content="Guayaquil" />`,
@@ -258,7 +258,7 @@ export function Seo({
     upsertMeta("name", "author", DEFAULT_COMPANY.name);
     upsertMeta("name", "application-name", DEFAULT_COMPANY.name);
     upsertMeta("name", "format-detection", "telephone=no");
-    upsertMeta("name", "referrer", "strict-origin-when-cross-origin");
+    upsertMeta("name", "referrer", "origin-when-cross-origin");
     upsertMeta("name", "theme-color", "#ffffff");
     upsertMeta("name", "twitter:card", "summary_large_image");
     upsertMeta("property", "og:title", seoState.title);

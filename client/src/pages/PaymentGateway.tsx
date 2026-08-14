@@ -14,8 +14,8 @@ declare global {
 }
 
 const PAYPHONE_BOX_STORAGE_KEY = "pp_box_payload";
-const PAYPHONE_SDK_URL = "https://cdn.payphonetodoesposible.com/box/v1.1/payphone-payment-box.js";
-const PAYPHONE_CSS_URL = "https://cdn.payphonetodoesposible.com/box/v1.1/payphone-payment-box.css";
+const PAYPHONE_SDK_URL = "https://cdn.payphonetodoesposible.com/box/v2.0/payphone-payment-box.js";
+const PAYPHONE_CSS_URL = "https://cdn.payphonetodoesposible.com/box/v2.0/payphone-payment-box.css";
 const PAYMENT_PREPARE_TIMEOUT_MS = 20000;
 const SDK_LOAD_TIMEOUT_MS = 15000;
 const WIDGET_RENDER_TIMEOUT_MS = 15000;
@@ -56,6 +56,7 @@ function ensureScript(src: string, timeoutMs = SDK_LOAD_TIMEOUT_MS) {
     }
 
     const script = document.createElement("script");
+    script.type = "module";
     script.src = src;
     script.async = true;
     script.onload = () => {

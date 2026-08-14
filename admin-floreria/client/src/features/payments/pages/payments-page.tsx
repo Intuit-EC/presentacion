@@ -99,6 +99,7 @@ export default function PaymentsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isTestingPaypal, setIsTestingPaypal] = useState(false);
+  const [isTestingPayphone, setIsTestingPayphone] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -282,6 +283,23 @@ export default function PaymentsPage() {
     }
   };
 
+  const handleTestPayphone = async () => {
+    try {
+      setIsTestingPayphone(true);
+      const saved = await handleSave();
+      if (!saved) return;
+
+      const response = await ecommerceService.get("/external/payphone/health");
+      const environment = response.data?.data?.environment || form.payphoneEnvironment;
+      toast.success(`PayPhone ${environment}: Token y Store ID están completos`);
+    } catch (error: any) {
+      console.error("Test PayPhone settings error:", error);
+      toast.error(error?.response?.data?.message || "PayPhone no tiene Token y Store ID completos");
+    } finally {
+      setIsTestingPayphone(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="p-8">
@@ -295,7 +313,7 @@ export default function PaymentsPage() {
       <header>
         <h1 className="text-3xl font-bold text-gray-900">Configuracion de Pagos</h1>
         <p className="mt-1 text-gray-600">
-          Deja listo el admin para desarrollo y produccion: PayPal, transferencias, envios por sector y correo del dueno.
+          Deja listo el admin para desarrollo y produccion: PayPhone, PayPal, transferencias, envios por sector y correo del dueno.
         </p>
       </header>
 
@@ -316,7 +334,7 @@ export default function PaymentsPage() {
           <Button
             type="button"
             onClick={handleToggleAcceptOrders}
-            disabled={isSaving || isTestingPaypal}
+            disabled={isSaving || isTestingPaypal || isTestingPayphone}
             className={
               form.acceptOrders
                 ? "bg-red-600 text-white hover:bg-red-700"
@@ -329,6 +347,55 @@ export default function PaymentsPage() {
                 ? "Cerrar pedidos"
                 : "Abrir pedidos"}
           </Button>
+        </div>
+      </section>
+
+      <section className="rounded-xl border bg-white p-6 shadow-sm">
+        <h2 className="text-lg font-semibold text-gray-900">PayPhone</h2>
+        <p className="mt-1 text-sm text-gray-500">
+          Configura el mismo dominio y URL de respuesta en PayPhone Developer: difiori.com.ec y https://difiori.com.ec/payment-result.
+        </p>
+
+        <div className="mt-6 grid gap-4 md:grid-cols-2">
+          <label className="space-y-2 text-sm md:col-span-2">
+            <span className="font-medium text-gray-700">Entorno activo de PayPhone</span>
+            <select
+              value={form.payphoneEnvironment}
+              onChange={(event) => updateField("payphoneEnvironment", event.target.value === "live" ? "live" : "sandbox")}
+              className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm outline-none focus:border-blue-500"
+            >
+              <option value="sandbox">Sandbox / pruebas</option>
+              <option value="live">Live / cobros reales</option>
+            </select>
+          </label>
+
+          <div className="md:col-span-2 pt-2">
+            <h3 className="text-sm font-semibold text-gray-800">Sandbox / Pruebas</h3>
+          </div>
+          <Field label="Store ID sandbox" value={form.payphoneSandboxStoreId} onChange={(value) => updateField("payphoneSandboxStoreId", value)} placeholder="Store ID de pruebas" />
+          <Field label="Token sandbox" value={form.payphoneSandboxToken} onChange={(value) => updateField("payphoneSandboxToken", value)} placeholder="Token de pruebas" type="password" />
+          <Field label="Webhook token sandbox" value={form.payphoneSandboxWebhookToken} onChange={(value) => updateField("payphoneSandboxWebhookToken", value)} placeholder="Opcional" type="password" />
+
+          <div className="md:col-span-2 pt-4">
+            <h3 className="text-sm font-semibold text-gray-800">Producción / Live</h3>
+          </div>
+          <Field label="Store ID live" value={form.payphoneLiveStoreId} onChange={(value) => updateField("payphoneLiveStoreId", value)} placeholder="Store ID de producción" />
+          <Field label="Token live" value={form.payphoneLiveToken} onChange={(value) => updateField("payphoneLiveToken", value)} placeholder="Token de producción" type="password" />
+          <Field label="Webhook token live" value={form.payphoneLiveWebhookToken} onChange={(value) => updateField("payphoneLiveWebhookToken", value)} placeholder="Opcional" type="password" />
+
+          <div className="md:col-span-2 flex flex-wrap gap-3 pt-4">
+            <Button
+              type="button"
+              onClick={handleTestPayphone}
+              disabled={isSaving || isTestingPayphone || isTestingPaypal}
+              className="bg-violet-600 text-white hover:bg-violet-700"
+            >
+              {isTestingPayphone ? "Comprobando PayPhone..." : "Guardar y comprobar PayPhone"}
+            </Button>
+            <p className="self-center text-xs text-gray-500">
+              Verifica configuración y versión del SDK sin generar un cobro.
+            </p>
+          </div>
         </div>
       </section>
 
@@ -466,7 +533,7 @@ export default function PaymentsPage() {
             <Button
               type="button"
               onClick={handleTestPaypal}
-              disabled={isSaving || isTestingPaypal}
+              disabled={isSaving || isTestingPaypal || isTestingPayphone}
               className="bg-blue-600 text-white hover:bg-blue-700"
             >
               {isTestingPaypal ? "Probando PayPal..." : "Guardar y probar PayPal"}
@@ -511,7 +578,7 @@ export default function PaymentsPage() {
       <div className="flex justify-end">
         <Button
           onClick={handleSave}
-          disabled={isSaving || isTestingPaypal}
+          disabled={isSaving || isTestingPaypal || isTestingPayphone}
           className="bg-blue-600 text-white hover:bg-blue-700"
         >
           {isSaving ? "Guardando..." : "Guardar configuracion"}
@@ -527,12 +594,14 @@ function Field({
   onChange,
   placeholder,
   inputMode,
+  type = "text",
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
   inputMode?: InputHTMLAttributes<HTMLInputElement>["inputMode"];
+  type?: InputHTMLAttributes<HTMLInputElement>["type"];
 }) {
   return (
     <label className="space-y-2 text-sm">
@@ -542,6 +611,7 @@ function Field({
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         inputMode={inputMode}
+        type={type}
         className="h-11 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm text-gray-900 placeholder:text-gray-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
       />
     </label>

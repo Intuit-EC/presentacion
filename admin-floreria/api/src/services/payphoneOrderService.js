@@ -238,7 +238,10 @@ async function finalizePayphoneOrder(prisma, payload) {
     };
   }
 
-  if (!payphoneTransactionId || transactionStatus === "CANCELLED") {
+  const normalizedTransactionStatus = String(transactionStatus || "").trim().toLowerCase();
+  const isCancelled = ["cancelled", "canceled"].includes(normalizedTransactionStatus);
+
+  if (!payphoneTransactionId || isCancelled) {
     const updatedOrder = await prisma.order.update({
       where: { id: order.id },
       data: {
@@ -255,7 +258,7 @@ async function finalizePayphoneOrder(prisma, payload) {
     };
   }
 
-  const approved = transactionStatus === "Approved";
+  const approved = normalizedTransactionStatus === "approved";
   const normalizedAmount = Number(amount);
   if (approved && Number.isFinite(normalizedAmount)) {
     const expectedAmountCents = Math.round(Number(order.total) * 100);
