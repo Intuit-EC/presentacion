@@ -33,12 +33,17 @@ type PaymentSettings = {
 };
 
 const DEFAULT_TRANSFER_INSTRUCTIONS = `Banco Pichincha cta ahorro # 2202306049
-Banco Pacifico cta ahorro # 0851179635
+Banco Bolivariano cta ahorro # 0851179635
 Banco Guayaquil cta ahorro # 1389429
 
 Nombre: Maritza Iveth Medranda Flor
 CI: 0910784024
 Correo: ventas@difiori.com.ec`;
+
+function normalizeTransferInstructions(value: unknown) {
+  if (typeof value !== "string" || !value.trim()) return DEFAULT_TRANSFER_INSTRUCTIONS;
+  return value.replace(/Banco Pac[ií]fico/gi, "Banco Bolivariano");
+}
 
 const DEFAULT_SETTINGS: PaymentSettings = {
   acceptOrders: true,
@@ -110,6 +115,7 @@ export default function PaymentsPage() {
         setForm({
           ...DEFAULT_SETTINGS,
           ...paymentSettings,
+          transferInstructions: normalizeTransferInstructions(paymentSettings.transferInstructions),
           acceptOrders: settings.acceptOrders ?? true,
           shippingSectorRates: ensureEditableSectorRates(
             normalizeSectorRates(paymentSettings.shippingSectorRates)
@@ -214,6 +220,7 @@ export default function PaymentsPage() {
       setForm({
         ...DEFAULT_SETTINGS,
         ...savedPaymentSettings,
+        transferInstructions: normalizeTransferInstructions(savedPaymentSettings.transferInstructions),
         acceptOrders: savedSettings.acceptOrders ?? true,
         shippingSectorRates: ensureEditableSectorRates(
           normalizeSectorRates(savedPaymentSettings.shippingSectorRates)
@@ -253,6 +260,7 @@ export default function PaymentsPage() {
       setForm({
         ...DEFAULT_SETTINGS,
         ...savedPaymentSettings,
+        transferInstructions: normalizeTransferInstructions(savedPaymentSettings.transferInstructions),
         acceptOrders: savedSettings.acceptOrders ?? true,
         shippingSectorRates: ensureEditableSectorRates(
           normalizeSectorRates(savedPaymentSettings.shippingSectorRates)
