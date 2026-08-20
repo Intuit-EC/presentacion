@@ -94,14 +94,14 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
-  // Comprar ahora suma al carrito y lleva al checkout. Antes lo reemplazaba, asi
-  // que quien ya tenia productos elegidos los perdia al pulsar el boton.
+  // "Comprar ahora" lleva al checkout con ese producto y nada mas. Sumarlo a lo
+  // que hubiera guardado de visitas anteriores hacia que el cliente llegara al
+  // pago con un total que no reconocia. Para llevar varios productos esta
+  // "Agregar al carrito", que si acumula.
   const buyNow = (product: Product) => {
-    setItems((prev) => {
-      const nextItems = mergeProductIntoItems(prev, product, 1);
-      persistCartItems(nextItems);
-      return nextItems;
-    });
+    const nextItems = [{ product, quantity: 1 }];
+    persistCartItems(nextItems);
+    setItems(nextItems);
   };
 
   const removeItem = (productId: string) => {

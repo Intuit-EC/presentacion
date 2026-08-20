@@ -1400,8 +1400,12 @@ app.use((req, res, next) => {
       const requestOrigin = buildRequestOrigin(req);
       const statusCode = await prefetchSsrRouteData(queryClient, req.path, requestOrigin);
       const renderApp = await loadRenderApp(vite);
+      // Solo la ruta, sin query string. Con `?fbclid=...`, `?utm_source=...` o
+      // `?gclid=...` el router no encontraba coincidencia y el servidor devolvia
+      // "Pagina no encontrada": justo lo que veia todo el que llegaba desde un
+      // anuncio o una campana, hasta que el navegador hidrataba y lo corregia.
       const { appHtml, dehydratedState, seo } = renderApp({
-        path: req.originalUrl,
+        path: req.path,
         queryClient,
       });
 
