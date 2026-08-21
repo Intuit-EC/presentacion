@@ -72,6 +72,7 @@ export default function PaymentResult() {
     const clearPayphoneDraft = () => {
       localStorage.removeItem("pp_clientTxId");
       localStorage.removeItem("pp_box_payload");
+      localStorage.removeItem("pp_box_session");
       localStorage.removeItem("pp_web_token");
       sessionStorage.removeItem("pp_web_token");
     };

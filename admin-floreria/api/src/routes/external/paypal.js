@@ -8,6 +8,47 @@ const { businessLog, businessError } = require("../../utils/logger");
 
 const router = express.Router();
 
+function getActivePaypalCredentials(paymentSettings = {}) {
+  const environment = paymentSettings.paypalEnvironment === "live" ? "live" : "sandbox";
+  const prefix = environment === "live" ? "paypalLive" : "paypalSandbox";
+
+  return {
+    environment,
+    clientId: paymentSettings[`${prefix}ClientId`] || "",
+    clientSecret: paymentSettings[`${prefix}ClientSecret`] || "",
+  };
+}
+
+router.get("/health", async (_req, res) => {
+  res.set("Cache-Control", "no-store");
+
+  try {
+    const company = await prisma.company.findFirst({
+      where: { isActive: true },
+      select: { settings: true },
+    });
+    const paymentSettings = company?.settings?.paymentSettings || {};
+    const credentials = getActivePaypalCredentials(paymentSettings);
+    const configured = Boolean(credentials.clientId && credentials.clientSecret);
+
+    return res.status(configured ? 200 : 503).json({
+      status: configured ? "success" : "error",
+      data: {
+        provider: "PayPal",
+        environment: credentials.environment,
+        readyForProduction: credentials.environment === "live" && configured,
+        clientIdConfigured: Boolean(credentials.clientId),
+        clientSecretConfigured: Boolean(credentials.clientSecret),
+      },
+    });
+  } catch (_error) {
+    return res.status(503).json({
+      status: "error",
+      message: "No se pudo validar la configuración de PayPal.",
+    });
+  }
+});
+
 router.post("/create-order", async (req, res) => {
   const startedAt = Date.now();
 

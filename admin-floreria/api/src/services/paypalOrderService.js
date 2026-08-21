@@ -76,6 +76,15 @@ function getPaypalBaseUrl(environment) {
     : "https://api-m.sandbox.paypal.com";
 }
 
+function isProductionStoreUrl(value) {
+  try {
+    const hostname = new URL(String(value || "")).hostname.toLowerCase();
+    return hostname === "difiori.com.ec" || hostname === "www.difiori.com.ec";
+  } catch {
+    return false;
+  }
+}
+
 function getActivePaypalCredentials(paymentSettings = {}) {
   const environment = paymentSettings.paypalEnvironment === "live" ? "live" : "sandbox";
   const prefix = environment === "live" ? "paypalLive" : "paypalSandbox";
@@ -395,6 +404,14 @@ async function createPaypalCheckoutOrder(prisma, payload) {
       `Completa Client ID y Client Secret de PayPal (${credentials.environment}) en el admin.`
     );
     error.statusCode = 400;
+    throw error;
+  }
+
+  if (credentials.environment !== "live" && isProductionStoreUrl(storeUrl)) {
+    const error = new Error(
+      "PayPal está en modo de pruebas y no puede cobrar en la tienda pública. Elige otro método de pago."
+    );
+    error.statusCode = 503;
     throw error;
   }
 

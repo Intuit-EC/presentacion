@@ -39,6 +39,12 @@ type SelectedPaymentMethod = PaymentMethod | "";
 type CheckoutStep = "sender" | "receiver" | "payment";
 type ShippingSectorRate = { sector: string; cost: number };
 type CheckoutFocusable = HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
+type OnlinePaymentMethod = "PayPal" | "Payphone";
+type PaymentAvailability = {
+  status: "checking" | "available" | "unavailable";
+  environment?: "sandbox" | "live";
+  message?: string;
+};
 
 const CHECKOUT_REQUEST_TIMEOUT_MS = 30000;
 const PAYPAL_PROOF_UPLOAD_TIMEOUT_MS = 25000;
@@ -324,6 +330,12 @@ export default function Checkout() {
   const [isUploadingProof, setIsUploadingProof] = useState(false);
   const [proofMessage, setProofMessage] = useState("");
   const [paypalPayerEmail, setPaypalPayerEmail] = useState("");
+  const [onlinePaymentAvailability, setOnlinePaymentAvailability] = useState<
+    Record<OnlinePaymentMethod, PaymentAvailability>
+  >({
+    PayPal: { status: "checking" },
+    Payphone: { status: "checking" },
+  });
   const payphoneBoxStorageKey = "pp_box_payload";
   const checkoutWhatsappUrl = `https://wa.me/${DEFAULT_COMPANY.phoneDigits}?text=${encodeURIComponent(
     "Hola, necesito ayuda para completar mi pedido en DIFIORI."
@@ -400,18 +412,16 @@ export default function Checkout() {
       senderEmail,
       senderPhone,
       receiverName,
-      receiverPhone,
       deliveryDateTime,
       address,
       sector,
     } = readCheckoutFields();
-    const hasValidSenderEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(senderEmail);
-    const senderComplete = Boolean(senderName && senderEmail && senderPhone && hasValidSenderEmail);
+    const hasValidSenderEmail = !senderEmail || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(senderEmail);
+    const senderComplete = Boolean(senderName && senderPhone && hasValidSenderEmail);
     // El mensaje de la tarjeta es opcional: bloqueaba el pago de productos que
     // ni siquiera llevan tarjeta (perfumes, desayunos, regalos).
     const deliveryComplete = Boolean(
       receiverName &&
-        receiverPhone &&
         (hasConfiguredShippingSectors ? sector : true) &&
         deliveryDateTime &&
         address
@@ -431,6 +441,52 @@ export default function Checkout() {
   const updateCheckoutProgress = () => {
     setFormRevision((current) => current + 1);
   };
+
+  useEffect(() => {
+    let active = true;
+    const productionHost = ["difiori.com.ec", "www.difiori.com.ec"].includes(window.location.hostname);
+
+    const checkProvider = async (
+      method: OnlinePaymentMethod,
+      path: string,
+    ): Promise<[OnlinePaymentMethod, PaymentAvailability]> => {
+      try {
+        const response = await fetch(apiUrl(path), {
+          headers: { Accept: "application/json" },
+          cache: "no-store",
+        });
+        const data = await response.json().catch(() => ({}));
+        const environment = data?.data?.environment === "live" ? "live" : "sandbox";
+        const configured = response.ok && data?.status === "success";
+        const readyForStore = configured && (!productionHost || environment === "live");
+
+        return [method, {
+          status: readyForStore ? "available" : "unavailable",
+          environment,
+          message: configured && productionHost && environment !== "live"
+            ? "Temporalmente no disponible: la pasarela sigue en modo de pruebas."
+            : "Temporalmente no disponible. Elige transferencia, Zelle o solicita ayuda.",
+        }];
+      } catch {
+        return [method, {
+          status: "unavailable",
+          message: "No pudimos verificar esta pasarela. Elige transferencia, Zelle o solicita ayuda.",
+        }];
+      }
+    };
+
+    Promise.all([
+      checkProvider("Payphone", "/api/external/payphone/health"),
+      checkProvider("PayPal", "/api/external/paypal/health"),
+    ]).then((entries) => {
+      if (!active) return;
+      setOnlinePaymentAvailability(Object.fromEntries(entries) as Record<OnlinePaymentMethod, PaymentAvailability>);
+    });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (checkoutStartedSent.current || items.length === 0) return;
@@ -531,10 +587,13 @@ export default function Checkout() {
   }, [orderItemsPayload, orderStatus, paymentMethod, appliedCoupon, cartTotal, shippingResolution.cost, sectorInput]);
 
   useEffect(() => {
-    if (!checkoutReadiness.canChoosePayment && paymentMethod) {
-      setPaymentMethod("");
-    }
-  }, [checkoutReadiness.canChoosePayment, paymentMethod]);
+    if (paymentMethod !== "PayPal" && paymentMethod !== "Payphone") return;
+    const availability = onlinePaymentAvailability[paymentMethod];
+    if (availability.status !== "unavailable") return;
+
+    setPaymentMethod("");
+    setErrorMsg(availability.message || `${paymentMethod} no está disponible temporalmente.`);
+  }, [onlinePaymentAvailability, paymentMethod]);
 
   useEffect(() => {
     if (paymentMethod !== "Payphone") return;
@@ -581,10 +640,9 @@ export default function Checkout() {
   };
 
   const getMissingSenderFields = () => {
-    const { senderName, senderEmail, senderPhone } = readCheckoutFields();
+    const { senderName, senderPhone } = readCheckoutFields();
     return [
       [senderName, "nombre de quien envía"],
-      [senderEmail, "correo de quien envía"],
       [senderPhone, "teléfono de quien envía"],
     ]
       .filter(([value]) => !value)
@@ -594,14 +652,12 @@ export default function Checkout() {
   const getMissingReceiverFields = () => {
     const {
       receiverName,
-      receiverPhone,
       address,
       sector,
       deliveryDateTime,
     } = readCheckoutFields();
     return [
       [receiverName, "nombre de quien recibe"],
-      [receiverPhone, "teléfono de quien recibe"],
       ...(hasConfiguredShippingSectors ? [[sector, "sector"] as const] : []),
       [deliveryDateTime, "hora de entrega"],
       [address, "dirección exacta"],
@@ -618,16 +674,14 @@ export default function Checkout() {
       setErrorMsg(`Completa: ${missingFields.join(", ")}.`);
       if (!senderName) {
         focusCheckoutField("sender", senderNameRef);
-      } else if (!senderEmail) {
-        focusCheckoutField("sender", senderEmailRef);
       } else if (!senderPhone) {
         focusCheckoutField("sender", senderPhoneRef);
       }
       return false;
     }
 
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(senderEmail)) {
-      setErrorMsg("Ingresa un correo válido para quien envía.");
+    if (senderEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(senderEmail)) {
+      setErrorMsg("Revisa el correo o déjalo vacío para continuar por WhatsApp.");
       focusCheckoutField("sender", senderEmailRef);
       return false;
     }
@@ -650,8 +704,6 @@ export default function Checkout() {
       setErrorMsg(`Completa: ${missingFields.join(", ")}.`);
       if (!receiverName) {
         focusCheckoutField("receiver", receiverNameRef);
-      } else if (!receiverPhone) {
-        focusCheckoutField("receiver", receiverPhoneRef);
       } else if (!sector) {
         focusCheckoutField("receiver", hasConfiguredShippingSectors ? sectorSelectRef : sectorInputRef);
       } else if (!deliveryDateTime) {
@@ -785,6 +837,18 @@ export default function Checkout() {
       return;
     }
 
+    if (paymentMethod === "PayPal" || paymentMethod === "Payphone") {
+      const availability = onlinePaymentAvailability[paymentMethod];
+      if (availability.status !== "available") {
+        setErrorMsg(
+          availability.message ||
+            `${paymentMethod} no está disponible temporalmente. Elige transferencia, Zelle o solicita ayuda.`,
+        );
+        scrollToCheckoutSection("payment");
+        return;
+      }
+    }
+
     setErrorMsg("");
     setOrderStatus("loading");
     abandonmentSent.current = true;
@@ -818,6 +882,7 @@ export default function Checkout() {
 
     try {
       if (paymentMethod === "Payphone") {
+        localStorage.removeItem("pp_box_session");
         localStorage.setItem(
           payphoneBoxStorageKey,
           JSON.stringify({
@@ -906,10 +971,10 @@ export default function Checkout() {
         const createdOrderNumber = data.data?.orderNumber || "DIFIORI-OK";
         setOrderNumber(createdOrderNumber);
         setOrderStatus("success");
-        // Banco y Zelle se confirman aqui mismo: sin este evento ni Analytics ni
-        // el pixel llegan a ver estas ventas y las campanas optimizan a ciegas.
-        trackGaEvent("purchase", {
-          transaction_id: createdOrderNumber,
+        // Una transferencia o Zelle todavía están pendientes de validación.
+        // Marcarlos como compra entrenaba las campañas con pedidos no pagados.
+        trackGaEvent("generate_lead", {
+          lead_id: createdOrderNumber,
           currency: "USD",
           value: finalTotal,
           payment_method: paymentMethod,
@@ -923,7 +988,7 @@ export default function Checkout() {
             }),
           ),
         });
-        trackFacebookEvent("Purchase", {
+        trackFacebookEvent("Lead", {
           currency: "USD",
           value: finalTotal,
           content_ids: items.map((item) => getProductSku(item.product)),
@@ -1401,7 +1466,7 @@ export default function Checkout() {
                   <User className="h-7 w-7 sm:h-9 sm:w-9" /> Quién envía
                 </h3>
                 <p className="rounded-2xl bg-[#FBF7FD] p-4 text-sm font-bold text-[#4A3362]">
-                  Estos datos son para confirmar el pedido contigo. El correo debe ser válido y los campos con * son obligatorios.
+                  Usaremos tu teléfono para confirmar el pedido. El correo es opcional y los campos con * son obligatorios.
                 </p>
                 <div className="grid grid-cols-1 gap-5">
                   <label className="checkout-field">
@@ -1417,7 +1482,7 @@ export default function Checkout() {
                   </label>
                   <label className="checkout-field">
                     <span>
-                      <Mail className="h-5 w-5" /> Correo electrónico *
+                      <Mail className="h-5 w-5" /> Correo electrónico (opcional)
                     </span>
                     <input
                       ref={senderEmailRef}
@@ -1451,7 +1516,7 @@ export default function Checkout() {
                   <Truck className="h-7 w-7 sm:h-9 sm:w-9" /> Quién recibe
                 </h3>
                 <p className="rounded-2xl bg-[#FBF7FD] p-4 text-sm font-bold text-[#4A3362]">
-                  Selecciona el sector para calcular el envío. Sin destino de entrega no se habilitan los métodos de pago.
+                  Selecciona el sector para calcular el envío. Si no conoces el teléfono de quien recibe, coordinaremos contigo.
                 </p>
                 <div className="grid grid-cols-1 gap-5">
                   <label className="checkout-field">
@@ -1466,7 +1531,7 @@ export default function Checkout() {
                   </label>
                   <label className="checkout-field">
                     <span>
-                      <Phone className="h-5 w-5" /> Teléfono *
+                      <Phone className="h-5 w-5" /> Teléfono de quien recibe (opcional)
                     </span>
                     <input
                       ref={receiverPhoneRef}
@@ -1570,7 +1635,7 @@ export default function Checkout() {
                 </h3>
                 {!checkoutReadiness.canChoosePayment ? (
                   <div className="rounded-2xl border border-[#DCC5E8] bg-[#FBF7FD] p-4 text-sm font-black text-[#4A3362] sm:text-base">
-                    Completa primero tus datos y la entrega. El pago se habilita cuando selecciones el sector/destino de envío y llenes todos los campos obligatorios.
+                    Puedes revisar y elegir el método ahora. Antes de confirmar te indicaremos cualquier dato obligatorio que falte.
                   </div>
                 ) : null}
                 <a
@@ -1583,55 +1648,70 @@ export default function Checkout() {
                   Tengo dudas sobre el pago
                 </a>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  {PAYMENT_METHODS.map(({ label, description, trustLabel, Icon }) => (
-                    <button
-                      key={label}
-                      type="button"
-                      onClick={() => {
-                        if (!checkoutReadiness.canChoosePayment) return;
-                        setPaymentMethod(label);
-                      }}
-                      disabled={isCheckoutBusy || !checkoutReadiness.canChoosePayment}
-                      className={cn(
-                        "flex min-h-[132px] flex-col items-start justify-between rounded-2xl border p-5 text-left transition-all disabled:cursor-not-allowed disabled:opacity-60",
-                        paymentMethod === label
-                          ? "border-[#4B1F6F] bg-[#4B1F6F] text-white shadow-lg shadow-[#4B1F6F]/20"
-                          : "border-[#DCC5E8] bg-white text-[#4A3362] hover:border-[#B58CCC] hover:bg-[#FBF7FD]"
-                      )}
-                    >
-                      <Icon
+                  {PAYMENT_METHODS.map(({ label, description, trustLabel, Icon }) => {
+                    const availability = label === "PayPal" || label === "Payphone"
+                      ? onlinePaymentAvailability[label]
+                      : null;
+                    const providerBlocked = Boolean(availability && availability.status !== "available");
+                    const availabilityLabel = availability?.status === "checking"
+                      ? "Verificando"
+                      : availability?.status === "unavailable"
+                        ? "No disponible"
+                        : trustLabel;
+
+                    return (
+                      <button
+                        key={label}
+                        type="button"
+                        onClick={() => {
+                          if (providerBlocked) return;
+                          setErrorMsg("");
+                          setPaymentMethod(label);
+                        }}
+                        disabled={isCheckoutBusy || providerBlocked}
                         className={cn(
-                          "h-7 w-7",
+                          "flex min-h-[132px] flex-col items-start justify-between rounded-2xl border p-5 text-left transition-all disabled:cursor-not-allowed disabled:opacity-60",
                           paymentMethod === label
-                            ? "text-white"
-                            : "text-[#4A3362]"
-                        )}
-                      />
-                      <span className="flex w-full items-center justify-between gap-2 text-2xl font-black">
-                        {label}
-                        <span
-                          className={cn(
-                            "rounded-full px-2.5 py-1 text-[0.62rem] font-black uppercase tracking-[0.08em]",
-                            paymentMethod === label
-                              ? "bg-white/15 text-white"
-                              : "bg-[#FBF7FD] text-[#4B1F6F]"
-                          )}
-                        >
-                          {trustLabel}
-                        </span>
-                      </span>
-                      <span
-                        className={cn(
-                          "text-base font-black leading-snug",
-                          paymentMethod === label
-                            ? "text-white/80"
-                            : "text-[#4A3362]"
+                            ? "border-[#4B1F6F] bg-[#4B1F6F] text-white shadow-lg shadow-[#4B1F6F]/20"
+                            : "border-[#DCC5E8] bg-white text-[#4A3362] hover:border-[#B58CCC] hover:bg-[#FBF7FD]"
                         )}
                       >
-                        {description}
-                      </span>
-                    </button>
-                  ))}
+                        <Icon
+                          className={cn(
+                            "h-7 w-7",
+                            paymentMethod === label
+                              ? "text-white"
+                              : "text-[#4A3362]"
+                          )}
+                        />
+                        <span className="flex w-full items-center justify-between gap-2 text-2xl font-black">
+                          {label}
+                          <span
+                            className={cn(
+                              "rounded-full px-2.5 py-1 text-[0.62rem] font-black uppercase tracking-[0.08em]",
+                              paymentMethod === label
+                                ? "bg-white/15 text-white"
+                                : "bg-[#FBF7FD] text-[#4B1F6F]"
+                            )}
+                          >
+                            {availabilityLabel}
+                          </span>
+                        </span>
+                        <span
+                          className={cn(
+                            "text-base font-black leading-snug",
+                            paymentMethod === label
+                              ? "text-white/80"
+                              : "text-[#4A3362]"
+                          )}
+                        >
+                          {availability?.status === "unavailable" && availability.message
+                            ? availability.message
+                            : description}
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
 
                 <AnimatePresence mode="wait">
@@ -1644,7 +1724,7 @@ export default function Checkout() {
                   >
                     {!paymentMethod && (
                       <p className="text-base font-black text-[#4A3362]">
-                        Cuando completes los datos obligatorios podrás elegir Banco, Zelle, Payphone o PayPal.
+                        Elige cualquiera de los métodos disponibles. Transferencia y Zelle permanecen disponibles si una pasarela está en mantenimiento.
                       </p>
                     )}
                     {selectedPaymentDetails && (

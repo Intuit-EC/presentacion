@@ -20,6 +20,7 @@ const checks: SmokeCheck[] = [
       "DIFIORI",
       "canonical",
       "application/ld+json",
+      '"gaMeasurementId":"G-',
       'href="/shop" class="site-nav-link',
       'href="/shop" class="home-discovery-card home-discovery-card-accent"',
     ],
@@ -67,7 +68,18 @@ const checks: SmokeCheck[] = [
       '"provider":"PayPhone"',
       '"tokenConfigured":true',
       '"storeIdConfigured":true',
+      '"readyForProduction":true',
       '"sdkVersion":"2.0"',
+    ],
+  },
+  {
+    name: "PayPal configurado",
+    path: "/api/external/paypal/health",
+    mustContain: [
+      '"provider":"PayPal"',
+      '"clientIdConfigured":true',
+      '"clientSecretConfigured":true',
+      '"readyForProduction":true',
     ],
   },
 ];
@@ -144,15 +156,25 @@ async function main() {
   console.log(`User-Agent: ${USER_AGENT}`);
 
   const results = [];
+  const failures: string[] = [];
 
   for (const check of checks) {
     const startedAt = Date.now();
-    const result = await runCheck(check);
-    results.push({ ...result, ms: Date.now() - startedAt });
-    console.log(`✓ ${result.name} ${result.status} ${result.bytes} bytes`);
+    try {
+      const result = await runCheck(check);
+      results.push({ ...result, ms: Date.now() - startedAt });
+      console.log(`✓ ${result.name} ${result.status} ${result.bytes} bytes`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      failures.push(message);
+      console.error(`✗ ${message}`);
+    }
   }
 
   const totalMs = results.reduce((sum, result) => sum + result.ms, 0);
+  if (failures.length > 0) {
+    throw new Error(`${failures.length} comprobación(es) fallaron.`);
+  }
   console.log(`Smoke E2E OK: ${results.length} checks en ${totalMs}ms`);
 }
 

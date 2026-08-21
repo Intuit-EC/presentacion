@@ -19,6 +19,15 @@ function getActivePayphoneCredentials(paymentSettings = {}) {
   };
 }
 
+function isProductionStoreUrl(value) {
+  try {
+    const hostname = new URL(String(value || '')).hostname.toLowerCase();
+    return hostname === 'difiori.com.ec' || hostname === 'www.difiori.com.ec';
+  } catch {
+    return false;
+  }
+}
+
 async function requestPayphoneConfirmation({ token, id, clientTransactionId }) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 15000);
@@ -62,6 +71,7 @@ router.get('/health', async (_req, res) => {
       data: {
         provider: 'PayPhone',
         environment: credentials.environment,
+        readyForProduction: credentials.environment === 'live' && Boolean(credentials.token) && Boolean(credentials.storeId),
         tokenConfigured: Boolean(credentials.token),
         storeIdConfigured: Boolean(credentials.storeId),
         sdkVersion: '2.0',
@@ -94,6 +104,13 @@ router.post('/box-session', async (req, res) => {
     return res.status(503).json({
       status: 'error',
       message: `PayPhone ${credentials.environment} no tiene Token y Store ID completos. Revisa Pagos en el administrador.`,
+    });
+  }
+
+  if (credentials.environment !== 'live' && isProductionStoreUrl(req.body?.storeUrl)) {
+    return res.status(503).json({
+      status: 'error',
+      message: 'PayPhone está en modo de pruebas y no puede cobrar en la tienda pública. Elige otro método de pago.',
     });
   }
 

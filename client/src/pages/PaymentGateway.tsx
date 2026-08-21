@@ -14,6 +14,8 @@ declare global {
 }
 
 const PAYPHONE_BOX_STORAGE_KEY = "pp_box_payload";
+const PAYPHONE_SESSION_STORAGE_KEY = "pp_box_session";
+const PAYPHONE_SESSION_MAX_AGE_MS = 8 * 60 * 1000;
 const PAYPHONE_SDK_URL = "https://cdn.payphonetodoesposible.com/box/v2.0/payphone-payment-box.js";
 const PAYPHONE_CSS_URL = "https://cdn.payphonetodoesposible.com/box/v2.0/payphone-payment-box.css";
 const PAYMENT_PREPARE_TIMEOUT_MS = 20000;
@@ -85,6 +87,30 @@ export default function PaymentGateway() {
       return;
     }
 
+    const applyPreparedSession = (data: any) => {
+      if (!data?.clientTransactionId || !data?.paymentBoxData) return false;
+      localStorage.setItem("pp_clientTxId", String(data.clientTransactionId));
+      setReference(String(data.reference || ""));
+      setClientTransactionId(String(data.clientTransactionId));
+      setGatewayState("loading-widget");
+      setWidgetPayload(data.paymentBoxData);
+      return true;
+    };
+
+    try {
+      const cachedRaw = localStorage.getItem(PAYPHONE_SESSION_STORAGE_KEY);
+      const cached = cachedRaw ? JSON.parse(cachedRaw) : null;
+      const isFresh = Number.isFinite(cached?.createdAt) &&
+        Date.now() - Number(cached.createdAt) < PAYPHONE_SESSION_MAX_AGE_MS;
+
+      if (isFresh && cached?.checkoutPayload === rawPayload && applyPreparedSession(cached?.data)) {
+        return;
+      }
+      localStorage.removeItem(PAYPHONE_SESSION_STORAGE_KEY);
+    } catch {
+      localStorage.removeItem(PAYPHONE_SESSION_STORAGE_KEY);
+    }
+
     const preparePaymentBox = async () => {
       const controller = new AbortController();
       const timeoutId = window.setTimeout(() => controller.abort(), PAYMENT_PREPARE_TIMEOUT_MS);
@@ -109,12 +135,12 @@ export default function PaymentGateway() {
           throw new Error(result.message || "No se pudo preparar el botón de pago.");
         }
 
-        localStorage.setItem("pp_clientTxId", result.data.clientTransactionId);
-
-        setReference(result.data.reference || "");
-        setClientTransactionId(result.data.clientTransactionId || "");
-        setGatewayState("loading-widget");
-        setWidgetPayload(result.data.paymentBoxData);
+        localStorage.setItem(PAYPHONE_SESSION_STORAGE_KEY, JSON.stringify({
+          createdAt: Date.now(),
+          checkoutPayload: rawPayload,
+          data: result.data,
+        }));
+        applyPreparedSession(result.data);
       } catch (error) {
         setGatewayState("error");
         setErrorMessage(
@@ -208,6 +234,7 @@ export default function PaymentGateway() {
 
   const goBackToCheckout = () => {
     localStorage.removeItem(PAYPHONE_BOX_STORAGE_KEY);
+    localStorage.removeItem(PAYPHONE_SESSION_STORAGE_KEY);
     localStorage.removeItem("pp_clientTxId");
     localStorage.removeItem("pp_web_token");
     sessionStorage.removeItem("pp_web_token");
