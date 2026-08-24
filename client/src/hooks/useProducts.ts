@@ -10,6 +10,7 @@ export interface ProductsQueryOptions {
   category?: string;
   featured?: boolean;
   limit?: number;
+  summary?: boolean;
   enabled?: boolean;
 }
 
@@ -24,6 +25,7 @@ export const productsQueryKey = (options: string | ProductsQueryOptions = {}) =>
     normalized.category || "all",
     normalized.featured ? "featured" : "all",
     normalized.limit || "all",
+    normalized.summary ? "summary" : "full",
   ] as const;
 };
 
@@ -35,6 +37,13 @@ function getImageUrl(imagePath: string | null | undefined): string {
   }
 
   return toPublicImageUrl(imagePath) || PLACEHOLDER;
+}
+
+function normalizePublicProductText(value: unknown) {
+  return String(value || "")
+    .replace(/[“”"]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 /**
@@ -62,6 +71,8 @@ export async function fetchProducts(
     const params = new URLSearchParams();
 
     if (normalized.featured) params.set("featured", "true");
+    if (normalized.limit) params.set("limit", String(normalized.limit));
+    if (normalized.summary) params.set("summary", "true");
 
     const query = params.toString();
     const endpoint = query ? `${API_URL}?${query}` : API_URL;
@@ -72,19 +83,23 @@ export async function fetchProducts(
     if (json.status !== "success") throw new Error("Respuesta invalida del servidor");
 
     const products = json.data
-      .map((p: any): Product => ({
-        id: String(p.id),
-        name: p.name,
-        description: p.description || "",
-        category: p.category || "General",
-        price: p.price || "$0.00",
-        image: getImageUrl(p.image),
-        isBestSeller: p.isBestSeller || false,
-        stock: p.stock ?? 99,
-        deliveryTime: p.deliveryTime || "",
-        size: p.size || "",
-        includes: p.includes || p.description || "",
-      }))
+      .map((p: any): Product => {
+        const fullDescription = normalizePublicProductText(p.description);
+
+        return {
+          id: String(p.id),
+          name: normalizePublicProductText(p.name),
+          description: normalized.summary ? fullDescription.slice(0, 220) : fullDescription,
+          category: p.category || "General",
+          price: p.price || "$0.00",
+          image: getImageUrl(p.image),
+          isBestSeller: p.isBestSeller || false,
+          stock: p.stock ?? 99,
+          deliveryTime: p.deliveryTime || "",
+          size: normalizePublicProductText(p.size),
+          includes: normalized.summary ? "" : normalizePublicProductText(p.includes || p.description),
+        };
+      })
       .filter(isPublicCatalogProduct)
       .filter((product: Product) => {
         if (!normalized.category || normalized.category === "all") return true;

@@ -357,8 +357,12 @@ export default function SeoLandingPage() {
             </div>
           ) : highlightedProducts.length > 0 ? (
             <div className="product-grid">
-              {highlightedProducts.map((product) => (
-                <ProductCard key={product.id} product={product} />
+              {highlightedProducts.map((product, index) => (
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  showBestSellerBadge={index < 2}
+                />
               ))}
             </div>
           ) : (

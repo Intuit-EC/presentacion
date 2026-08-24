@@ -19,7 +19,12 @@ function normalizeDisplayText(value) {
   return MOJIBAKE_REPLACEMENTS.reduce(
     (text, [broken, fixed]) => text.replaceAll(broken, fixed),
     String(value),
-  ).replace(/\s+/g, ' ').trim();
+  )
+    // Algunos textos antiguos llegaron rodeados o intercalados con comillas
+    // duplicadas. Las limpiamos al publicar sin alterar el dato almacenado.
+    .replace(/[“”"]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 function slugify(value) {
@@ -71,7 +76,7 @@ function getCanonicalCategory(category) {
  */
 router.get('/', async (req, res) => {
   try {
-    const { category, featured } = req.query;
+    const { category, featured, summary } = req.query;
     const requestedLimit = Number.parseInt(String(req.query.limit || ''), 10);
     const limit = Number.isFinite(requestedLimit)
       ? Math.max(1, Math.min(requestedLimit, 60))
@@ -110,12 +115,16 @@ router.get('/', async (req, res) => {
       .map((p) => {
       const defaultVariant = p.variants.find((v) => v.isDefault) || p.variants[0];
       const price = p.hasVariants ? defaultVariant?.price : p.price;
+      const fullDescription = normalizeDisplayText(p.description);
+      const publicDescription = summary === 'true'
+        ? fullDescription.slice(0, 220)
+        : fullDescription;
 
       // Calcular si es best seller (featured)
       return {
         id: p.id,
-        name: p.name,
-        description: p.description,
+        name: normalizeDisplayText(p.name),
+        description: publicDescription,
         price: price ? `$${Number(price).toFixed(2)}` : '$0.00',
         rawPrice: price || 0,
         image: p.image || '',
@@ -130,8 +139,8 @@ router.get('/', async (req, res) => {
           isDefault: v.isDefault,
         })),
         deliveryTime: '2-3 horas',
-        size: '-',
-        includes: p.description || '',
+        size: '',
+        includes: summary === 'true' ? '' : fullDescription,
       };
     });
 
@@ -161,6 +170,17 @@ router.get('/categories', async (req, res) => {
     return res.status(500).json({ status: 'error', message: 'Error interno del servidor' });
   }
 });
+// El seed histórico nunca debe estar disponible desde la tienda pública.
+// Esta ruta se declara antes del manejador antiguo y termina la petición sin
+// ejecutar escrituras; se conserva el código viejo solo para facilitar su
+// eliminación en una migración posterior independiente.
+router.post('/seed', (_req, res) => {
+  return res.status(410).json({
+    status: 'error',
+    message: 'Endpoint retirado.',
+  });
+});
+
 /**
  * POST /api/external/products/seed
  * Endpoint temporal para ejecutar el seed de productos desde el navegador

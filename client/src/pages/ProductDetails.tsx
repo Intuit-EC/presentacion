@@ -396,7 +396,7 @@ export default function ProductDetails() {
             </div>
 
             <p className="product-description-strong mb-10 max-w-2xl">
-              "{product.description}"
+              {product.description}
             </p>
 
             {detailItems.length > 0 ? (

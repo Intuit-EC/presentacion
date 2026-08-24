@@ -166,7 +166,7 @@ export default function CategoryPage() {
                       <ProductCard
                         key={product.id}
                         product={product}
-                        showBestSellerBadge={!isBestSellers || index < BEST_SELLERS_VISIBLE_LIMIT}
+                        showBestSellerBadge={index < BEST_SELLERS_VISIBLE_LIMIT}
                       />
                     ))}
                   </div>

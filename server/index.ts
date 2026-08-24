@@ -30,6 +30,8 @@ import type { renderApp as renderAppFn } from "../client/src/server-entry";
 
 const app = express();
 const httpServer = createServer(app);
+const INITIAL_CATALOG_PRODUCTS = 12;
+const HOME_CATALOG_PRODUCTS = 8;
 
 function hydrateEnvFile(envPath: string) {
   if (!existsSync(envPath)) return;
@@ -531,12 +533,18 @@ async function prefetchSsrRouteData(queryClient: QueryClient, path: string, base
   }
 
   if (path === "/") {
-    // Solo la lista de categorias: son unos cientos de bytes y permiten pintar
-    // las colecciones en el primer render, sin arrastrar todo el catalogo.
-    await queryClient.prefetchQuery({
-      queryKey: categoriesQueryKey,
-      queryFn: () => fetchCategories(baseUrl),
-    });
+    // Categorías y una vitrina corta permiten comprar desde el primer HTML sin
+    // volver pesada la portada. El catálogo completo llega tras hidratar.
+    await Promise.all([
+      queryClient.prefetchQuery({
+        queryKey: categoriesQueryKey,
+        queryFn: () => fetchCategories(baseUrl),
+      }),
+      queryClient.prefetchQuery({
+        queryKey: productsQueryKey({ limit: HOME_CATALOG_PRODUCTS, summary: true }),
+        queryFn: () => fetchProducts({ limit: HOME_CATALOG_PRODUCTS, summary: true }, baseUrl),
+      }),
+    ]);
 
     return 200;
   }
@@ -551,10 +559,14 @@ async function prefetchSsrRouteData(queryClient: QueryClient, path: string, base
   }
 
   if (path === "/shop") {
-    // The catalog loads its first 20 products in the browser. Avoid embedding
-    // the whole inventory and its descriptions into the initial HTML response.
-    // That keeps the route crawlable through its own product URLs while making
-    // the storefront substantially lighter for visitors and crawlers.
+    // Entrega una vitrina real y ligera en el HTML inicial. El navegador carga
+    // el resto después; así Google descubre productos desde /shop sin volver a
+    // incrustar todo el inventario en cada respuesta.
+    await queryClient.prefetchQuery({
+      queryKey: productsQueryKey({ limit: INITIAL_CATALOG_PRODUCTS, summary: true }),
+      queryFn: () => fetchProducts({ limit: INITIAL_CATALOG_PRODUCTS, summary: true }, baseUrl),
+    });
+
     return 200;
   }
 

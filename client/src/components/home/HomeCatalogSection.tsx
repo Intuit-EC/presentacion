@@ -15,13 +15,26 @@ import {
 import "./home-catalog.css";
 
 const HOME_FEATURED_PRODUCTS = 4;
+const HOME_INITIAL_PRODUCTS = 8;
 
 export function HomeCatalogSection() {
-  const { data: allProducts = [], isLoading: isLoadingAll } = useProducts();
+  const { data: initialProducts = [], isLoading: isLoadingAll } = useProducts({
+    limit: HOME_INITIAL_PRODUCTS,
+    summary: true,
+  });
+  const [loadFullCatalog, setLoadFullCatalog] = React.useState(false);
+  const { data: fullCatalog = [] } = useProducts({ enabled: loadFullCatalog });
+  const allProducts = loadFullCatalog && fullCatalog.length > 0
+    ? fullCatalog
+    : initialProducts;
   // La lista de categorias se renderiza desde el servidor y pesa unos pocos
   // cientos de bytes, asi que las colecciones se ven apenas abre la pagina.
   // El catalogo completo llega despues y solo agrega foto, cantidad y precio.
   const { data: categoryNames = [] } = useCategories();
+
+  React.useEffect(() => {
+    setLoadFullCatalog(true);
+  }, []);
 
   const collections = React.useMemo(() => {
     const grouped = new Map<string, typeof allProducts>();

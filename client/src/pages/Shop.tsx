@@ -14,9 +14,9 @@ import {
 } from "@/components/ui/breadcrumb";
 import { Link } from "wouter";
 
-const INITIAL_VISIBLE_PRODUCTS = 20;
+const INITIAL_VISIBLE_PRODUCTS = 12;
 const LOAD_MORE_PRODUCTS = 16;
-const BEST_SELLER_BADGE_LIMIT = 10;
+const BEST_SELLER_BADGE_LIMIT = 6;
 
 const OCCASION_FILTERS = [
   { value: "all", label: "Todas las ocasiones", terms: [] },
@@ -46,10 +46,26 @@ function normalizeSearchText(value: string) {
 }
 
 export default function Shop() {
-  const { data: allProducts = [], isLoading } = useProducts();
+  const { data: initialProducts = [], isLoading } = useProducts({
+    limit: INITIAL_VISIBLE_PRODUCTS,
+    summary: true,
+  });
+  const [loadFullCatalog, setLoadFullCatalog] = useState(false);
+  const { data: fullCatalog = [] } = useProducts({ enabled: loadFullCatalog });
   const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE_PRODUCTS);
   const [occasion, setOccasion] = useState<(typeof OCCASION_FILTERS)[number]["value"]>("all");
   const [priceRange, setPriceRange] = useState<(typeof PRICE_FILTERS)[number]["value"]>("all");
+  const allProducts = loadFullCatalog && fullCatalog.length > 0
+    ? fullCatalog
+    : initialProducts;
+
+  // El servidor entrega 12 productos reales en el HTML para que Google y el
+  // visitante vean el catálogo de inmediato. El resto llega después de la
+  // hidratación, sin volver pesada la respuesta inicial.
+  useEffect(() => {
+    setLoadFullCatalog(true);
+  }, []);
+
   const filteredProducts = useMemo(() => {
     const occasionFilter = OCCASION_FILTERS.find((filter) => filter.value === occasion)!;
     const priceFilter = PRICE_FILTERS.find((filter) => filter.value === priceRange)!;
