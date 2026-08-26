@@ -517,7 +517,7 @@ export default function Checkout() {
   }, [cartTotal, items]);
 
   useEffect(() => {
-    const handleAbandonment = () => {
+    const handleAbandonment = (event?: Event) => {
       if (
         abandonmentSent.current ||
         orderStatus === "success" ||
@@ -540,40 +540,60 @@ export default function Checkout() {
       } = readCheckoutFields();
 
       if (senderName || senderPhone) {
-        fetch(apiUrl("/api/external/store-orders/abandoned"), {
+        const endpoint = apiUrl("/api/external/store-orders/abandoned");
+        const body = JSON.stringify({
+          customerName: senderName || "Cliente anonimo",
+          phone: senderPhone || "No proporcionado",
+          senderName: senderName || "",
+          senderEmail: senderEmail || "",
+          senderPhone: senderPhone || "",
+          receiverName: receiverName || "",
+          receiverPhone: receiverPhone || "",
+          exactAddress: exactAddress || "",
+          sector: sector || "Guayaquil",
+          paymentMethod,
+          deliveryDateTime: deliveryDateTime || "",
+          cardMessage: cardMessage || "",
+          observations: observations || "",
+          couponCode: appliedCoupon?.code || "",
+          abandonedAt: new Date().toISOString(),
+          source: "CHECKOUT_WEB",
+          storeUrl: window.location.origin,
+          items: orderItemsPayload,
+          total:
+            cartTotal +
+            shippingResolution.cost -
+            (appliedCoupon
+              ? appliedCoupon.type === "PERCENTAGE"
+                ? cartTotal * appliedCoupon.percent_value
+                : appliedCoupon.amount || 0
+              : 0),
+        });
+
+        if (event?.type === "beforeunload" && typeof navigator.sendBeacon === "function") {
+          const queued = navigator.sendBeacon(
+            endpoint,
+            new Blob([body], { type: "application/json" }),
+          );
+          if (queued) {
+            abandonmentSent.current = true;
+            return;
+          }
+        }
+
+        abandonmentSent.current = true;
+        void fetch(endpoint, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            customerName: senderName || "Cliente anonimo",
-            phone: senderPhone || "No proporcionado",
-            senderName: senderName || "",
-            senderEmail: senderEmail || "",
-            senderPhone: senderPhone || "",
-            receiverName: receiverName || "",
-            receiverPhone: receiverPhone || "",
-            exactAddress: exactAddress || "",
-            sector: sector || "Guayaquil",
-            paymentMethod,
-            deliveryDateTime: deliveryDateTime || "",
-            cardMessage: cardMessage || "",
-            observations: observations || "",
-            couponCode: appliedCoupon?.code || "",
-            abandonedAt: new Date().toISOString(),
-            source: "CHECKOUT_WEB",
-            storeUrl: window.location.origin,
-            items: orderItemsPayload,
-            total:
-              cartTotal +
-              shippingResolution.cost -
-              (appliedCoupon
-                ? appliedCoupon.type === "PERCENTAGE"
-                  ? cartTotal * appliedCoupon.percent_value
-                  : appliedCoupon.amount || 0
-                : 0),
-          }),
+          body,
           keepalive: true,
-        });
-        abandonmentSent.current = true;
+        })
+          .then((response) => {
+            if (!response.ok) abandonmentSent.current = false;
+          })
+          .catch(() => {
+            abandonmentSent.current = false;
+          });
       }
     };
 

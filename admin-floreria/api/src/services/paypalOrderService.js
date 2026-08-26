@@ -320,7 +320,7 @@ async function createPendingPaypalOrder(prisma, payload) {
   });
 
   try {
-    await emailService.sendNewOrderAlert({
+    const alertResult = await emailService.sendNewOrderAlert({
       orderNumber: order.orderNumber,
       customerName: senderName,
       customerEmail: storefrontDetails.senderEmail,
@@ -348,6 +348,9 @@ async function createPendingPaypalOrder(prisma, payload) {
         variantName: item.variantName || null,
       })),
     });
+    if (alertResult?.success !== true) {
+      throw new Error(alertResult?.error || "SMTP no confirmó la alerta del pedido PayPal");
+    }
   } catch (emailError) {
     console.error("PayPal new order alert email error:", emailError);
   }

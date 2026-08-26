@@ -18,6 +18,9 @@ function getSmtpConfig() {
     port,
     secure,
     auth: user && pass ? { user, pass } : undefined,
+    connectionTimeout: 5000,
+    greetingTimeout: 5000,
+    socketTimeout: 10000,
   };
 }
 
@@ -27,7 +30,30 @@ function getDefaultFrom() {
   return process.env.EMAIL_FROM || `"${companyName}" <${user}>`;
 }
 
+function getSalesNotificationEmail(explicitRecipient) {
+  return String(
+    explicitRecipient ||
+      process.env.OWNER_NOTIFICATION_EMAIL ||
+      process.env.SALES_NOTIFICATION_EMAIL ||
+      "ventas@difiori.com.ec"
+  ).trim();
+}
+
+function getSmtpPublicStatus() {
+  const config = getSmtpConfig();
+  return {
+    host: config.host,
+    port: config.port,
+    secure: config.secure,
+    credentialsConfigured: Boolean(config.auth?.user && config.auth?.pass),
+    senderConfigured: Boolean(process.env.EMAIL_FROM || config.auth?.user),
+    notificationRecipient: getSalesNotificationEmail(),
+  };
+}
+
 module.exports = {
   getDefaultFrom,
+  getSalesNotificationEmail,
   getSmtpConfig,
+  getSmtpPublicStatus,
 };

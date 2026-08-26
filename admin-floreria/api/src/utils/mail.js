@@ -1,7 +1,11 @@
 const nodemailer = require("nodemailer");
 const { existsSync } = require("fs");
 const path = require("path");
-const { getDefaultFrom, getSmtpConfig } = require("./smtpConfig");
+const {
+  getDefaultFrom,
+  getSalesNotificationEmail,
+  getSmtpConfig,
+} = require("./smtpConfig");
 const { resolvePublicMediaUrl } = require("./publicMediaUrl");
 
 const transporter = nodemailer.createTransport(getSmtpConfig());
@@ -94,7 +98,7 @@ async function sendAbandonedCartEmail({
   source,
   storeUrl,
 }) {
-  const adminEmail = recipientEmail || process.env.COMPANY_EMAIL || process.env.ADMIN_EMAIL || "ventas@difiori.com.ec";
+  const adminEmail = getSalesNotificationEmail(recipientEmail);
   const safeTotal = Number(total) || 0;
   const attachments = [];
 

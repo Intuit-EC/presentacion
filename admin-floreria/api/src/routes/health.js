@@ -1,6 +1,8 @@
 const express = require('express');
 const { PrismaClient } = require('@prisma/client');
 const packageJson = require('../../package.json');
+const emailService = require('../services/emailService');
+const { getSmtpPublicStatus } = require('../utils/smtpConfig');
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -40,6 +42,21 @@ router.get('/', async (req, res) => {
     
     res.status(503).json(healthCheck);
   }
+});
+
+/**
+ * Comprueba autenticación SMTP sin enviar mensajes ni exponer contraseñas.
+ */
+router.get('/email', async (_req, res) => {
+  const smtp = getSmtpPublicStatus();
+  const ready = smtp.credentialsConfigured && await emailService.verifyConnection();
+
+  return res.status(ready ? 200 : 503).json({
+    status: ready ? 'OK' : 'ERROR',
+    service: 'email',
+    ready,
+    smtp,
+  });
 });
 
 /**

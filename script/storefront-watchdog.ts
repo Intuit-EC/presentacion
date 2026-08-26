@@ -96,29 +96,23 @@ async function medir(
   }
 }
 
-/**
- * Una pasarela en "sandbox" responde a todo con normalidad pero no cobra dinero
- * real: el cliente cree que pagó y la venta nunca entra. Por eso se comprueba el
- * entorno, no solo que la pasarela conteste.
- */
-async function comprobarPasarela(nombre: string, ruta: string) {
-  return medir(`${nombre} cobrando de verdad`, "CRITICO", async () => {
-    const { cuerpo } = await pedir(ruta);
-    const datos = JSON.parse(cuerpo);
-    const entorno = String(datos?.data?.environment || "desconocido");
-    const listo = datos?.data?.readyForProduction === true;
+type EstadoPasarela = {
+  nombre: string;
+  entorno: string;
+  lista: boolean;
+};
 
-    if (entorno !== "live") {
-      return {
-        ok: false,
-        detalle: `está en modo de pruebas (${entorno}): los pagos NO son reales y no entra dinero`,
-      };
-    }
+async function obtenerEstadoPasarela(nombre: string, ruta: string): Promise<EstadoPasarela> {
+  const { status, cuerpo } = await pedir(ruta);
+  if (status !== 200) return { nombre, entorno: `HTTP ${status}`, lista: false };
 
-    if (!listo) return { ok: false, detalle: "faltan credenciales de producción" };
-
-    return { ok: true, detalle: `en producción (${entorno})` };
-  });
+  const datos = JSON.parse(cuerpo);
+  const entorno = String(datos?.data?.environment || "desconocido");
+  return {
+    nombre,
+    entorno,
+    lista: entorno === "live" && datos?.data?.readyForProduction === true,
+  };
 }
 
 const comprobaciones: Array<() => Promise<Resultado>> = [
@@ -197,8 +191,35 @@ const comprobaciones: Array<() => Promise<Resultado>> = [
       return { ok: false, detalle: `el backend respondió ${status} al registrar un pedido` };
     }),
 
-  () => comprobarPasarela("Payphone", "/api/external/payphone/health"),
-  () => comprobarPasarela("PayPal", "/api/external/paypal/health"),
+  () =>
+    medir("Hay pago en línea disponible", "CRITICO", async () => {
+      // Una pasarela opcional en sandbox no impide vender si otra está realmente
+      // operativa. El checkout ya bloquea proveedores que no estén en producción.
+      const pasarelas = await Promise.all([
+        obtenerEstadoPasarela("Payphone", "/api/external/payphone/health"),
+        obtenerEstadoPasarela("PayPal", "/api/external/paypal/health"),
+      ]);
+      const listas = pasarelas.filter((pasarela) => pasarela.lista);
+      const noListas = pasarelas.filter((pasarela) => !pasarela.lista);
+
+      if (listas.length === 0) {
+        return {
+          ok: false,
+          detalle: `ninguna pasarela cobra en producción (${pasarelas
+            .map((pasarela) => `${pasarela.nombre}: ${pasarela.entorno}`)
+            .join(", ")})`,
+        };
+      }
+
+      const disponibles = listas.map((pasarela) => pasarela.nombre).join(", ");
+      const deshabilitadas = noListas.length > 0
+        ? `; no disponible: ${noListas
+            .map((pasarela) => `${pasarela.nombre} (${pasarela.entorno})`)
+            .join(", ")}`
+        : "";
+
+      return { ok: true, detalle: `${disponibles} en producción${deshabilitadas}` };
+    }),
 
   () =>
     medir("Medición de visitas activa", "ALTO", async () => {
@@ -207,6 +228,20 @@ const comprobaciones: Array<() => Promise<Resultado>> = [
         return { ok: false, detalle: "falta GA_MEASUREMENT_ID: no se registra ninguna visita ni venta" };
       }
       return { ok: true, detalle: "Analytics configurado" };
+    }),
+
+  () =>
+    medir("Correo de ventas operativo", "CRITICO", async () => {
+      const { status, cuerpo } = await pedir("/api/health/email");
+      const datos = JSON.parse(cuerpo);
+      const destinatario = datos?.smtp?.notificationRecipient || "sin destinatario";
+      if (status !== 200 || datos?.ready !== true) {
+        return {
+          ok: false,
+          detalle: `SMTP no autentica; no llegarán avisos a ${destinatario}`,
+        };
+      }
+      return { ok: true, detalle: `SMTP autenticado; destino ${destinatario}` };
     }),
 
   () =>

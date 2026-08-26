@@ -76,37 +76,55 @@ function parseDataUrl(dataUrl) {
 }
 
 /**
- * Envia la alerta interna y la confirmacion al cliente sin bloquear la respuesta
- * HTTP de la orden. Un fallo de SMTP no debe romper una venta ya registrada.
+ * Confirma la alerta interna antes de responder y deja la confirmación del
+ * cliente en segundo plano. Un fallo SMTP nunca revierte la venta registrada.
  */
-function sendStoreOrderEmails(emailData, senderEmail, orderNumber) {
-  setImmediate(async () => {
-    try {
-      await emailService.sendNewOrderAlert(emailData);
-    } catch (emailError) {
-      businessError("ORDER", "ALERT_EMAIL_FAILED", emailError, { orderNumber });
-    }
+async function sendStoreOrderEmails(emailData, senderEmail, orderNumber) {
+  let ownerNotificationSent = false;
 
-    if (!senderEmail) return;
-
-    try {
-      const activeCompany = await prisma.company.findFirst({
-        where: { isActive: true },
-        select: { name: true, email: true, phone: true },
-      });
-
-      await emailService.sendOrderConfirmation({
-        ...emailData,
+  try {
+    const alertResult = await emailService.sendNewOrderAlert(emailData);
+    ownerNotificationSent = alertResult?.success === true;
+    if (!ownerNotificationSent) {
+      businessError("ORDER", "ALERT_EMAIL_FAILED", alertResult?.error || "SMTP no confirmó el envío", {
         orderNumber,
-        companyName: activeCompany?.name || process.env.COMPANY_NAME || "DIFIORI",
-        companyEmail:
-          activeCompany?.email || process.env.COMPANY_EMAIL || process.env.EMAIL_USER,
-        companyPhone: activeCompany?.phone || process.env.COMPANY_PHONE || "",
       });
-    } catch (emailError) {
-      businessError("ORDER", "CONFIRMATION_EMAIL_FAILED", emailError, { orderNumber });
     }
-  });
+  } catch (emailError) {
+    businessError("ORDER", "ALERT_EMAIL_FAILED", emailError, { orderNumber });
+  }
+
+  if (senderEmail) {
+    setImmediate(async () => {
+      try {
+        const activeCompany = await prisma.company.findFirst({
+          where: { isActive: true },
+          select: { name: true, email: true, phone: true },
+        });
+
+        const confirmationResult = await emailService.sendOrderConfirmation({
+          ...emailData,
+          orderNumber,
+          companyName: activeCompany?.name || process.env.COMPANY_NAME || "DIFIORI",
+          companyEmail:
+            activeCompany?.email || process.env.COMPANY_EMAIL || process.env.EMAIL_USER,
+          companyPhone: activeCompany?.phone || process.env.COMPANY_PHONE || "",
+        });
+        if (confirmationResult?.success !== true) {
+          businessError(
+            "ORDER",
+            "CONFIRMATION_EMAIL_FAILED",
+            confirmationResult?.error || "SMTP no confirmó el envío",
+            { orderNumber }
+          );
+        }
+      } catch (emailError) {
+        businessError("ORDER", "CONFIRMATION_EMAIL_FAILED", emailError, { orderNumber });
+      }
+    });
+  }
+
+  return ownerNotificationSent;
 }
 
 /**
@@ -388,9 +406,13 @@ router.post("/", async (req, res) => {
       })),
     };
 
-    // Los correos salen fuera del camino critico: SMTP puede tardar varios
-    // segundos y el comprador no debe esperar (ni ver un error) por eso.
-    sendStoreOrderEmails(emailData, storefrontDetails.senderEmail, order.orderNumber);
+    // Confirmamos la alerta comercial antes de responder. La orden no se pierde
+    // si SMTP falla, pero el fallo queda visible y deja de pasar silenciosamente.
+    const ownerNotificationSent = await sendStoreOrderEmails(
+      emailData,
+      storefrontDetails.senderEmail,
+      order.orderNumber
+    );
 
     businessLog("ORDER", "CREATED", {
       orderId: order.id,
@@ -418,6 +440,7 @@ router.post("/", async (req, res) => {
       data: {
         orderId: order.id,
         orderNumber: order.orderNumber,
+        ownerNotificationSent,
       },
     });
   } catch (error) {

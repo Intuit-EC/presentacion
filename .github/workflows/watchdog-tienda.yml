@@ -4,7 +4,8 @@ name: Vigilante de la tienda
 # cron que viva dentro de él no podría avisar de nada.
 on:
   schedule:
-    - cron: "*/15 * * * *"
+    # Una comprobación por hora es suficiente y evita alertas repetidas.
+    - cron: "0 * * * *"
   workflow_dispatch:
 
 jobs:

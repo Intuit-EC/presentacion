@@ -4,7 +4,11 @@ const juice = require("juice");
 const fs = require("fs").promises;
 const { existsSync } = require("fs");
 const path = require("path");
-const { getDefaultFrom, getSmtpConfig } = require("../utils/smtpConfig");
+const {
+  getDefaultFrom,
+  getSalesNotificationEmail,
+  getSmtpConfig,
+} = require("../utils/smtpConfig");
 const { resolvePublicMediaUrl } = require("../utils/publicMediaUrl");
 const EMAIL_LOGO_PATH = path.resolve(
   __dirname,
@@ -351,10 +355,7 @@ class EmailService {
   async sendNewOrderAlert(orderData) {
     try {
       const recipientEmail =
-        orderData.recipientEmail ||
-        process.env.OWNER_NOTIFICATION_EMAIL ||
-        process.env.COMPANY_EMAIL ||
-        "ventas@difiori.com.ec";
+        getSalesNotificationEmail(orderData.recipientEmail);
       const storeUrl = String(
         orderData.storeUrl ||
         process.env.STORE_URL ||
@@ -472,10 +473,7 @@ class EmailService {
   async sendNewOrderAlert(orderData) {
     try {
       const recipientEmail =
-        orderData.recipientEmail ||
-        process.env.OWNER_NOTIFICATION_EMAIL ||
-        process.env.COMPANY_EMAIL ||
-        "ventas@difiori.com.ec";
+        getSalesNotificationEmail(orderData.recipientEmail);
       const storeUrl = String(
         orderData.storeUrl ||
         process.env.STORE_URL ||
