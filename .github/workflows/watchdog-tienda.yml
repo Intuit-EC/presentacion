@@ -1,0 +1,37 @@
+name: Vigilante de la tienda
+
+# Corre fuera del servidor a propósito: si el servidor se cae por completo, un
+# cron que viva dentro de él no podría avisar de nada.
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+jobs:
+  vigilar:
+    name: ¿Se puede comprar ahora mismo?
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+
+    env:
+      WATCHDOG_BASE_URL: ${{ vars.WATCHDOG_BASE_URL || 'https://difiori.com.ec' }}
+      WATCHDOG_TIMEOUT_MS: "15000"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm ci --no-audit --no-fund
+
+      - name: Revisar la tienda
+        run: npm run watchdog:tienda
+
+      # Cuando algo crítico falla, el paso anterior sale con código 1 y GitHub
+      # avisa por correo al dueño del repositorio.

@@ -5,7 +5,10 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon src/index.js",
-    "db:manual-migrate-discounts": "prisma db execute --schema prisma/schema.prisma --file prisma/manual-migrations/20251220_add_discount_schedule_and_codes.sql"
+    "db:manual-migrate-discounts": "prisma db execute --schema prisma/schema.prisma --file prisma/manual-migrations/20251220_add_discount_schedule_and_codes.sql",
+    "watchdog:ventas": "node scripts/sales-watchdog.js",
+    "watchdog:ventas:resumen": "node scripts/sales-watchdog.js --resumen",
+    "watchdog:test": "node scripts/sales-watchdog-rules.test.js"
   },
   "author": "",
   "license": "ISC",
