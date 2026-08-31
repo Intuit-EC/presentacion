@@ -129,3 +129,39 @@ Cuando sospeches que algo va mal y quieras una respuesta en 30 segundos:
 npm run watchdog:tienda                                    # ¿se puede comprar?
 cd admin-floreria/api && node scripts/sales-watchdog.js --json   # ¿cuánto se vendió hoy?
 ```
+
+---
+
+## 5. Vigilar que ENTREN ventas (no solo que la tienda funcione)
+
+Todo lo anterior comprueba que la tienda **se pueda** comprar. Esto comprueba que
+**se esté** comprando, que es lo único que confirma que el embudo entero funciona.
+
+Como son cifras del negocio, van detrás de un token propio. Genera uno:
+
+```bash
+openssl rand -hex 24
+```
+
+Ponlo en el `.env` del backend y reinicia:
+
+```bash
+WATCHDOG_TOKEN=el_token_generado
+```
+
+Y el mismo valor donde corra el vigilante (variable de entorno local, o en
+GitHub: Settings → Secrets → Actions → `WATCHDOG_TOKEN`).
+
+Sin token, el endpoint `/api/external/sales-pulse` responde 404 y el vigilante
+avisa de que no puede vigilar el ritmo de ventas. Con token, informa así:
+
+```
+✓ Están entrando ventas: 7 pedidos hoy, 5 pagados, $312.40 cobrados (lo normal a esta hora son 6.2)
+✗ Están entrando ventas: ni una venta en 5 h (lo normal a esta hora son 6.2); el último pedido entró hace 9.4 h
+```
+
+Para consultarlo a mano:
+
+```bash
+curl -s -H "x-watchdog-token: TU_TOKEN" https://difiori.com.ec/api/external/sales-pulse | python3 -m json.tool
+```

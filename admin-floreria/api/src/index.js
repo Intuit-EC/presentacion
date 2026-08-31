@@ -116,10 +116,12 @@ app.use("/api/external/company", externalCompanyRoutes);
 app.use("/api/external/reviews", externalReviewsRoutes);
 
 // Órdenes desde la tienda pública
+const salesPulseRoutes = require("./routes/external/sales-pulse");
 const storeOrdersRoutes = require("./routes/external/store-orders");
 const abandonedOrdersRoutes = require("./routes/external/abandoned-orders");
 const payphoneRoutes = require("./routes/external/payphone");
 const paypalRoutes = require("./routes/external/paypal");
+app.use("/api/external/sales-pulse", salesPulseRoutes);
 app.use("/api/external/store-orders", storeOrdersRoutes);
 app.use("/api/external/store-orders/abandoned", abandonedOrdersRoutes);
 app.use("/api/external/payphone", payphoneRoutes);

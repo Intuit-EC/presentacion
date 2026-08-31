@@ -18,12 +18,50 @@ const INITIAL_VISIBLE_PRODUCTS = 12;
 const LOAD_MORE_PRODUCTS = 16;
 const BEST_SELLER_BADGE_LIMIT = 6;
 
+/**
+ * Las ocasiones se resuelven por categoría y nombre, nunca por la descripción:
+ * los textos de catálogo mencionan todas las ocasiones ("ideal para cumpleaños,
+ * aniversarios, San Valentín…"), así que buscar ahí hacía que "Cumpleaños"
+ * devolviera 107 de 141 productos y el filtro no ayudara a decidir nada.
+ */
 const OCCASION_FILTERS = [
-  { value: "all", label: "Todas las ocasiones", terms: [] },
-  { value: "amor", label: "Amor y aniversario", terms: ["amor", "aniversario", "romantic", "rosa"] },
-  { value: "cumpleanos", label: "Cumpleaños", terms: ["cumple", "15 anos", "quince"] },
-  { value: "nacimiento", label: "Nacimiento", terms: ["nacimiento", "bebe", "baby"] },
-  { value: "condolencias", label: "Condolencias", terms: ["ofrenda", "condolencia", "funeral", "velacion"] },
+  { value: "all", label: "Todas las ocasiones", categories: [], terms: [] },
+  {
+    value: "amor",
+    label: "Amor y aniversario",
+    categories: ["Flores para Aniversario"],
+    terms: ["rosas rojas", "amor", "romantic", "corazon"],
+  },
+  {
+    value: "cumpleanos",
+    label: "Cumpleaños",
+    categories: ["Desayuno Sorpresa", "Arreglo con Frutas"],
+    terms: ["cumpleanos", "cumple", "quince", "15 anos", "torta", "pastel", "globo"],
+  },
+  {
+    value: "para-el",
+    label: "Para él",
+    categories: ["Regalos para Hombre"],
+    terms: ["hombre", "papa", "padre", "caballero"],
+  },
+  {
+    value: "desayunos",
+    label: "Desayunos sorpresa",
+    categories: ["Desayuno Sorpresa"],
+    terms: ["desayuno"],
+  },
+  {
+    value: "nacimiento",
+    label: "Nacimiento",
+    categories: ["Nacimiento"],
+    terms: ["nacimiento", "bebe", "baby"],
+  },
+  {
+    value: "condolencias",
+    label: "Condolencias",
+    categories: ["Ofrenda Floral"],
+    terms: ["ofrenda", "condolencia", "funeral", "velacion", "corona"],
+  },
 ] as const;
 
 const PRICE_FILTERS = [
@@ -71,8 +109,14 @@ export default function Shop() {
     const priceFilter = PRICE_FILTERS.find((filter) => filter.value === priceRange)!;
 
     return allProducts.filter((product) => {
-      const text = normalizeSearchText(`${product.name} ${product.category} ${product.description}`);
-      const matchesOccasion = occasionFilter.terms.length === 0 || occasionFilter.terms.some((term) => text.includes(term));
+      const categoria = normalizeSearchText(product.category);
+      const nombre = normalizeSearchText(product.name);
+      const sinFiltroDeOcasion =
+        occasionFilter.categories.length === 0 && occasionFilter.terms.length === 0;
+      const matchesOccasion =
+        sinFiltroDeOcasion ||
+        occasionFilter.categories.some((c) => categoria === normalizeSearchText(c)) ||
+        occasionFilter.terms.some((term) => nombre.includes(term));
       const price = getNumericPrice(product.price);
       const matchesPrice = price >= priceFilter.min && price <= priceFilter.max;
       return matchesOccasion && matchesPrice;

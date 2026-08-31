@@ -151,6 +151,88 @@ const landingPages = {
     ],
     related: ["/arreglos-de-flores-guayaquil", "/floreria-guayaquil", "/ramos-de-flores"],
   },
+
+  // Las seis páginas anteriores compiten todas por "flores" y "florería". Estas
+  // tres cubren lo que ya está en el catálogo y no tenía puerta de entrada:
+  // 27 desayunos, 14 ofrendas fúnebres (las de ticket más alto) y 15 regalos
+  // para hombre, es decir cuatro de cada diez productos publicados.
+  "/desayunos-sorpresa-guayaquil": {
+    path: "/desayunos-sorpresa-guayaquil",
+    title: "Desayunos Sorpresa a Domicilio en Guayaquil | DIFIORI",
+    description:
+      "Desayunos sorpresa a domicilio en Guayaquil para cumpleaños, aniversarios y fechas especiales. Coordinamos la entrega temprano y confirmamos por WhatsApp.",
+    keywords:
+      "desayunos sorpresa Guayaquil, desayuno a domicilio Guayaquil, desayuno sorpresa cumpleaños, desayunos con flores Guayaquil",
+    h1: "Desayunos sorpresa en Guayaquil",
+    intro:
+      "Sorprende con un desayuno entregado en la puerta. Preparamos desayunos con flores, frutas y detalles dulces para cumpleaños, aniversarios y fechas que merecen empezar distinto.",
+    focus: ["Entrega temprano coordinada", "Combina con flores y globos", "Confirmación por WhatsApp"],
+    preferredCategories: ["Desayuno Sorpresa", "Arreglo con Frutas"],
+    productTerms: ["desayuno", "fruta", "torta", "pastel"],
+    serviceCards: [
+      ["Llega a primera hora", "Coordinamos la franja de entrega para que la sorpresa abra el día."],
+      ["Detalle completo", "Puedes sumar flores, globo o tarjeta con tu mensaje."],
+      ["Entrega discreta", "Confirmamos dirección y horario antes de salir, sin arruinar la sorpresa."],
+    ],
+    bodyTitle: "Desayunos sorpresa a domicilio en Guayaquil",
+    bodyCopy: [
+      "Un desayuno sorpresa funciona cuando llega temprano y bien presentado. Por eso confirmamos sector, dirección y franja horaria antes de preparar el pedido.",
+      "Si necesitas entregarlo en una oficina o coordinar con alguien de la casa para que no se arruine la sorpresa, escríbenos por WhatsApp y lo organizamos contigo.",
+    ],
+    related: ["/flores-guayaquil", "/ramos-de-flores", "/floreria-guayaquil"],
+  },
+
+  "/arreglos-funebres-guayaquil": {
+    path: "/arreglos-funebres-guayaquil",
+    title: "Arreglos Fúnebres y Ofrendas Florales en Guayaquil | DIFIORI",
+    description:
+      "Coronas, ofrendas florales y arreglos fúnebres con entrega en salas de velación de Guayaquil. Atención inmediata por WhatsApp y coordinación urgente.",
+    keywords:
+      "arreglos funebres Guayaquil, ofrenda floral Guayaquil, coronas funebres Guayaquil, flores para velacion Guayaquil",
+    h1: "Arreglos fúnebres en Guayaquil",
+    intro:
+      "Acompañamos en momentos difíciles con ofrendas florales, coronas y arreglos fúnebres entregados directamente en la sala de velación. Atendemos pedidos urgentes.",
+    focus: ["Entrega en salas de velación", "Pedidos urgentes por WhatsApp", "Acompañamiento discreto"],
+    preferredCategories: ["Ofrenda Floral"],
+    productTerms: ["ofrenda", "corona", "condolencia", "velacion"],
+    serviceCards: [
+      ["Atención inmediata", "Escríbenos por WhatsApp y coordinamos el envío con la urgencia que necesitas."],
+      ["Entrega en velación", "Llevamos el arreglo directamente a la sala, con la cinta y el mensaje que indiques."],
+      ["Te guiamos", "Si no sabes qué elegir, te recomendamos según el espacio y la relación con la familia."],
+    ],
+    bodyTitle: "Ofrendas florales con entrega en Guayaquil",
+    bodyCopy: [
+      "En una condolencia el tiempo apremia. Preparamos coronas y ofrendas florales para entregar el mismo día en salas de velación de Guayaquil.",
+      "Indícanos el nombre de la sala, la hora y el mensaje de la cinta; nosotros confirmamos la entrega y te avisamos cuando el arreglo ya está colocado.",
+    ],
+    related: ["/flores-guayaquil", "/floreria-guayaquil", "/arreglos-florales-guayaquil"],
+  },
+
+  "/regalos-para-hombre-guayaquil": {
+    path: "/regalos-para-hombre-guayaquil",
+    title: "Regalos para Hombre a Domicilio en Guayaquil | DIFIORI",
+    description:
+      "Regalos para hombre con entrega a domicilio en Guayaquil: detalles para cumpleaños, aniversario y Día del Padre, con confirmación por WhatsApp.",
+    keywords:
+      "regalos para hombre Guayaquil, regalo cumpleaños hombre Guayaquil, detalles para hombre a domicilio, regalo dia del padre Guayaquil",
+    h1: "Regalos para hombre en Guayaquil",
+    intro:
+      "Detalles pensados para él: cumpleaños, aniversario, Día del Padre o simplemente porque sí. Entregamos a domicilio en Guayaquil y coordinamos la hora contigo.",
+    focus: ["Detalles pensados para él", "Entrega a domicilio en Guayaquil", "Coordinación por WhatsApp"],
+    preferredCategories: ["Regalos para Hombre"],
+    productTerms: ["hombre", "papa", "padre", "caballero"],
+    serviceCards: [
+      ["Sin quedarte en blanco", "Opciones ya armadas para no improvisar a última hora."],
+      ["Entrega donde esté", "Casa u oficina: confirmamos sector y franja horaria antes de salir."],
+      ["Personalízalo", "Suma una tarjeta con tu mensaje o combínalo con otro detalle."],
+    ],
+    bodyTitle: "Regalos para él con entrega en Guayaquil",
+    bodyCopy: [
+      "Encontrar un regalo para hombre suele ser lo que más cuesta. Aquí reunimos las opciones del catálogo pensadas para él, listas para enviar.",
+      "Si prefieres algo distinto o quieres combinar varios detalles, escríbenos por WhatsApp y armamos el pedido contigo.",
+    ],
+    related: ["/flores-guayaquil", "/floreria-guayaquil", "/ramos-de-flores"],
+  },
 } as const;
 
 type LandingPath = keyof typeof landingPages;
@@ -170,7 +252,13 @@ function useCurrentLandingPage() {
   const [ramosMatch] = useRoute("/ramos-de-flores");
   const [arreglosFloresMatch] = useRoute("/arreglos-de-flores-guayaquil");
   const [arreglosFloralesMatch] = useRoute("/arreglos-florales-guayaquil");
+  const [desayunosMatch] = useRoute("/desayunos-sorpresa-guayaquil");
+  const [funebresMatch] = useRoute("/arreglos-funebres-guayaquil");
+  const [regalosHombreMatch] = useRoute("/regalos-para-hombre-guayaquil");
 
+  if (desayunosMatch) return landingPages["/desayunos-sorpresa-guayaquil"];
+  if (funebresMatch) return landingPages["/arreglos-funebres-guayaquil"];
+  if (regalosHombreMatch) return landingPages["/regalos-para-hombre-guayaquil"];
   if (floresMatch) return landingPages["/flores-guayaquil"];
   if (floreriaMatch) return landingPages["/floreria-guayaquil"];
   if (floreriasMatch) return landingPages["/florerias-en-guayaquil"];

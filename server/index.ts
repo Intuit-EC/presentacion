@@ -1047,6 +1047,9 @@ const SEO_LANDING_PATHS = [
   "/ramos-de-flores",
   "/arreglos-de-flores-guayaquil",
   "/arreglos-florales-guayaquil",
+  "/desayunos-sorpresa-guayaquil",
+  "/arreglos-funebres-guayaquil",
+  "/regalos-para-hombre-guayaquil",
 ];
 
 const LEGACY_STORE_PATHS = new Set([
@@ -1337,6 +1340,17 @@ ${urls
 app.use("/api/external", proxyToBackend);
 app.use("/api/checkout", proxyToBackend);
 app.use("/uploads", proxyToBackend);
+
+// El vigilante necesita comprobar desde fuera que el backend y el envio de
+// correos siguen vivos. Se deja fuera "/detailed" porque publica conteos del
+// negocio (pedidos totales) sin pedir ninguna credencial.
+app.use("/api/health", (req, res, next) => {
+  if (req.path.startsWith("/detailed")) {
+    return res.status(404).json({ status: "error", message: "No disponible." });
+  }
+
+  return proxyToBackend(req, res).catch(next);
+});
 
 export function log(message: string, source = "express") {
   const formattedTime = new Date().toLocaleTimeString("en-US", {

@@ -28,6 +28,7 @@ const TIMEOUT_MS = Number(process.env.WATCHDOG_TIMEOUT_MS || 15000);
 const LENTO_MS = Number(process.env.WATCHDOG_LENTO_MS || 4000);
 const SOLO_JSON = process.argv.includes("--json");
 const USER_AGENT = "DIFIORI-Watchdog/1.0 (+monitoreo; no-analytics-bot)";
+const WATCHDOG_TOKEN = process.env.WATCHDOG_TOKEN || "";
 
 // Parámetros que añaden Facebook, Instagram y Google a cada clic de anuncio.
 const PARAMETROS_PUBLICIDAD = [
@@ -42,7 +43,7 @@ function normalizarBase(valor: string) {
   return limpio;
 }
 
-async function pedir(ruta: string) {
+async function pedir(ruta: string, cabecerasExtra: Record<string, string> = {}) {
   const controlador = new AbortController();
   const temporizador = setTimeout(() => controlador.abort(), TIMEOUT_MS);
 
@@ -50,7 +51,7 @@ async function pedir(ruta: string) {
     const respuesta = await fetch(`${BASE_URL}${ruta}`, {
       redirect: "follow",
       signal: controlador.signal,
-      headers: { "User-Agent": USER_AGENT, "Cache-Control": "no-cache" },
+      headers: { "User-Agent": USER_AGENT, "Cache-Control": "no-cache", ...cabecerasExtra },
     });
     const cuerpo = await respuesta.text();
     return { status: respuesta.status, cuerpo };
@@ -102,11 +103,25 @@ type EstadoPasarela = {
   lista: boolean;
 };
 
+/**
+ * Cuando una ruta de API no está publicada, el servidor devuelve el HTML de la
+ * tienda. Sin esto, el vigilante moría con un error de JSON y no se entendía
+ * qué estaba pasando; un monitor que se rompe es peor que no tenerlo.
+ */
+function leerJson(cuerpo: string, contexto: string) {
+  try {
+    return JSON.parse(cuerpo);
+  } catch {
+    const recorte = cuerpo.trim().slice(0, 40).replace(/\s+/g, " ");
+    throw new Error(`${contexto} no devolvió JSON (recibido: "${recorte}...")`);
+  }
+}
+
 async function obtenerEstadoPasarela(nombre: string, ruta: string): Promise<EstadoPasarela> {
   const { status, cuerpo } = await pedir(ruta);
   if (status !== 200) return { nombre, entorno: `HTTP ${status}`, lista: false };
 
-  const datos = JSON.parse(cuerpo);
+  const datos = leerJson(cuerpo, ruta);
   const entorno = String(datos?.data?.environment || "desconocido");
   return {
     nombre,
@@ -148,7 +163,7 @@ const comprobaciones: Array<() => Promise<Resultado>> = [
       const { status, cuerpo } = await pedir("/api/external/products");
       if (status !== 200) return { ok: false, detalle: `la API respondió ${status}` };
 
-      const datos = JSON.parse(cuerpo);
+      const datos = leerJson(cuerpo, "/api/external/products");
       const productos: any[] = datos?.data || [];
       if (productos.length === 0) return { ok: false, detalle: "el catálogo está vacío" };
 
@@ -164,7 +179,7 @@ const comprobaciones: Array<() => Promise<Resultado>> = [
   () =>
     medir("La tienda acepta pedidos", "CRITICO", async () => {
       const { cuerpo } = await pedir("/api/external/company");
-      const datos = JSON.parse(cuerpo);
+      const datos = leerJson(cuerpo, "/api/external/company");
       const acepta = datos?.data?.settings?.acceptOrders !== false;
       if (!acepta) return { ok: false, detalle: "'Aceptar pedidos' está desactivado en el panel" };
 
@@ -233,7 +248,7 @@ const comprobaciones: Array<() => Promise<Resultado>> = [
   () =>
     medir("Correo de ventas operativo", "CRITICO", async () => {
       const { status, cuerpo } = await pedir("/api/health/email");
-      const datos = JSON.parse(cuerpo);
+      const datos = leerJson(cuerpo, "/api/health/email");
       const destinatario = datos?.smtp?.notificationRecipient || "sin destinatario";
       if (status !== 200 || datos?.ready !== true) {
         return {
@@ -252,6 +267,48 @@ const comprobaciones: Array<() => Promise<Resultado>> = [
       return ms > LENTO_MS
         ? { ok: false, detalle: `tardó ${ms} ms en cargar (límite ${LENTO_MS} ms)` }
         : { ok: true, detalle: `${ms} ms` };
+    }),
+
+  // Lo anterior comprueba que la tienda SE PUEDA comprar. Esto comprueba que
+  // además SE ESTÉ comprando, que es lo único que confirma que el embudo entero
+  // funciona de punta a punta.
+  () =>
+    medir("Están entrando ventas", "CRITICO", async () => {
+      if (!WATCHDOG_TOKEN) {
+        return {
+          ok: true,
+          detalle: "sin WATCHDOG_TOKEN configurado: no se puede vigilar el ritmo de ventas",
+        };
+      }
+
+      const { status, cuerpo } = await pedir("/api/external/sales-pulse", {
+        "x-watchdog-token": WATCHDOG_TOKEN,
+      });
+
+      if (status === 401) return { ok: false, detalle: "el WATCHDOG_TOKEN no coincide con el del servidor" };
+      if (status === 404) return { ok: false, detalle: "el servidor no tiene configurado WATCHDOG_TOKEN" };
+      if (status !== 200) return { ok: false, detalle: `el pulso de ventas respondió ${status}` };
+
+      const pulso = leerJson(cuerpo, "/api/external/sales-pulse")?.data || {};
+      const esperado = pulso.esperadoAEstaHora;
+      const referencia =
+        typeof esperado === "number" ? ` (lo normal a esta hora son ${esperado.toFixed(1)})` : "";
+
+      if (pulso.enHorarioComercial && pulso.pedidosEnVentana === 0) {
+        const desde =
+          pulso.horasDesdeUltimaVenta === null
+            ? "nunca ha entrado un pedido"
+            : `el último pedido entró hace ${pulso.horasDesdeUltimaVenta} h`;
+        return {
+          ok: false,
+          detalle: `ni una venta en ${pulso.ventanaHoras} h${referencia}; ${desde}`,
+        };
+      }
+
+      return {
+        ok: true,
+        detalle: `${pulso.pedidosHoy} pedidos hoy, ${pulso.pagadasHoy} pagados, $${Number(pulso.ingresosHoy || 0).toFixed(2)} cobrados${referencia}`,
+      };
     }),
 ];
 

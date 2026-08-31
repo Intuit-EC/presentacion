@@ -21,6 +21,9 @@ export function ServerRoutes() {
       <Route path="/ramos-de-flores" component={SeoLandingPage} />
       <Route path="/arreglos-de-flores-guayaquil" component={SeoLandingPage} />
       <Route path="/arreglos-florales-guayaquil" component={SeoLandingPage} />
+      <Route path="/desayunos-sorpresa-guayaquil" component={SeoLandingPage} />
+      <Route path="/arreglos-funebres-guayaquil" component={SeoLandingPage} />
+      <Route path="/regalos-para-hombre-guayaquil" component={SeoLandingPage} />
       <Route path="/categoria/:slug" component={CategoryPage} />
       <Route path="/producto/:slug" component={ProductDetails} />
       <Route path="/product/:id" component={ProductDetails} />
