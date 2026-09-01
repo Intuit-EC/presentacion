@@ -49,12 +49,17 @@ router.get('/', async (req, res) => {
  */
 router.get('/email', async (_req, res) => {
   const smtp = getSmtpPublicStatus();
-  const ready = smtp.credentialsConfigured && await emailService.verifyConnection();
+  const verificacion = smtp.credentialsConfigured
+    ? await emailService.verifyConnectionDetailed()
+    : { ok: false, code: 'SIN_CREDENCIALES', reason: 'Faltan SMTP_USER y SMTP_PASS.' };
 
-  return res.status(ready ? 200 : 503).json({
-    status: ready ? 'OK' : 'ERROR',
+  return res.status(verificacion.ok ? 200 : 503).json({
+    status: verificacion.ok ? 'OK' : 'ERROR',
     service: 'email',
-    ready,
+    ready: verificacion.ok,
+    // El motivo concreto del fallo: sin esto no hay forma de saber qué corregir.
+    errorCode: verificacion.code,
+    reason: verificacion.reason,
     smtp,
   });
 });

@@ -12,6 +12,7 @@ import {
   findCategoryNameBySlug,
   getCategoryPath,
   getCategorySlug,
+  getNumericPriceValue,
   getProductPath,
   isProductSlugMatch,
   isPublicCatalogProduct,
@@ -1207,6 +1208,7 @@ app.get("/robots.txt", (_req, res) => {
     "Disallow: /v2",
     "",
     `Sitemap: ${buildSiteUrl("/sitemap.xml")}`,
+    `# Feed de productos para Google Merchant Center: ${buildSiteUrl("/merchant-feed.xml")}`,
   ].join("\n"));
 });
 
@@ -1242,6 +1244,78 @@ app.get("/llms.txt", (_req, res) => {
     `- [Pago con tarjeta](${buildSiteUrl("/payment-gateway")}): Ruta operativa no indexable.`,
     `- [Resultado de pago](${buildSiteUrl("/payment-result")}): Ruta operativa no indexable.`,
   ].join("\n"));
+});
+
+/**
+ * Feed de productos para Google Merchant Center.
+ *
+ * Es la vía por la que el catálogo puede aparecer en la pestaña Shopping de
+ * Google (fichas gratuitas) y en anuncios de Shopping. Sin feed, ninguno de los
+ * productos existe para ese canal, por muy bien posicionada que esté la web.
+ *
+ * Se carga en Merchant Center como "feed programado" apuntando a esta URL.
+ */
+app.get("/merchant-feed.xml", async (_req, res) => {
+  try {
+    const products = await fetchPublicProducts();
+
+    const items = products
+      .map((product) => {
+        const precio = Number(getNumericPriceValue(product.price));
+        if (!precio) return "";
+
+        const enlace = buildSiteUrl(getProductPath(product));
+        const imagen = product.image
+          ? (() => {
+              const publica = toPublicImageUrl(product.image);
+              return publica.startsWith("http") ? publica : buildSiteUrl(publica);
+            })()
+          : "";
+
+        if (!imagen) return "";
+
+        // Google corta el título en 150 caracteres y la descripción en 5000.
+        const titulo = product.name.slice(0, 150);
+        const descripcion = (product.description || product.name).replace(/\s+/g, " ").slice(0, 4999);
+
+        return `    <item>
+      <g:id>${escapeXml(product.id)}</g:id>
+      <g:title>${escapeXml(titulo)}</g:title>
+      <g:description>${escapeXml(descripcion)}</g:description>
+      <g:link>${escapeXml(enlace)}</g:link>
+      <g:image_link>${escapeXml(imagen)}</g:image_link>
+      <g:availability>in_stock</g:availability>
+      <g:price>${precio.toFixed(2)} USD</g:price>
+      <g:condition>new</g:condition>
+      <g:brand>DIFIORI</g:brand>
+      <g:mpn>${escapeXml(`DIFIORI-${product.id}`)}</g:mpn>
+      <g:identifier_exists>no</g:identifier_exists>
+      <g:product_type>${escapeXml(product.category)}</g:product_type>
+      <g:google_product_category>Home &amp; Garden &gt; Decor &gt; Flowers</g:google_product_category>
+      <g:shipping>
+        <g:country>EC</g:country>
+        <g:service>Entrega en Guayaquil</g:service>
+        <g:price>5.00 USD</g:price>
+      </g:shipping>
+    </item>`;
+      })
+      .filter(Boolean)
+      .join("\n");
+
+    res.setHeader("Cache-Control", "public, max-age=3600, stale-while-revalidate=86400");
+    res.type("application/xml").send(`<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:g="http://base.google.com/ns/1.0">
+  <channel>
+    <title>DIFIORI - Flores y regalos a domicilio en Guayaquil</title>
+    <link>${escapeXml(buildSiteUrl("/"))}</link>
+    <description>Catálogo de flores, arreglos, desayunos y regalos con entrega en Guayaquil.</description>
+${items}
+  </channel>
+</rss>`);
+  } catch (error) {
+    console.warn("Error generando el feed de Merchant Center:", error);
+    res.status(503).type("application/xml").send('<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"><channel></channel></rss>');
+  }
 });
 
 app.get("/sitemap.xml", async (_req, res) => {

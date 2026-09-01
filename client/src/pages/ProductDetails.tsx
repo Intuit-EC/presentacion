@@ -246,6 +246,9 @@ export default function ProductDetails() {
           url: canonicalUrl(productPath),
           priceCurrency: "USD",
           price: priceValue,
+          // Google avisa en Search Console cuando falta: sin fecha de validez
+          // puede dejar de mostrar el precio en los resultados de búsqueda.
+          priceValidUntil: getPriceValidUntil(),
           availability: "https://schema.org/InStock",
           itemCondition: "https://schema.org/NewCondition",
           shippingDetails: getOfferShippingDetailsSchema(),
@@ -453,6 +456,13 @@ export default function ProductDetails() {
       </div>
     </div>
   );
+}
+
+/** Un año por delante: los precios del catálogo no tienen caducidad propia. */
+function getPriceValidUntil() {
+  const fecha = new Date();
+  fecha.setFullYear(fecha.getFullYear() + 1);
+  return fecha.toISOString().slice(0, 10);
 }
 
 function getCleanRoutePath(location: string) {

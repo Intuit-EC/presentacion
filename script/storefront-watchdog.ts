@@ -251,9 +251,11 @@ const comprobaciones: Array<() => Promise<Resultado>> = [
       const datos = leerJson(cuerpo, "/api/health/email");
       const destinatario = datos?.smtp?.notificationRecipient || "sin destinatario";
       if (status !== 200 || datos?.ready !== true) {
+        const motivo = datos?.reason ? ` ${datos.reason}` : "";
+        const codigo = datos?.errorCode ? ` [${datos.errorCode}]` : "";
         return {
           ok: false,
-          detalle: `SMTP no autentica; no llegarán avisos a ${destinatario}`,
+          detalle: `no llegarán avisos de pedido a ${destinatario}${codigo}.${motivo}`,
         };
       }
       return { ok: true, detalle: `SMTP autenticado; destino ${destinatario}` };

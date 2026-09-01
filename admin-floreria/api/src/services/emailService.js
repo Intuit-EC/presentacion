@@ -656,14 +656,44 @@ class EmailService {
   }
 
   async verifyConnection() {
+    const { ok } = await this.verifyConnectionDetailed();
+    return ok;
+  }
+
+  /**
+   * Igual que verifyConnection pero explicando POR QUÉ falla. Sin esto, un fallo
+   * de correo se veía solo como "no autentica" y no había forma de saber si era
+   * la contraseña, el puerto o que el servidor no responde: mientras tanto, los
+   * avisos de pedido nuevo no llegan a nadie.
+   *
+   * Nunca devuelve usuario ni contraseña, solo el código del error.
+   */
+  async verifyConnectionDetailed() {
+    if (!this.transporter) {
+      return { ok: false, code: "NO_TRANSPORT", reason: "El servicio de correo no está inicializado." };
+    }
+
     try {
-      if (!this.transporter) return false;
       await this.transporter.verify();
       console.log("✅ Email service ready");
-      return true;
+      return { ok: true, code: null, reason: null };
     } catch (error) {
-      console.log("⚠️  Email service: Credentials pending/invalid (Ready to use when configured)");
-      return false;
+      const code = String(error?.code || error?.responseCode || "DESCONOCIDO");
+      const explicaciones = {
+        EAUTH:
+          "El servidor de correo rechazó el usuario o la contraseña. Genera una contraseña nueva para la cuenta y actualiza SMTP_PASS.",
+        ECONNECTION: "No se pudo conectar con el servidor de correo. Revisa el host y que el puerto no esté bloqueado.",
+        ESOCKET: "La conexión con el servidor de correo se cortó. Suele ser el puerto o el modo seguro mal configurados.",
+        ETIMEDOUT: "El servidor de correo no respondió a tiempo.",
+        EDNS: "No se pudo resolver el host del servidor de correo.",
+      };
+
+      console.log(`⚠️  Email service: no autentica (${code})`);
+      return {
+        ok: false,
+        code,
+        reason: explicaciones[code] || "El servidor de correo rechazó la conexión.",
+      };
     }
   }
 }
