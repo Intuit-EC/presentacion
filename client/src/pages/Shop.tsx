@@ -84,25 +84,19 @@ function normalizeSearchText(value: string) {
 }
 
 export default function Shop() {
-  const { data: initialProducts = [], isLoading } = useProducts({
-    limit: INITIAL_VISIBLE_PRODUCTS,
-    summary: true,
-  });
-  const [loadFullCatalog, setLoadFullCatalog] = useState(false);
-  const { data: fullCatalog = [] } = useProducts({ enabled: loadFullCatalog });
   const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE_PRODUCTS);
   const [occasion, setOccasion] = useState<(typeof OCCASION_FILTERS)[number]["value"]>("all");
   const [priceRange, setPriceRange] = useState<(typeof PRICE_FILTERS)[number]["value"]>("all");
-  const allProducts = loadFullCatalog && fullCatalog.length > 0
-    ? fullCatalog
-    : initialProducts;
+  const hasActiveFilters = occasion !== "all" || priceRange !== "all";
+  const requestedProductCount = hasActiveFilters ? 60 : visibleCount;
+  const { data: allProducts = [], isLoading } = useProducts({
+    limit: requestedProductCount,
+    summary: true,
+  });
 
   // El servidor entrega 12 productos reales en el HTML para que Google y el
-  // visitante vean el catálogo de inmediato. El resto llega después de la
-  // hidratación, sin volver pesada la respuesta inicial.
-  useEffect(() => {
-    setLoadFullCatalog(true);
-  }, []);
+  // visitante vean el catálogo de inmediato. El resto solo se pide cuando el
+  // cliente quiere ver mas, evitando descargar todo el inventario en celular.
 
   const filteredProducts = useMemo(() => {
     const occasionFilter = OCCASION_FILTERS.find((filter) => filter.value === occasion)!;
@@ -131,7 +125,9 @@ export default function Shop() {
     () => filteredProducts.slice(0, visibleCount),
     [filteredProducts, visibleCount],
   );
-  const hasMoreProducts = visibleCount < filteredProducts.length;
+  const hasMoreProducts = hasActiveFilters
+    ? visibleCount < filteredProducts.length
+    : allProducts.length >= visibleCount;
   const shopSchema = {
     "@context": "https://schema.org",
     "@graph": [

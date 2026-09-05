@@ -12,14 +12,19 @@ interface SearchOverlayProps {
 
 export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
   const [query, setQuery] = useState("");
-  const { data: allProducts = [], isLoading, isError } = useProducts();
-  const [, setLocation] = useLocation();
-
   const normalizedQuery = normalizeSearchText(query);
+  const shouldSearch = isOpen && normalizedQuery.length >= 2;
+  const { data: allProducts = [], isLoading, isError } = useProducts({
+    enabled: shouldSearch,
+    limit: 12,
+    summary: true,
+    search: normalizedQuery,
+  });
+  const [, setLocation] = useLocation();
 
   // Filtrado de productos en tiempo real
   const filteredProducts = useMemo(() => {
-    if (!normalizedQuery) return [];
+    if (!shouldSearch) return [];
 
     return allProducts
       .filter((product) => {
@@ -34,7 +39,7 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
         return searchableText.includes(normalizedQuery);
       })
       .slice(0, 8);
-  }, [allProducts, normalizedQuery]);
+  }, [allProducts, normalizedQuery, shouldSearch]);
 
   // Bloquear scroll cuando está abierto
   useEffect(() => {
@@ -118,7 +123,7 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
             {/* Results Area */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
               <AnimatePresence mode="popLayout">
-                {isLoading && normalizedQuery ? (
+                {isLoading && shouldSearch ? (
                   <div className="col-span-full rounded-[2rem] border border-primary/50 bg-white p-8 text-center shadow-sm">
                     <p className="text-[#5A3F73] text-sm font-black uppercase tracking-[0.18em]">Buscando productos...</p>
                     <p className="mt-2 text-foreground/60 text-sm font-bold">Estamos cargando el catálogo DIFIORI.</p>
@@ -160,7 +165,7 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
                 ))}
               </AnimatePresence>
 
-              {normalizedQuery && !isLoading && !isError && filteredProducts.length === 0 && (
+              {shouldSearch && !isLoading && !isError && filteredProducts.length === 0 && (
                 <div className="col-span-full py-16 text-center">
                    <p className="text-foreground/50 text-2xl font-serif italic">No encontramos resultados para "{query}"</p>
                    <button type="button" onClick={handleGoToCatalog} className="ui-btn-secondary mt-6">
@@ -169,7 +174,7 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
                 </div>
               )}
 
-              {!normalizedQuery && (
+              {!shouldSearch && (
                  <div className="col-span-full py-10 flex flex-col items-center">
                    <Sparkles className="w-12 h-12 text-[#5A3F73]/30 mb-6 animate-pulse" />
                    <p className="text-foreground/45 text-xs font-black uppercase tracking-[0.4em]">Busca por producto, ocasión, categoría o precio</p>

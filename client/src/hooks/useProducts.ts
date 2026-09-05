@@ -11,6 +11,7 @@ export interface ProductsQueryOptions {
   featured?: boolean;
   limit?: number;
   summary?: boolean;
+  search?: string;
   enabled?: boolean;
 }
 
@@ -26,6 +27,7 @@ export const productsQueryKey = (options: string | ProductsQueryOptions = {}) =>
     normalized.featured ? "featured" : "all",
     normalized.limit || "all",
     normalized.summary ? "summary" : "full",
+    normalized.search || "",
   ] as const;
 };
 
@@ -73,6 +75,7 @@ export async function fetchProducts(
     if (normalized.featured) params.set("featured", "true");
     if (normalized.limit) params.set("limit", String(normalized.limit));
     if (normalized.summary) params.set("summary", "true");
+    if (normalized.search) params.set("search", normalized.search);
 
     const query = params.toString();
     const endpoint = query ? `${API_URL}?${query}` : API_URL;

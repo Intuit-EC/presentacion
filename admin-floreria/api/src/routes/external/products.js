@@ -36,6 +36,14 @@ function slugify(value) {
     .replace(/^-+|-+$/g, '');
 }
 
+function normalizeSearchText(value) {
+  return normalizeDisplayText(value)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLocaleLowerCase('es')
+    .trim();
+}
+
 function toReadableTitleCase(value) {
   const smallWords = new Set(['a', 'al', 'con', 'de', 'del', 'en', 'la', 'las', 'para', 'por', 'y']);
 
@@ -77,6 +85,7 @@ function getCanonicalCategory(category) {
 router.get('/', async (req, res) => {
   try {
     const { category, featured, summary } = req.query;
+    const search = normalizeSearchText(req.query.search);
     const requestedLimit = Number.parseInt(String(req.query.limit || ''), 10);
     const limit = Number.isFinite(requestedLimit)
       ? Math.max(1, Math.min(requestedLimit, 60))
@@ -103,13 +112,23 @@ router.get('/', async (req, res) => {
       // Los productos recién creados aparecen primero. Antes, los mismos
       // destacados ocupaban siempre las primeras posiciones del catálogo.
       orderBy: [{ createdAt: 'desc' }, { featured: 'desc' }],
-      ...(limit && !requestedCategorySlug ? { take: limit * 2 } : {}),
+      ...(limit && !requestedCategorySlug && !search ? { take: limit * 2 } : {}),
     });
 
     const data = products
       .filter((p) => {
         if (!requestedCategorySlug) return true;
         return slugify(p.category) === requestedCategorySlug;
+      })
+      .filter((p) => {
+        if (!search) return true;
+        const searchable = normalizeSearchText([
+          p.name,
+          p.category,
+          p.description,
+          p.price,
+        ].filter(Boolean).join(' '));
+        return searchable.includes(search);
       })
       .slice(0, limit || products.length)
       .map((p) => {
