@@ -39,6 +39,15 @@ function getSalesNotificationEmail(explicitRecipient) {
   ).trim();
 }
 
+function maskEmail(value) {
+  const email = String(value || "").trim();
+  if (!email.includes("@")) return email ? "configurado" : "";
+
+  const [localPart, domain] = email.split("@");
+  const visible = localPart.slice(0, 2);
+  return `${visible}${localPart.length > 2 ? "***" : "*"}@${domain}`;
+}
+
 function getSmtpPublicStatus() {
   const config = getSmtpConfig();
   return {
@@ -46,6 +55,7 @@ function getSmtpPublicStatus() {
     port: config.port,
     secure: config.secure,
     credentialsConfigured: Boolean(config.auth?.user && config.auth?.pass),
+    smtpUser: maskEmail(config.auth?.user),
     senderConfigured: Boolean(process.env.EMAIL_FROM || config.auth?.user),
     notificationRecipient: getSalesNotificationEmail(),
   };

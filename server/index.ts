@@ -1,5 +1,6 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
+import { obtenerResumen, registrarVisita } from "./traffic-log";
 import { getProdTemplate, serveStatic } from "./static";
 import { createServer } from "http";
 import { existsSync, readFileSync } from "fs";
@@ -1247,6 +1248,28 @@ app.get("/llms.txt", (_req, res) => {
 });
 
 /**
+ * Recorrido real de los visitantes.
+ *
+ * Cuenta cuánta gente entra y por dónde pasa, para poder ver dónde se cae el
+ * embudo sin depender de que Analytics esté configurado. Son datos del negocio,
+ * así que van detrás del mismo token que el pulso de ventas.
+ */
+app.get("/api/external/traffic-pulse", (req, res) => {
+  const esperado = process.env.WATCHDOG_TOKEN;
+  if (!esperado) {
+    return res.status(404).json({ status: "error", message: "No disponible." });
+  }
+
+  if (String(req.headers["x-watchdog-token"] || "") !== esperado) {
+    return res.status(401).json({ status: "error", message: "Token inválido." });
+  }
+
+  const dias = Math.min(Math.max(Number(req.query.dias) || 7, 1), 30);
+  res.setHeader("Cache-Control", "no-store");
+  return res.status(200).json({ status: "success", data: obtenerResumen(dias) });
+});
+
+/**
  * Feed de productos para Google Merchant Center.
  *
  * Es la vía por la que el catálogo puede aparecer en la pestaña Shopping de
@@ -1474,6 +1497,15 @@ app.use((req, res, next) => {
     const { setupVite } = await import("./vite");
     vite = await setupVite(httpServer, app);
   }
+
+  // Cuenta la visita antes de renderizar. Solo contadores agregados: ni IPs, ni
+  // cookies, ni nada que identifique a la persona.
+  app.use((req, _res, next) => {
+    if (req.method === "GET") {
+      registrarVisita(req.path, String(req.get("user-agent") || ""), SEO_LANDING_PATHS.includes(req.path));
+    }
+    next();
+  });
 
   app.get("/{*path}", async (req, res, next) => {
     try {

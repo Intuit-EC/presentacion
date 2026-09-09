@@ -271,6 +271,34 @@ const comprobaciones: Array<() => Promise<Resultado>> = [
         : { ok: true, detalle: `${ms} ms` };
     }),
 
+  () =>
+    medir("Recorrido de los visitantes", "AVISO", async () => {
+      if (!WATCHDOG_TOKEN) {
+        return { ok: true, detalle: "sin WATCHDOG_TOKEN: no se puede leer el recorrido" };
+      }
+
+      const { status, cuerpo } = await pedir("/api/external/traffic-pulse?dias=7", {
+        "x-watchdog-token": WATCHDOG_TOKEN,
+      });
+
+      if (status === 404) return { ok: true, detalle: "el servidor aún no publica el recorrido" };
+      if (status !== 200) return { ok: false, detalle: `el recorrido respondió ${status}` };
+
+      const d = leerJson(cuerpo, "/api/external/traffic-pulse")?.data || {};
+      const e = d.embudo || {};
+
+      if (!e.visitas) {
+        return { ok: false, detalle: "ni una visita de persona en 7 días: nadie está llegando a la tienda" };
+      }
+
+      return {
+        ok: true,
+        detalle:
+          `7 días: ${e.visitas} visitas, ${e.vieronProducto} vieron producto (${e.porcentajeQueVeProducto}%), ` +
+          `${e.llegaronAlPago} llegaron al pago (${e.porcentajeQueLlegaAlPago}%)`,
+      };
+    }),
+
   // Lo anterior comprueba que la tienda SE PUEDA comprar. Esto comprueba que
   // además SE ESTÉ comprando, que es lo único que confirma que el embudo entero
   // funciona de punta a punta.

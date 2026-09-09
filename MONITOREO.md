@@ -165,3 +165,46 @@ Para consultarlo a mano:
 ```bash
 curl -s -H "x-watchdog-token: TU_TOKEN" https://difiori.com.ec/api/external/sales-pulse | python3 -m json.tool
 ```
+
+---
+
+## 6. Recorrido real de los visitantes
+
+Mide, desde tu propio servidor, cuánta gente entra y dónde se cae. Existe porque
+sin Analytics configurado no había forma de saberlo, y sin eso cualquier decisión
+sobre catálogo o publicidad es adivinar.
+
+**No guarda IPs, ni identificadores, ni usa cookies.** Solo contadores agregados
+por día y hora, en `logs/traffic.json`, conservando 30 días.
+
+Usa el mismo `WATCHDOG_TOKEN` que el pulso de ventas, pero configurado en el
+**servidor de la tienda** (no en el backend). Con él, el vigilante informa así:
+
+```
+✓ Recorrido de los visitantes: 7 días: 340 visitas, 96 vieron producto (28%), 22 llegaron al pago (6%)
+```
+
+Y para verlo en detalle:
+
+```bash
+curl -s -H "x-watchdog-token: TU_TOKEN" "https://difiori.com.ec/api/external/traffic-pulse?dias=7" | python3 -m json.tool
+```
+
+Devuelve visitas por tipo de página, el embudo completo, el reparto por hora del
+día y los productos más mirados.
+
+### Cómo leerlo
+
+- **Pocas visitas** → el problema es de captación: publicidad, posicionamiento, redes.
+- **Muchas visitas pero pocos ven producto** → la portada no engancha o el catálogo no se entiende.
+- **Ven producto pero no llegan al pago** → precio, fotos o falta de confianza en la ficha.
+- **Llegan al pago y no hay pedidos** → algo falla en el checkout o en el cobro.
+
+Cada tramo señala un problema distinto. Sin esta medición, los cuatro se ven igual:
+"no se vende".
+
+### Prueba
+
+```bash
+npx tsx script/traffic-log.test.ts
+```
