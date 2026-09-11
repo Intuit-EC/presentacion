@@ -97,7 +97,17 @@ router.get('/', async (req, res) => {
 
     const products = await prisma.product.findMany({
       where,
-      include: {
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        price: true,
+        image: true,
+        category: true,
+        stock: true,
+        featured: true,
+        hasVariants: true,
+        createdAt: true,
         variants: {
           where: { isActive: true, isDeleted: false },
           select: {
@@ -106,16 +116,11 @@ router.get('/', async (req, res) => {
             price: true,
             isDefault: true,
           },
-          orderBy: { sortOrder: 'asc' },
         },
       },
-      // Manda la posición elegida a mano en el panel. Los productos que aún no
-      // se han ordenado quedan al final, con los recién creados primero.
-      orderBy: [
-        { sortOrder: { sort: 'asc', nulls: 'last' } },
-        { createdAt: 'desc' },
-        { featured: 'desc' },
-      ],
+      // Evitamos depender de columnas opcionales del admin en la ruta publica:
+      // si una migracion queda pendiente, el catalogo debe seguir vendiendo.
+      orderBy: [{ createdAt: 'desc' }, { featured: 'desc' }],
       ...(limit && !requestedCategorySlug && !search ? { take: limit * 2 } : {}),
     });
 
@@ -153,9 +158,6 @@ router.get('/', async (req, res) => {
         image: p.image || '',
         category: getCanonicalCategory(p.category),
         isBestSeller: p.featured,
-        // La tienda lo usa para conservar el orden del panel al filtrar por
-        // categoría en el navegador.
-        sortOrder: p.sortOrder ?? null,
         stock: p.stock,
         hasVariants: p.hasVariants,
         variants: p.variants.map((v) => ({
