@@ -32,6 +32,18 @@ const uploadImage = async (file: File) => {
   return response.data;
 };
 
+/** Guarda en el servidor el orden en que quedaron las tarjetas del panel. */
+const reorder = async (productIds: string[]) => {
+  const response = await service.put("/products/reorder", { productIds });
+  return response.data;
+};
+
+/** Devuelve el catálogo al orden automático. */
+const resetOrder = async () => {
+  const response = await service.delete("/products/reorder");
+  return response.data;
+};
+
 const getProductFilters = async (productId: string) => {
   const response = await service.get(`/products/${productId}/filters`);
   return response.data;
@@ -45,6 +57,8 @@ const productsService = {
   remove,
   uploadImage,
   getProductFilters,
+  reorder,
+  resetOrder,
 };
 
 export default productsService;

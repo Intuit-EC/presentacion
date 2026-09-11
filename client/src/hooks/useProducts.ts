@@ -49,19 +49,23 @@ function normalizePublicProductText(value: unknown) {
 }
 
 /**
- * Orden estable del catalogo: primero lo que mas se vende. Antes se barajaba al
- * azar en cada carga, asi que nadie veia dos veces la misma vitrina, los mejores
- * productos podian quedar al final y el HTML del servidor no coincidia con el
- * del navegador.
+ * La tienda respeta el orden que se acomoda en el panel de administración: la
+ * API ya devuelve los productos en esa posición. Antes se reordenaban aquí por
+ * "más vendido" y nombre, lo que borraba cualquier decisión tomada en el panel.
+ *
+ * Los que aún no tienen posición asignada llegan al final; entre esos, los más
+ * vendidos primero, que es mejor que un orden arbitrario.
  */
 function sortProductsForStorefront(products: Product[]) {
-  return [...products].sort((left, right) => {
-    if (left.isBestSeller !== right.isBestSeller) {
-      return left.isBestSeller ? -1 : 1;
-    }
+  const conPosicion = products.filter((product) => product.sortOrder != null);
+  const sinPosicion = products
+    .filter((product) => product.sortOrder == null)
+    .sort((left, right) => {
+      if (left.isBestSeller !== right.isBestSeller) return left.isBestSeller ? -1 : 1;
+      return left.name.localeCompare(right.name, "es");
+    });
 
-    return left.name.localeCompare(right.name, "es");
-  });
+  return [...conPosicion, ...sinPosicion];
 }
 
 export async function fetchProducts(
@@ -97,6 +101,7 @@ export async function fetchProducts(
           price: p.price || "$0.00",
           image: getImageUrl(p.image),
           isBestSeller: p.isBestSeller || false,
+          sortOrder: typeof p.sortOrder === "number" ? p.sortOrder : null,
           stock: p.stock ?? 99,
           deliveryTime: p.deliveryTime || "",
           size: normalizePublicProductText(p.size),

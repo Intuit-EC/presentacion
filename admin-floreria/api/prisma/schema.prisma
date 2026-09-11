@@ -210,6 +210,9 @@ model Product {
   priceIncludesTax      Boolean              @default(false)
   isDeleted             Boolean              @default(false)
   isLimited             Boolean              @default(false)
+  // Posición elegida a mano desde el panel. Nulo = sin ordenar todavía: esos
+  // productos van al final, ordenados por fecha como siempre.
+  sortOrder             Int?
   discounts_products    discounts_products[]
   orderItems            OrderItem[]
   product_filters       product_filters[]

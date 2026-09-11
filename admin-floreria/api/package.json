@@ -8,7 +8,9 @@
     "db:manual-migrate-discounts": "prisma db execute --schema prisma/schema.prisma --file prisma/manual-migrations/20251220_add_discount_schedule_and_codes.sql",
     "watchdog:ventas": "node scripts/sales-watchdog.js",
     "watchdog:ventas:resumen": "node scripts/sales-watchdog.js --resumen",
-    "watchdog:test": "node scripts/sales-watchdog-rules.test.js"
+    "watchdog:test": "node scripts/sales-watchdog-rules.test.js",
+    "db:add-product-order": "node scripts/add-product-sort-order.js",
+    "test:reorder": "node src/controllers/products/reorder-rules.test.js"
   },
   "author": "",
   "license": "ISC",

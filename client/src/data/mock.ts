@@ -12,6 +12,8 @@ export interface Product {
   image: string;
   additionalImages?: string[];
   isBestSeller: boolean;
+  /** Posición elegida en el panel. Nulo si aún no se ha ordenado a mano. */
+  sortOrder?: number | null;
   stock: number;
   deliveryTime: string;
   size: string;

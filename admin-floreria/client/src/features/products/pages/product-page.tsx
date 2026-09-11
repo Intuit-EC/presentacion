@@ -46,7 +46,7 @@ export default function ProductsPage() {
         <div>
           <h2 className="text-2xl font-bold">Productos</h2>
           <p className="text-gray-600">
-            Gestiona el catálogo y acomoda las tarjetas del administrador
+            Gestiona el catálogo y decide en qué orden lo ven los clientes
           </p>
         </div>
       </div>
@@ -86,9 +86,9 @@ export default function ProductsPage() {
         <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <span>
-              Usa las flechas de cada producto para cambiar su ubicación visual
-              en este panel. El orden se guarda en este navegador del
-              administrador.
+              Usa las flechas de cada producto para cambiar su posición. El orden
+              se guarda en el servidor y es <strong>el mismo que ven los clientes
+              en la tienda</strong>.
             </span>
             <Button
               type="button"
@@ -97,14 +97,14 @@ export default function ProductsPage() {
               className="border-amber-300 bg-white text-amber-900 hover:bg-amber-100"
               onClick={resetProductOrder}
             >
-              Restablecer ubicación
+              Volver al orden automático
             </Button>
           </div>
         </div>
       ) : (
         <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">
-          Estás buscando productos. Limpia la búsqueda para reordenar la lista
-          completa sin mezclar posiciones ocultas.
+          Estás buscando productos. Limpia la búsqueda para reordenar el catálogo
+          completo sin mezclar posiciones ocultas.
         </div>
       )}
 

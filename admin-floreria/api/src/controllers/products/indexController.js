@@ -135,7 +135,12 @@ exports.getAllProducts = async (req, res) => {
           }
         }
       },
-      orderBy: [{ createdAt: "desc" }],
+      // El mismo orden que ve el cliente en la tienda: si el panel mostrara otro,
+      // acomodar las tarjetas aquí no serviría para nada.
+      orderBy: [
+        { sortOrder: { sort: "asc", nulls: "last" } },
+        { createdAt: "desc" },
+      ],
     });
 
     // return res.status(200).json({

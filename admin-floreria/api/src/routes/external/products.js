@@ -109,9 +109,13 @@ router.get('/', async (req, res) => {
           orderBy: { sortOrder: 'asc' },
         },
       },
-      // Los productos recién creados aparecen primero. Antes, los mismos
-      // destacados ocupaban siempre las primeras posiciones del catálogo.
-      orderBy: [{ createdAt: 'desc' }, { featured: 'desc' }],
+      // Manda la posición elegida a mano en el panel. Los productos que aún no
+      // se han ordenado quedan al final, con los recién creados primero.
+      orderBy: [
+        { sortOrder: { sort: 'asc', nulls: 'last' } },
+        { createdAt: 'desc' },
+        { featured: 'desc' },
+      ],
       ...(limit && !requestedCategorySlug && !search ? { take: limit * 2 } : {}),
     });
 
@@ -149,6 +153,9 @@ router.get('/', async (req, res) => {
         image: p.image || '',
         category: getCanonicalCategory(p.category),
         isBestSeller: p.featured,
+        // La tienda lo usa para conservar el orden del panel al filtrar por
+        // categoría en el navegador.
+        sortOrder: p.sortOrder ?? null,
         stock: p.stock,
         hasVariants: p.hasVariants,
         variants: p.variants.map((v) => ({
