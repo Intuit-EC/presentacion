@@ -1,10 +1,20 @@
 const { db: prisma } = require("../../lib/prisma");
 
+const variantSelect = {
+  id: true,
+  productId: true,
+  name: true,
+  price: true,
+  isActive: true,
+  isDefault: true,
+};
+
 exports.getVariantsByProduct = async (req, res) => {
   try {
     const { productId } = req.params;
     const variants = await prisma.productVariant.findMany({
-      where: { productId }
+      where: { productId },
+      select: variantSelect,
     });
     return res.status(200).json({ variants });
   } catch (error) {
@@ -15,16 +25,16 @@ exports.getVariantsByProduct = async (req, res) => {
 exports.createVariant = async (req, res) => {
   try {
     const { productId } = req.params;
-    const { name, price, isActive, isDefault, sortOrder } = req.body;
+    const { name, price, isActive, isDefault } = req.body;
     const variant = await prisma.productVariant.create({
       data: {
         productId,
         name,
         price,
         isActive,
-        isDefault,
-        sortOrder
-      }
+        isDefault
+      },
+      select: variantSelect,
     });
     return res.status(201).json({ variant });
   } catch (error) {
@@ -35,10 +45,11 @@ exports.createVariant = async (req, res) => {
 exports.updateVariant = async (req, res) => {
   try {
     const { variantId } = req.params;
-    const data = req.body;
+    const { sortOrder, ...data } = req.body || {};
     const variant = await prisma.productVariant.update({
       where: { id: variantId },
-      data
+      data,
+      select: variantSelect,
     });
     return res.status(200).json({ variant });
   } catch (error) {

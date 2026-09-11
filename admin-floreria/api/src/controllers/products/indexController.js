@@ -5,6 +5,39 @@ const { validateFeatureAccess } = require("../../validations/featureValidation")
 const { ProductCreateSchema } = require("../../validations/productSchema");
 const { isDiscountActive } = require("../../utils/discountRules");
 
+const variantListSelect = {
+  id: true,
+  name: true,
+  price: true,
+  isActive: true,
+  isDefault: true,
+};
+
+const discountRelationSelect = {
+  discounts: true,
+};
+
+const productListSelect = {
+  id: true,
+  name: true,
+  description: true,
+  price: true,
+  image: true,
+  category: true,
+  stock: true,
+  isActive: true,
+  featured: true,
+  hasVariants: true,
+  createdAt: true,
+  variants: {
+    where: { isDeleted: false },
+    select: variantListSelect,
+  },
+  discounts_products: {
+    select: discountRelationSelect,
+  },
+};
+
 exports.getProductsFeatured = async (req, res, next) => {
   try {
     const hasAccessToFeature = await validateFeatureAccess('discounts', req.headers.host);
@@ -12,10 +45,11 @@ exports.getProductsFeatured = async (req, res, next) => {
 
     const products = await prisma.product.findMany({
       where: { isActive: true, featured: true },
-      include: {
+      select: {
+        ...productListSelect,
         variants: {
-          where: { isActive: true },
-          orderBy: { sortOrder: "asc" },
+          where: { isActive: true, isDeleted: false },
+          select: variantListSelect,
         },
         discounts_products: {
           where: {
@@ -23,9 +57,7 @@ exports.getProductsFeatured = async (req, res, next) => {
               code: null,
             },
           },
-          include: {
-            discounts: true,
-          },
+          select: discountRelationSelect,
         },
       },
       orderBy: [{ createdAt: "desc" }],
@@ -124,23 +156,10 @@ exports.getAllProducts = async (req, res) => {
 
     const products = await prisma.product.findMany({
       where,
-      include: {
-        variants: {
-          where: { isDeleted: false },
-          orderBy: { sortOrder: "asc" },
-        },
-        discounts_products: {
-          include: {
-            discounts: true
-          }
-        }
-      },
-      // El mismo orden que ve el cliente en la tienda: si el panel mostrara otro,
-      // acomodar las tarjetas aquí no serviría para nada.
-      orderBy: [
-        { sortOrder: { sort: "asc", nulls: "last" } },
-        { createdAt: "desc" },
-      ],
+      select: productListSelect,
+      // Orden compatible con produccion aunque la columna sortOrder aun no
+      // exista. Lo importante ahora es que el admin no se quede sin productos.
+      orderBy: [{ createdAt: "desc" }],
     });
 
     // return res.status(200).json({
@@ -280,9 +299,8 @@ exports.createProduct = async (req, res, next) => {
             name: variant.name,
             price: variant.price,
             isDefault: variant.isDefault,
-            sortOrder: variant.sortOrder || index,
             isActive: true,
-            userId: validation.data.userId, // Agregar userId requerido
+            userId,
           })),
         });
       }
@@ -318,11 +336,7 @@ exports.createProduct = async (req, res, next) => {
       // Retornar producto con variantes
       return await tx.product.findUnique({
         where: { id: newProduct.id },
-        include: {
-          variants: {
-            orderBy: { sortOrder: "asc" },
-          },
-        },
+        select: productListSelect,
       });
     });
 

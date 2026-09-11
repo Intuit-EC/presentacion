@@ -3,6 +3,29 @@ const { validateFeatureAccess } = require("../../validations/featureValidation")
 const { ProductUpdateSchema } = require("../../validations/productSchema");
 const { isDiscountActive } = require("../../utils/discountRules");
 
+const variantSelect = {
+  id: true,
+  name: true,
+  price: true,
+  isActive: true,
+  isDefault: true,
+};
+
+const productSelect = {
+  id: true,
+  name: true,
+  description: true,
+  price: true,
+  image: true,
+  category: true,
+  stock: true,
+  isActive: true,
+  featured: true,
+  hasVariants: true,
+  createdAt: true,
+  userId: true,
+};
+
 exports.getProductById = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -12,8 +35,12 @@ exports.getProductById = async (req, res, next) => {
 
     const product = await prisma.product.findUnique({
       where: { id, isDeleted: false },
-      include: {
-        variants: true,
+      select: {
+        ...productSelect,
+        variants: {
+          where: { isDeleted: false },
+          select: variantSelect,
+        },
         product_filters: {
           include: {
             category: true,
@@ -69,10 +96,15 @@ exports.updateProductById = async (req, res, next) => {
   try {
     const { id } = req.params;
     const { product, variants, productFilter, productFilters } = req.body;
+    const { sortOrder, ...safeProductData } = product || {};
 
     // Obtener el producto original para preservar userId
     const originalProduct = await prisma.product.findUnique({
       where: { id },
+      select: {
+        id: true,
+        userId: true,
+      },
     });
 
     if (!originalProduct) {
@@ -84,7 +116,7 @@ exports.updateProductById = async (req, res, next) => {
 
     // Validación básica de payload producto si llega
     if (product) {
-      const validation = ProductUpdateSchema.safeParse(product);
+      const validation = ProductUpdateSchema.safeParse(safeProductData);
       if (!validation.success) {
         console.error("Validation error for product update:", validation.error.format());
         return res.status(400).json({
@@ -97,7 +129,8 @@ exports.updateProductById = async (req, res, next) => {
 
     const res_product = await prisma.product.update({
       where: { id },
-      data: product,
+      data: safeProductData,
+      select: productSelect,
     });
 
     if (res_product.hasVariants && variants && variants.length > 0) {
@@ -105,7 +138,10 @@ exports.updateProductById = async (req, res, next) => {
         where: { productId: res_product.id },
       });
       const newVariants = variants.map((variant) => ({
-        ...variant,
+        name: variant.name,
+        price: variant.price,
+        isActive: variant.isActive ?? true,
+        isDefault: variant.isDefault ?? false,
         productId: id,
         userId: originalProduct.userId, // Usar userId del producto original
       }));

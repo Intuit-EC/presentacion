@@ -50,11 +50,6 @@ const orderSelect = {
   discount_code_percent: true,
   discount_coupon_id: true,
   discount_code_id: true,
-  cashOnDelivery: true,
-  clientTransactionId: true,
-  couponDiscountCode: true,
-  payPhoneAuthCode: true,
-  payPhoneTransactionId: true,
   orderItems: {
     select: {
       id: true,
@@ -328,6 +323,11 @@ function serializeOrder(order, paymentProofFields = {}) {
     paymentVerifiedBy: paymentProofFields.paymentVerifiedBy || null,
     paymentVerificationNotes:
       paymentProofFields.paymentVerificationNotes || null,
+    cashOnDelivery: order.cashOnDelivery ?? false,
+    clientTransactionId: order.clientTransactionId ?? null,
+    couponDiscountCode: order.couponDiscountCode ?? null,
+    payPhoneAuthCode: order.payPhoneAuthCode ?? null,
+    payPhoneTransactionId: order.payPhoneTransactionId ?? null,
     totalAmount,
     estimatedDiscountAmount,
     pendingAmount,
