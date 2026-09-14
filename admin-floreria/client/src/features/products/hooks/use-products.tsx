@@ -5,6 +5,34 @@ import productsService from "../api/products-service";
 import { useUserStore } from "@/store/use-user-store";
 import filtersService from "@/features/filters/api/filters-service";
 
+/**
+ * Convierte la respuesta de error del servidor en algo que el administrador
+ * pueda accionar: qué campo falta, en vez de un "error" genérico.
+ */
+function describirErrorDeGuardado(error: unknown): string {
+  const respuesta = (error as { response?: { data?: { message?: string; details?: Array<{ path?: (string | number)[]; message?: string }> } } })?.response;
+
+  if (!respuesta) return "No hay conexión con el servidor. Revisa tu internet.";
+
+  const datos = respuesta.data;
+  const detalles = datos?.details;
+
+  if (Array.isArray(detalles) && detalles.length > 0) {
+    const campos = detalles
+      .map((detalle) => {
+        const campo = detalle.path?.filter((parte) => typeof parte === "string").join(".");
+        return campo ? `${campo}: ${detalle.message}` : detalle.message;
+      })
+      .filter(Boolean)
+      .slice(0, 3)
+      .join(" · ");
+
+    return campos || datos?.message || "Datos inválidos";
+  }
+
+  return datos?.message || "No se pudo guardar el producto";
+}
+
 export default function useProducts() {
   const { user } = useUserStore();
   const [products, setProducts] = useState<Product[]>([]);
@@ -99,7 +127,6 @@ export default function useProducts() {
     try {
       const data = {
         product: {
-          id: editingProduct?.id ?? "",
           name: formData.name,
           description: formData.description,
           image: formData.image,
@@ -108,35 +135,32 @@ export default function useProducts() {
           isActive: formData.isActive,
           featured: formData.featured,
           hasVariants: formData.hasVariants,
-          createdAt: new Date().toISOString(),
           price: formData.price,
           userId: user?.id,
         },
         ...(formData.hasVariants && { variants }),
       };
 
-      if (editingProduct) {
-        const response = await productsService.update(editingProduct.id, data);
-        if (response.status === "success") {
-          toast.success(response.message);
-          setEditingProduct(null);
-          setShowModal(false);
-          resetForm();
-          await fetchProducts();
-        }
-      } else {
-        const response = await productsService.create(data);
-        if (response.status === "success") {
-          toast.success(response.message);
-          setEditingProduct(null);
-          setShowModal(false);
-          resetForm();
-          await fetchProducts();
-        }
+      const response = editingProduct
+        ? await productsService.update(editingProduct.id, data)
+        : await productsService.create(data);
+
+      if (response.status !== "success") {
+        toast.error(response.message || "No se pudo guardar el producto");
+        return;
       }
+
+      toast.success(response.message);
+      setEditingProduct(null);
+      setShowModal(false);
+      resetForm();
+      await fetchProducts();
     } catch (error) {
+      // Antes se avisaba siempre de "Error de conexión", incluso cuando el
+      // servidor había respondido diciendo exactamente qué faltaba. El
+      // formulario parecía no hacer nada al pulsar Guardar.
       console.error("Submit error:", error);
-      toast.error("Error de conexión");
+      toast.error(describirErrorDeGuardado(error));
     }
   };
 

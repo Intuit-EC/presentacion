@@ -1,6 +1,6 @@
 const { db: prisma } = require("../../lib/prisma");
 const { validateFeatureAccess } = require("../../validations/featureValidation");
-const { ProductUpdateSchema } = require("../../validations/productSchema");
+const { ProductUpdateSchema, limpiarCamposNoEditables } = require("../../validations/productSchema");
 const { isDiscountActive } = require("../../utils/discountRules");
 
 const variantSelect = {
@@ -114,9 +114,13 @@ exports.updateProductById = async (req, res, next) => {
       });
     }
 
-    // Validación básica de payload producto si llega
+    // Se valida y, sobre todo, se guarda SOLO lo validado. Antes se validaba y
+    // luego se escribía el payload crudo del formulario, así que entraban campos
+    // que el cliente nunca debería tocar.
+    let datosAGuardar = {};
+
     if (product) {
-      const validation = ProductUpdateSchema.safeParse(safeProductData);
+      const validation = ProductUpdateSchema.safeParse(limpiarCamposNoEditables(safeProductData));
       if (!validation.success) {
         console.error("Validation error for product update:", validation.error.format());
         return res.status(400).json({
@@ -125,11 +129,13 @@ exports.updateProductById = async (req, res, next) => {
           details: validation.error.issues,
         });
       }
+
+      datosAGuardar = limpiarCamposNoEditables(validation.data);
     }
 
     const res_product = await prisma.product.update({
       where: { id },
-      data: safeProductData,
+      data: datosAGuardar,
       select: productSelect,
     });
 
