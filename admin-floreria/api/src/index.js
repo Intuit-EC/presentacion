@@ -151,6 +151,14 @@ app.use(errorHandler);
 // Iniciar el servidor en el puerto definido
 const HOST = '0.0.0.0'; // <--- ASEGÚRATE DE USAR ESTO POR SEA ACASO
 
+// Antes de aceptar peticiones, comprobar que la base tenga las columnas que el
+// código espera. Sin esto, un despliegue sin migrar dejaba operaciones rotas
+// (crear producto fallaba) con un error que no decía qué hacer.
+const { asegurarEsquema } = require("./lib/ensureSchema");
+asegurarEsquema().catch((error) => {
+    console.error("⚠️  No se pudo verificar el esquema:", error.message);
+});
+
 app.listen(PORT, HOST, () => {
     console.log(`🚀 Servidor ejecutándose en http://${HOST}:${PORT}`);
 }).on('error', (err) => {
