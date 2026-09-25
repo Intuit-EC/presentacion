@@ -1,4 +1,5 @@
 const { nanoid } = require("nanoid");
+const { interpretarErrorPaypal } = require("./paypal-errors");
 const emailService = require("./emailService");
 const { buildStorefrontOrderDetails } = require("../utils/storefrontOrderDetails");
 const {
@@ -639,12 +640,31 @@ async function capturePaypalCheckoutOrder(prisma, payload) {
   });
 
   if (!response.ok) {
-    const error = new Error(
-      data.message ||
-        data.details?.[0]?.description ||
-        "No se pudo capturar el pago de PayPal."
-    );
+    // PayPal responde en inglés y con frases genéricas; el motivo real viene en
+    // details[0].issue. Sin traducirlo, el cliente veía "semantically incorrect
+    // or failed business validation" en la pantalla de pago.
+    const interpretado = interpretarErrorPaypal(data, response.status);
+
+    if (interpretado.yaPagado) {
+      // El cobro existe: tratarlo como error llevaría al cliente a pagar dos veces.
+      serviceLog("capture:ya-capturado", { issue: interpretado.issue });
+      return {
+        order,
+        paymentStatus: "PAID",
+        approved: true,
+        alreadyProcessed: true,
+        paypalOrderId: resolvedPaypalOrderId,
+        captureId: null,
+        payerId: null,
+        payerEmail: null,
+        emailMismatch: false,
+      };
+    }
+
+    const error = new Error(interpretado.mensaje);
     error.statusCode = response.status || 502;
+    error.issue = interpretado.issue;
+    error.reintentable = interpretado.reintentable;
     throw error;
   }
 

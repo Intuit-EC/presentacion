@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "node src/validations/productSchema.test.js && node src/middlewares/prisma-error-map.test.js && node src/controllers/products/reorder-rules.test.js && node scripts/sales-watchdog-rules.test.js",
+    "test": "node src/validations/productSchema.test.js && node src/middlewares/prisma-error-map.test.js && node src/controllers/products/reorder-rules.test.js && node scripts/sales-watchdog-rules.test.js && node src/services/paypal-errors.test.js",
     "dev": "nodemon src/index.js",
     "db:manual-migrate-discounts": "prisma db execute --schema prisma/schema.prisma --file prisma/manual-migrations/20251220_add_discount_schedule_and_codes.sql",
     "watchdog:ventas": "node scripts/sales-watchdog.js",
@@ -12,7 +12,8 @@
     "db:add-product-order": "node scripts/add-product-sort-order.js",
     "test:reorder": "node src/controllers/products/reorder-rules.test.js",
     "test:productos": "node src/validations/productSchema.test.js",
-    "test:errores": "node src/middlewares/prisma-error-map.test.js"
+    "test:errores": "node src/middlewares/prisma-error-map.test.js",
+    "test:paypal": "node src/services/paypal-errors.test.js"
   },
   "author": "",
   "license": "ISC",

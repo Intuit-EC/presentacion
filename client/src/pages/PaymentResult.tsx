@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
 import { CheckCircle, XCircle, Loader2, MessageSquare, ShieldCheck } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Seo } from "@/components/Seo";
 import { useCart } from "@/context/CartContext";
 import { apiUrl } from "@/lib/api-url";
@@ -49,6 +50,23 @@ async function fetchJsonWithTimeout(
   } finally {
     window.clearTimeout(timeoutId);
   }
+}
+
+/**
+ * Cuando el cliente simplemente no terminó de aprobar el pago no hay nada roto:
+ * llamarlo "Pago rechazado" asusta y hace que no lo vuelva a intentar.
+ */
+export function describirResultadoDePago(estado: ResultStatus, mensaje: string) {
+  const pagoSinCompletar = /no llegaste a aprobar|caduc|confirmes el pago/i.test(mensaje || "");
+
+  return {
+    pagoSinCompletar,
+    titulo: pagoSinCompletar
+      ? "No se completó el pago"
+      : estado === "failed"
+        ? "Pago rechazado"
+        : "Error en el pago",
+  };
 }
 
 export default function PaymentResult() {
@@ -127,6 +145,10 @@ export default function PaymentResult() {
           : await confirmPayphoneOrder();
 
         if (data.status !== "success") {
+          // El servidor explica qué pasó (pago no aprobado, tarjeta rechazada,
+          // sesión caducada...). Antes se descartaba y el cliente veía una
+          // pantalla de error sin una sola pista de qué hacer.
+          setResultMessage(data.message || "");
           setStatus("error");
           return;
         }
@@ -281,6 +303,11 @@ export default function PaymentResult() {
     );
   }
 
+  const { pagoSinCompletar, titulo: tituloDelResultado } = describirResultadoDePago(
+    status,
+    resultMessage,
+  );
+
   // failed o error
   return (
     <div className="min-h-screen bg-[#FBF7FD] flex items-center justify-center px-6">
@@ -293,11 +320,11 @@ export default function PaymentResult() {
       <motion.div
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="bg-white p-8 sm:p-12 rounded-[2.5rem] shadow-2xl border border-red-500/20 text-center max-w-lg w-full"
+        className={cn("bg-white p-8 sm:p-12 rounded-[2.5rem] shadow-2xl text-center max-w-lg w-full border", pagoSinCompletar ? "border-amber-300/50" : "border-red-500/20")}
       >
-        <XCircle className="w-24 h-24 text-red-400 mx-auto mb-6" />
+        <XCircle className={cn("w-24 h-24 mx-auto mb-6", pagoSinCompletar ? "text-amber-400" : "text-red-400")} />
         <h2 className="text-3xl font-serif font-black text-[#4A3362] mb-3">
-          {status === "failed" ? "Pago rechazado" : "Error en el pago"}
+          {tituloDelResultado}
         </h2>
         <p className="text-[#4A3362]/70 text-sm font-bold mb-6">
           {status === "failed" ? (

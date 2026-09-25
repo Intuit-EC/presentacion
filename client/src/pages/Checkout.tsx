@@ -365,6 +365,7 @@ export default function Checkout() {
   const addressRef = useRef<HTMLInputElement>(null);
   const cardMessageRef = useRef<HTMLTextAreaElement>(null);
   const observationsRef = useRef<HTMLTextAreaElement>(null);
+  const errorBannerRef = useRef<HTMLParagraphElement>(null);
 
   const abandonmentSent = useRef(false);
   const checkoutStartedSent = useRef(false);
@@ -614,6 +615,16 @@ export default function Checkout() {
     setPaymentMethod("");
     setErrorMsg(availability.message || `${paymentMethod} no está disponible temporalmente.`);
   }, [onlinePaymentAvailability, paymentMethod]);
+
+  // El botón "Confirmar pedido" vive en el resumen, que en móvil queda abajo
+  // del formulario y en escritorio a un costado. El aviso de error se
+  // renderiza arriba del todo del formulario: sin esto, alguien que falla al
+  // pagar ve que "no pasa nada" al pulsar, porque el mensaje aparece fuera de
+  // su vista y parece que el botón no funciona.
+  useEffect(() => {
+    if (orderStatus !== "error" || !errorMsg) return;
+    errorBannerRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [orderStatus, errorMsg]);
 
   useEffect(() => {
     if (paymentMethod !== "Payphone") return;
@@ -1466,6 +1477,7 @@ export default function Checkout() {
             <AnimatePresence>
               {errorMsg && (
                 <motion.p
+                  ref={errorBannerRef}
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0 }}
