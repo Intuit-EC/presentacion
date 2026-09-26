@@ -182,6 +182,36 @@ const landingPages = {
     related: ["/flores-guayaquil", "/ramos-de-flores", "/floreria-guayaquil"],
   },
 
+  // Un cliente real escribió en su reseña "soy fiel cliente del extranjero":
+  // hay demanda de ecuatorianos en el exterior que envían regalos a la
+  // familia en Guayaquil, y PayPal (ya activo) es el método de pago ideal
+  // para ese público. No existía ninguna página ni mención dirigida a ellos.
+  "/flores-a-guayaquil-desde-el-exterior": {
+    path: "/flores-a-guayaquil-desde-el-exterior",
+    title: "Envía Flores a Guayaquil desde el Exterior | DIFIORI",
+    description:
+      "Envía flores y regalos a tu familia en Guayaquil desde Estados Unidos, España o cualquier país. Paga en línea con PayPal y coordinamos la entrega en Ecuador.",
+    keywords:
+      "enviar flores a guayaquil desde estados unidos, enviar flores a ecuador desde el exterior, regalos para guayaquil desde afuera, flores guayaquil paypal, enviar regalo a ecuador desde españa",
+    h1: "Envía flores a Guayaquil desde donde estés",
+    intro:
+      "Vives afuera y quieres sorprender a alguien en Guayaquil: mamá, pareja, un amigo. Paga en línea con PayPal en tu moneda y nosotros coordinamos la entrega en Ecuador, con confirmación por WhatsApp para que sepas que llegó.",
+    focus: ["Pago con PayPal desde cualquier país", "Coordinación de entrega en Guayaquil", "Confirmamos por WhatsApp cuando se entrega"],
+    preferredCategories: ["Ramo de Flores", "Flores para Aniversario", "Desayuno Sorpresa"],
+    productTerms: ["rosas", "ramo", "flor", "desayuno"],
+    serviceCards: [
+      ["Pagas en tu país", "PayPal acepta tu tarjeta o cuenta local; nosotros recibimos y despachamos en Guayaquil."],
+      ["Coordinación a distancia", "Nos escribes por WhatsApp con la fecha y el mensaje; nosotros nos encargamos de todo aquí."],
+      ["Confirmación de entrega", "Te avisamos cuando el regalo ya está en manos de la persona que quieres sorprender."],
+    ],
+    bodyTitle: "Sorprende a tu familia en Guayaquil aunque estés lejos",
+    bodyCopy: [
+      "No necesitas una cuenta bancaria en Ecuador ni pedirle el favor a alguien: pagas con PayPal desde donde estés y nosotros preparamos y entregamos el regalo en Guayaquil.",
+      "Cuéntanos la ocasión, la fecha y el mensaje para la tarjeta por WhatsApp. Confirmamos disponibilidad, coordinamos con la persona que recibe y te avisamos en cuanto el pedido esté entregado.",
+    ],
+    related: ["/flores-guayaquil", "/floreria-guayaquil", "/ramos-de-flores"],
+  },
+
   "/arreglos-funebres-guayaquil": {
     path: "/arreglos-funebres-guayaquil",
     title: "Arreglos Fúnebres y Ofrendas Florales en Guayaquil | DIFIORI",
@@ -255,10 +285,12 @@ function useCurrentLandingPage() {
   const [desayunosMatch] = useRoute("/desayunos-sorpresa-guayaquil");
   const [funebresMatch] = useRoute("/arreglos-funebres-guayaquil");
   const [regalosHombreMatch] = useRoute("/regalos-para-hombre-guayaquil");
+  const [exteriorMatch] = useRoute("/flores-a-guayaquil-desde-el-exterior");
 
   if (desayunosMatch) return landingPages["/desayunos-sorpresa-guayaquil"];
   if (funebresMatch) return landingPages["/arreglos-funebres-guayaquil"];
   if (regalosHombreMatch) return landingPages["/regalos-para-hombre-guayaquil"];
+  if (exteriorMatch) return landingPages["/flores-a-guayaquil-desde-el-exterior"];
   if (floresMatch) return landingPages["/flores-guayaquil"];
   if (floreriaMatch) return landingPages["/floreria-guayaquil"];
   if (floreriasMatch) return landingPages["/florerias-en-guayaquil"];

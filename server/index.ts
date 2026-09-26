@@ -1052,6 +1052,7 @@ const SEO_LANDING_PATHS = [
   "/desayunos-sorpresa-guayaquil",
   "/arreglos-funebres-guayaquil",
   "/regalos-para-hombre-guayaquil",
+  "/flores-a-guayaquil-desde-el-exterior",
 ];
 
 const LEGACY_STORE_PATHS = new Set([
