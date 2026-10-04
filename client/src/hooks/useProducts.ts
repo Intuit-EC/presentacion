@@ -57,7 +57,9 @@ function normalizePublicProductText(value: unknown) {
  * vendidos primero, que es mejor que un orden arbitrario.
  */
 function sortProductsForStorefront(products: Product[]) {
-  const conPosicion = products.filter((product) => product.sortOrder != null);
+  const conPosicion = products
+    .filter((product) => product.sortOrder != null)
+    .sort((left, right) => (left.sortOrder ?? 0) - (right.sortOrder ?? 0));
   const sinPosicion = products
     .filter((product) => product.sortOrder == null)
     .sort((left, right) => {

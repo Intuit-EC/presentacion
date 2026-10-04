@@ -29,6 +29,7 @@ export default function ProductsPage() {
     moveVariant,
     moveProduct,
     resetProductOrder,
+    randomizeProductOrder,
   } = useProducts();
 
   if (isLoading) {
@@ -86,19 +87,30 @@ export default function ProductsPage() {
         <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <span>
-              Usa las flechas de cada producto para cambiar su posición. El orden
-              se guarda en el servidor y es <strong>el mismo que ven los clientes
-              en la tienda</strong>.
+              Usa las flechas para priorizar los productos que quieres vender.
+              También puedes mezclar el catálogo; el resultado se guarda y es
+              <strong> el mismo que ven los clientes en la tienda</strong>.
             </span>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="border-amber-300 bg-white text-amber-900 hover:bg-amber-100"
-              onClick={resetProductOrder}
-            >
-              Volver al orden automático
-            </Button>
+            <div className="flex shrink-0 flex-wrap gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="border-amber-300 bg-white text-amber-900 hover:bg-amber-100"
+                onClick={randomizeProductOrder}
+              >
+                Mezclar catálogo
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="border-amber-300 bg-white text-amber-900 hover:bg-amber-100"
+                onClick={resetProductOrder}
+              >
+                Volver al orden automático
+              </Button>
+            </div>
           </div>
         </div>
       ) : (

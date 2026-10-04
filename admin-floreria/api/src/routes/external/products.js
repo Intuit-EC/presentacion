@@ -107,6 +107,7 @@ router.get('/', async (req, res) => {
         stock: true,
         featured: true,
         hasVariants: true,
+        sortOrder: true,
         createdAt: true,
         variants: {
           where: { isActive: true, isDeleted: false },
@@ -118,9 +119,9 @@ router.get('/', async (req, res) => {
           },
         },
       },
-      // Evitamos depender de columnas opcionales del admin en la ruta publica:
-      // si una migracion queda pendiente, el catalogo debe seguir vendiendo.
-      orderBy: [{ createdAt: 'desc' }, { featured: 'desc' }],
+      // El orden lo decide el administrador. Los productos sin posición se
+      // mantienen al final por fecha, como ocurría antes de esta función.
+      orderBy: [{ sortOrder: { sort: 'asc', nulls: 'last' } }, { createdAt: 'desc' }],
       ...(limit && !requestedCategorySlug && !search ? { take: limit * 2 } : {}),
     });
 
@@ -158,6 +159,7 @@ router.get('/', async (req, res) => {
         image: p.image || '',
         category: getCanonicalCategory(p.category),
         isBestSeller: p.featured,
+        sortOrder: p.sortOrder,
         stock: p.stock,
         hasVariants: p.hasVariants,
         variants: p.variants.map((v) => ({

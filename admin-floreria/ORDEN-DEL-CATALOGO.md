@@ -22,6 +22,10 @@ movimiento se guarda solo, y el aviso confirma que así lo verán los clientes.
 El botón **Volver al orden automático** borra las posiciones y deja el catálogo
 ordenado como antes: lo más reciente primero.
 
+El botón **Mezclar catálogo** genera un orden aleatorio y lo guarda. No cambia
+en cada visita: la mezcla permanece estable para los clientes hasta que el
+administrador vuelva a ordenar, mezclar o restaurar el catálogo.
+
 Mientras haya una búsqueda activa no se puede reordenar, para no mover productos
 usando posiciones parciales.
 

@@ -28,6 +28,9 @@ const productListSelect = {
   isActive: true,
   featured: true,
   hasVariants: true,
+  // La posición es parte del catálogo, no solo de la interfaz del admin.
+  // También se entrega a la tienda pública para que pueda respetarla.
+  sortOrder: true,
   createdAt: true,
   variants: {
     where: { isDeleted: false },
@@ -60,7 +63,7 @@ exports.getProductsFeatured = async (req, res, next) => {
           select: discountRelationSelect,
         },
       },
-      orderBy: [{ createdAt: "desc" }],
+      orderBy: [{ sortOrder: { sort: "asc", nulls: "last" } }, { createdAt: "desc" }],
       take: 3,
     });
 
@@ -157,9 +160,9 @@ exports.getAllProducts = async (req, res) => {
     const products = await prisma.product.findMany({
       where,
       select: productListSelect,
-      // Orden compatible con produccion aunque la columna sortOrder aun no
-      // exista. Lo importante ahora es que el admin no se quede sin productos.
-      orderBy: [{ createdAt: "desc" }],
+      // Las posiciones elegidas se muestran primero; al volver al modo
+      // automático los nulos conservan el comportamiento histórico.
+      orderBy: [{ sortOrder: { sort: "asc", nulls: "last" } }, { createdAt: "desc" }],
     });
 
     // return res.status(200).json({

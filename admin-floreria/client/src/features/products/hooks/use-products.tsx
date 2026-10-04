@@ -311,6 +311,36 @@ export default function useProducts() {
     }
   };
 
+  /**
+   * Baraja una vez y persiste el resultado. No se aleatoriza en cada visita:
+   * así el cliente no pierde de vista un producto al volver atrás y el HTML
+   * indexable conserva una lista estable hasta la próxima mezcla.
+   */
+  const randomizeProductOrder = async () => {
+    if (products.length < 2) return;
+
+    const ordenAnterior = products;
+    const reorderedProducts = [...products];
+
+    for (let index = reorderedProducts.length - 1; index > 0; index -= 1) {
+      const randomIndex = Math.floor(Math.random() * (index + 1));
+      [reorderedProducts[index], reorderedProducts[randomIndex]] = [
+        reorderedProducts[randomIndex],
+        reorderedProducts[index],
+      ];
+    }
+
+    setProducts(reorderedProducts);
+
+    try {
+      await productsService.reorder(reorderedProducts.map((product) => product.id));
+      toast.success("Catálogo mezclado y guardado. Este orden ya se muestra en la tienda.");
+    } catch {
+      setProducts(ordenAnterior);
+      toast.error("No se pudo mezclar el catálogo. Se mantuvo el orden anterior.");
+    }
+  };
+
   return {
     products,
     search,
@@ -335,6 +365,7 @@ export default function useProducts() {
     moveVariant,
     moveProduct,
     resetProductOrder,
+    randomizeProductOrder,
     fetchProducts,
   };
 }
