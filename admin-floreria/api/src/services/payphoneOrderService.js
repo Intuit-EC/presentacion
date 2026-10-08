@@ -53,6 +53,41 @@ async function resolveCoupon(prisma, { couponCode, total, shippingCost }) {
   };
 }
 
+function getMissingCheckoutFields({
+  receiverName,
+  receiverPhone,
+  senderName,
+  senderEmail,
+  senderPhone,
+  phone,
+  deliveryDateTime,
+  exactAddress,
+  sector,
+  cardMessage,
+  observations,
+  total,
+}) {
+  return [
+    [receiverName, "nombre de quien recibe"],
+    [receiverPhone, "teléfono de quien recibe"],
+    [senderName, "nombre de quien envía"],
+    [senderEmail, "correo de quien envía"],
+    [senderPhone || phone, "teléfono de quien envía"],
+    [deliveryDateTime, "hora de entrega"],
+    [exactAddress, "dirección exacta"],
+    [sector, "sector"],
+    [cardMessage, "mensaje para la tarjeta"],
+    [observations, "observaciones"],
+    [total, "total"],
+  ]
+    .filter(([value]) => !String(value ?? "").trim())
+    .map(([, label]) => label);
+}
+
+function isValidEmail(value) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || "").trim());
+}
+
 async function createPendingPayphoneOrder(prisma, payload) {
   const {
     productId,
@@ -78,8 +113,29 @@ async function createPendingPayphoneOrder(prisma, payload) {
     paymentLabel = "Tarjeta (PayPhone Box)",
   } = payload;
 
-  if (!receiverName || !senderName || !phone || !total) {
-    const error = new Error("Faltan datos obligatorios.");
+  const missingFields = getMissingCheckoutFields({
+    receiverName,
+    receiverPhone,
+    senderName,
+    senderEmail,
+    senderPhone,
+    phone,
+    deliveryDateTime,
+    exactAddress,
+    sector,
+    cardMessage,
+    observations,
+    total,
+  });
+
+  if (missingFields.length > 0) {
+    const error = new Error(`Faltan datos obligatorios: ${missingFields.join(", ")}.`);
+    error.statusCode = 400;
+    throw error;
+  }
+
+  if (!isValidEmail(senderEmail)) {
+    const error = new Error("El correo de quien envía no tiene un formato válido.");
     error.statusCode = 400;
     throw error;
   }

@@ -66,6 +66,41 @@ function normalizeEmail(value) {
   return String(value || "").trim().toLowerCase();
 }
 
+function getMissingCheckoutFields({
+  receiverName,
+  receiverPhone,
+  senderName,
+  senderEmail,
+  senderPhone,
+  phone,
+  deliveryDateTime,
+  exactAddress,
+  sector,
+  cardMessage,
+  observations,
+  total,
+}) {
+  return [
+    [receiverName, "nombre de quien recibe"],
+    [receiverPhone, "teléfono de quien recibe"],
+    [senderName, "nombre de quien envía"],
+    [senderEmail, "correo de quien envía"],
+    [senderPhone || phone, "teléfono de quien envía"],
+    [deliveryDateTime, "hora de entrega"],
+    [exactAddress, "dirección exacta"],
+    [sector, "sector"],
+    [cardMessage, "mensaje para la tarjeta"],
+    [observations, "observaciones"],
+    [total, "total"],
+  ]
+    .filter(([value]) => !String(value ?? "").trim())
+    .map(([, label]) => label);
+}
+
+function isValidEmail(value) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || "").trim());
+}
+
 function extractPaypalPayerEmail(orderNotes = "") {
   const match = String(orderNotes || "").match(/Correo PayPal indicado:\s*([^|]+)/i);
   return normalizeEmail(match?.[1] || "");
@@ -226,8 +261,29 @@ async function createPendingPaypalOrder(prisma, payload) {
     paypalPayerEmail,
   } = payload;
 
-  if (!receiverName || !senderName || !phone || !total) {
-    const error = new Error("Faltan datos obligatorios.");
+  const missingFields = getMissingCheckoutFields({
+    receiverName,
+    receiverPhone,
+    senderName,
+    senderEmail,
+    senderPhone,
+    phone,
+    deliveryDateTime,
+    exactAddress,
+    sector,
+    cardMessage,
+    observations,
+    total,
+  });
+
+  if (missingFields.length > 0) {
+    const error = new Error(`Faltan datos obligatorios: ${missingFields.join(", ")}.`);
+    error.statusCode = 400;
+    throw error;
+  }
+
+  if (!isValidEmail(senderEmail)) {
+    const error = new Error("El correo de quien envía no tiene un formato válido.");
     error.statusCode = 400;
     throw error;
   }

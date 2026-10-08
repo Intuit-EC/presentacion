@@ -75,6 +75,41 @@ function parseDataUrl(dataUrl) {
   };
 }
 
+function getMissingCheckoutFields({
+  receiverName,
+  receiverPhone,
+  senderName,
+  senderEmail,
+  senderPhone,
+  phone,
+  deliveryDateTime,
+  exactAddress,
+  sector,
+  cardMessage,
+  observations,
+  total,
+}) {
+  return [
+    [receiverName, "nombre de quien recibe"],
+    [receiverPhone, "teléfono de quien recibe"],
+    [senderName, "nombre de quien envía"],
+    [senderEmail, "correo de quien envía"],
+    [senderPhone || phone, "teléfono de quien envía"],
+    [deliveryDateTime, "hora de entrega"],
+    [exactAddress, "dirección exacta"],
+    [sector, "sector"],
+    [cardMessage, "mensaje para la tarjeta"],
+    [observations, "observaciones"],
+    [total, "total"],
+  ]
+    .filter(([value]) => !String(value ?? "").trim())
+    .map(([, label]) => label);
+}
+
+function isValidEmail(value) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || "").trim());
+}
+
 /**
  * Confirma la alerta interna antes de responder y deja la confirmación del
  * cliente en segundo plano. Un fallo SMTP nunca revierte la venta registrada.
@@ -190,10 +225,32 @@ router.post("/", async (req, res) => {
       couponCode: couponCode || null,
     });
 
-    if (!receiverName || !senderName || !phone || !total) {
+    const missingFields = getMissingCheckoutFields({
+      receiverName,
+      receiverPhone,
+      senderName,
+      senderEmail,
+      senderPhone,
+      phone,
+      deliveryDateTime,
+      exactAddress,
+      sector,
+      cardMessage,
+      observations,
+      total,
+    });
+
+    if (missingFields.length > 0) {
       return res.status(400).json({
         status: "error",
-        message: "Faltan datos obligatorios: nombre del receptor, emisor, telefono y total.",
+        message: `Faltan datos obligatorios: ${missingFields.join(", ")}.`,
+      });
+    }
+
+    if (!isValidEmail(senderEmail)) {
+      return res.status(400).json({
+        status: "error",
+        message: "El correo de quien envía no tiene un formato válido.",
       });
     }
 

@@ -413,19 +413,23 @@ export default function Checkout() {
       senderEmail,
       senderPhone,
       receiverName,
+      receiverPhone,
       deliveryDateTime,
       address,
       sector,
+      cardMessage,
+      observations,
     } = readCheckoutFields();
-    const hasValidSenderEmail = !senderEmail || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(senderEmail);
-    const senderComplete = Boolean(senderName && senderPhone && hasValidSenderEmail);
-    // El mensaje de la tarjeta es opcional: bloqueaba el pago de productos que
-    // ni siquiera llevan tarjeta (perfumes, desayunos, regalos).
+    const hasValidSenderEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(senderEmail);
+    const senderComplete = Boolean(senderName && senderEmail && senderPhone && hasValidSenderEmail);
     const deliveryComplete = Boolean(
       receiverName &&
+        receiverPhone &&
         (hasConfiguredShippingSectors ? sector : true) &&
         deliveryDateTime &&
-        address
+        address &&
+        cardMessage &&
+        observations
     );
 
     return {
@@ -671,9 +675,10 @@ export default function Checkout() {
   };
 
   const getMissingSenderFields = () => {
-    const { senderName, senderPhone } = readCheckoutFields();
+    const { senderName, senderEmail, senderPhone } = readCheckoutFields();
     return [
       [senderName, "nombre de quien envía"],
+      [senderEmail, "correo de quien envía"],
       [senderPhone, "teléfono de quien envía"],
     ]
       .filter(([value]) => !value)
@@ -683,15 +688,21 @@ export default function Checkout() {
   const getMissingReceiverFields = () => {
     const {
       receiverName,
+      receiverPhone,
       address,
       sector,
       deliveryDateTime,
+      cardMessage,
+      observations,
     } = readCheckoutFields();
     return [
       [receiverName, "nombre de quien recibe"],
+      [receiverPhone, "teléfono de quien recibe"],
       ...(hasConfiguredShippingSectors ? [[sector, "sector"] as const] : []),
       [deliveryDateTime, "hora de entrega"],
       [address, "dirección exacta"],
+      [cardMessage, "mensaje para la tarjeta"],
+      [observations, "observaciones"],
     ]
       .filter(([value]) => !value)
       .map(([, label]) => label);
@@ -705,14 +716,16 @@ export default function Checkout() {
       setErrorMsg(`Completa: ${missingFields.join(", ")}.`);
       if (!senderName) {
         focusCheckoutField("sender", senderNameRef);
+      } else if (!senderEmail) {
+        focusCheckoutField("sender", senderEmailRef);
       } else if (!senderPhone) {
         focusCheckoutField("sender", senderPhoneRef);
       }
       return false;
     }
 
-    if (senderEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(senderEmail)) {
-      setErrorMsg("Revisa el correo o déjalo vacío para continuar por WhatsApp.");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(senderEmail)) {
+      setErrorMsg("Revisa el correo electrónico para continuar.");
       focusCheckoutField("sender", senderEmailRef);
       return false;
     }
@@ -728,6 +741,8 @@ export default function Checkout() {
       address,
       sector,
       deliveryDateTime,
+      cardMessage,
+      observations,
     } = readCheckoutFields();
     const missingFields = getMissingReceiverFields();
 
@@ -735,12 +750,18 @@ export default function Checkout() {
       setErrorMsg(`Completa: ${missingFields.join(", ")}.`);
       if (!receiverName) {
         focusCheckoutField("receiver", receiverNameRef);
+      } else if (!receiverPhone) {
+        focusCheckoutField("receiver", receiverPhoneRef);
       } else if (!sector) {
         focusCheckoutField("receiver", hasConfiguredShippingSectors ? sectorSelectRef : sectorInputRef);
       } else if (!deliveryDateTime) {
         focusCheckoutField("receiver", dateTimeRef);
       } else if (!address) {
         focusCheckoutField("receiver", addressRef);
+      } else if (!cardMessage) {
+        focusCheckoutField("receiver", cardMessageRef);
+      } else if (!observations) {
+        focusCheckoutField("receiver", observationsRef);
       }
       return false;
     }
@@ -1498,7 +1519,7 @@ export default function Checkout() {
                   <User className="h-7 w-7 sm:h-9 sm:w-9" /> Quién envía
                 </h3>
                 <p className="rounded-2xl bg-[#FBF7FD] p-4 text-sm font-bold text-[#4A3362]">
-                  Usaremos tu teléfono para confirmar el pedido. El correo es opcional y los campos con * son obligatorios.
+                  Usaremos tu teléfono y correo para confirmar el pedido. Todos los campos con * son obligatorios.
                 </p>
                 <div className="grid grid-cols-1 gap-5">
                   <label className="checkout-field">
@@ -1508,18 +1529,20 @@ export default function Checkout() {
                     <input
                       ref={senderNameRef}
                       autoComplete="name"
+                      required
                       className="checkout-input"
                       placeholder="Nombre completo"
                     />
                   </label>
                   <label className="checkout-field">
                     <span>
-                      <Mail className="h-5 w-5" /> Correo electrónico (opcional)
+                      <Mail className="h-5 w-5" /> Correo electrónico *
                     </span>
                     <input
                       ref={senderEmailRef}
                       type="email"
                       autoComplete="email"
+                      required
                       className="checkout-input"
                       placeholder="correo@ejemplo.com"
                     />
@@ -1532,6 +1555,7 @@ export default function Checkout() {
                       ref={senderPhoneRef}
                       type="tel"
                       autoComplete="tel"
+                      required
                       className="checkout-input"
                       placeholder="Numero para confirmar el pedido"
                     />
@@ -1548,7 +1572,7 @@ export default function Checkout() {
                   <Truck className="h-7 w-7 sm:h-9 sm:w-9" /> Quién recibe
                 </h3>
                 <p className="rounded-2xl bg-[#FBF7FD] p-4 text-sm font-bold text-[#4A3362]">
-                  Selecciona el sector para calcular el envío. Si no conoces el teléfono de quien recibe, coordinaremos contigo.
+                  Selecciona el sector para calcular el envío y completa los datos para coordinar la entrega.
                 </p>
                 <div className="grid grid-cols-1 gap-5">
                   <label className="checkout-field">
@@ -1557,29 +1581,32 @@ export default function Checkout() {
                     </span>
                     <input
                       ref={receiverNameRef}
+                      required
                       className="checkout-input"
                       placeholder="Nombre de quien recibe"
                     />
                   </label>
                   <label className="checkout-field">
                     <span>
-                      <Phone className="h-5 w-5" /> Teléfono de quien recibe (opcional)
+                      <Phone className="h-5 w-5" /> Teléfono de quien recibe *
                     </span>
                     <input
                       ref={receiverPhoneRef}
                       type="tel"
+                      required
                       className="checkout-input"
                       placeholder="Telefono de quien recibe"
                     />
                   </label>
                   <label className="checkout-field">
                     <span>
-                      <MapPin className="h-5 w-5" /> {hasConfiguredShippingSectors ? "Sector *" : "Sector o zona"}
+                      <MapPin className="h-5 w-5" /> {hasConfiguredShippingSectors ? "Sector *" : "Sector o zona *"}
                     </span>
                     {hasConfiguredShippingSectors ? (
                       <select
                         ref={sectorSelectRef}
                         value={sectorInput}
+                        required
                         onChange={(e) => {
                           setSectorInput(e.target.value);
                           updateCheckoutProgress();
@@ -1599,6 +1626,7 @@ export default function Checkout() {
                       <input
                         ref={sectorInputRef}
                         value={sectorInput}
+                        required
                         onChange={(e) => {
                           setSectorInput(e.target.value);
                           updateCheckoutProgress();
@@ -1621,6 +1649,7 @@ export default function Checkout() {
                     </span>
                     <input
                       ref={dateTimeRef}
+                      required
                       className="checkout-input"
                       placeholder="Ej: hoy de 15:00 a 17:00"
                     />
@@ -1631,26 +1660,29 @@ export default function Checkout() {
                     </span>
                     <input
                       ref={addressRef}
+                      required
                       className="checkout-input"
                       placeholder="Ciudadela, calle, manzana, villa, referencia"
                     />
                   </label>
                   <label className="checkout-field">
                     <span>
-                      <MessageSquare className="h-5 w-5" /> Mensaje para la tarjeta
+                      <MessageSquare className="h-5 w-5" /> Mensaje para la tarjeta *
                     </span>
                     <textarea
                       ref={cardMessageRef}
+                      required
                       className="checkout-input h-28 resize-none"
-                      placeholder="Opcional: escríbelo aquí o coordínalo luego por WhatsApp"
+                      placeholder="Mensaje que irá en la tarjeta"
                     />
                   </label>
                   <label className="checkout-field">
                     <span>
-                      <FileText className="h-5 w-5" /> Observaciones
+                      <FileText className="h-5 w-5" /> Observaciones *
                     </span>
                     <textarea
                       ref={observationsRef}
+                      required
                       className="checkout-input h-24 resize-none"
                       placeholder="Referencias, indicaciones o detalles especiales"
                     />
