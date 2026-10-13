@@ -138,7 +138,10 @@ router.get('/', async (req, res) => {
           p.description,
           p.price,
         ].filter(Boolean).join(' '));
-        return searchable.includes(search);
+        // Cada palabra debe aparecer en algun lado, sin importar el orden:
+        // "rosas rojas" tambien debe encontrar "Rosas Rojas Premium".
+        const searchTerms = search.split(' ').filter(Boolean);
+        return searchTerms.every((term) => searchable.includes(term));
       })
       .slice(0, limit || products.length)
       .map((p) => {
@@ -197,6 +200,46 @@ router.get('/categories', async (req, res) => {
     return res.status(200).json({ status: 'success', data });
   } catch (error) {
     console.error('External categories error:', error);
+    return res.status(500).json({ status: 'error', message: 'Error interno del servidor' });
+  }
+});
+
+/**
+ * GET /api/external/products/category-covers
+ * Una imagen representativa por categoría, elegida sobre TODO el catálogo
+ * activo (no solo la vitrina corta que carga la portada), para que ninguna
+ * categoría se muestre sin foto en el carrusel de colecciones.
+ */
+router.get('/category-covers', async (req, res) => {
+  try {
+    const products = await prisma.product.findMany({
+      where: { isActive: true, isDeleted: false, image: { not: null } },
+      select: { category: true, image: true, featured: true },
+      orderBy: [{ sortOrder: { sort: 'asc', nulls: 'last' } }, { createdAt: 'desc' }],
+    });
+
+    const bestBySlug = new Map();
+    for (const product of products) {
+      if (!product.image) continue;
+
+      const slug = slugify(product.category);
+      if (!slug || slug === 'general') continue;
+
+      const existing = bestBySlug.get(slug);
+      if (!existing || (product.featured && !existing.featured)) {
+        bestBySlug.set(slug, {
+          category: getCanonicalCategory(product.category),
+          image: product.image,
+          featured: product.featured,
+        });
+      }
+    }
+
+    const data = Array.from(bestBySlug.values()).map(({ category, image }) => ({ category, image }));
+
+    return res.status(200).json({ status: 'success', data });
+  } catch (error) {
+    console.error('External category covers error:', error);
     return res.status(500).json({ status: 'error', message: 'Error interno del servidor' });
   }
 });

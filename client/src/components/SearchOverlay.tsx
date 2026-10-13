@@ -12,19 +12,30 @@ interface SearchOverlayProps {
 
 export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
   const [query, setQuery] = useState("");
-  const normalizedQuery = normalizeSearchText(query);
-  const shouldSearch = isOpen && normalizedQuery.length >= 2;
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+
+  // Espera a que la persona deje de escribir antes de buscar: sin esto, cada
+  // tecla disparaba una petición nueva al servidor y el buscador parpadeaba.
+  useEffect(() => {
+    const normalized = normalizeSearchText(query);
+    const timeoutId = window.setTimeout(() => setDebouncedQuery(normalized), 300);
+    return () => window.clearTimeout(timeoutId);
+  }, [query]);
+
+  const shouldSearch = isOpen && debouncedQuery.length >= 2;
   const { data: allProducts = [], isLoading, isError } = useProducts({
     enabled: shouldSearch,
     limit: 12,
     summary: true,
-    search: normalizedQuery,
+    search: debouncedQuery,
   });
   const [, setLocation] = useLocation();
 
   // Filtrado de productos en tiempo real
   const filteredProducts = useMemo(() => {
     if (!shouldSearch) return [];
+
+    const searchTerms = debouncedQuery.split(" ").filter(Boolean);
 
     return allProducts
       .filter((product) => {
@@ -36,10 +47,12 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
           formatCategoryDisplayName(product.category),
         ].filter(Boolean).join(" "));
 
-        return searchableText.includes(normalizedQuery);
+        // Cada palabra debe aparecer en algun lado, sin importar el orden:
+        // "rosas rojas" tambien debe encontrar "Rosas Rojas Premium".
+        return searchTerms.every((term) => searchableText.includes(term));
       })
       .slice(0, 8);
-  }, [allProducts, normalizedQuery, shouldSearch]);
+  }, [allProducts, debouncedQuery, shouldSearch]);
 
   // Bloquear scroll cuando está abierto
   useEffect(() => {
@@ -50,6 +63,7 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
     } else {
       document.body.style.overflow = "unset";
       setQuery("");
+      setDebouncedQuery("");
     }
 
     return () => {

@@ -4,8 +4,9 @@ import { ArrowRight } from "lucide-react";
 import { CategorySidebar } from "@/components/CategorySidebar";
 import { ProductCard } from "@/components/ProductCard";
 import { useCategories } from "@/hooks/useCategories";
+import { useCategoryCovers } from "@/hooks/useCategoryCovers";
 import { useProducts } from "@/hooks/useProducts";
-import { getResponsiveImageSrcSet } from "@/lib/media";
+import { PLACEHOLDER_IMAGE, getResponsiveImageSrcSet } from "@/lib/media";
 import {
   formatCategoryDisplayName,
   getCategoryPath,
@@ -26,6 +27,10 @@ export function HomeCatalogSection() {
   // cientos de bytes, asi que las colecciones se ven apenas abre la pagina.
   // La portada solo toma una vitrina corta para mantener el primer scroll agil.
   const { data: categoryNames = [] } = useCategories();
+  // Portada por categoria calculada sobre todo el catalogo activo, no solo la
+  // vitrina corta de arriba: con 8 productos de muestra la mayoria de las
+  // categorias no tenian ningun producto propio y se quedaban sin imagen.
+  const { data: categoryCovers } = useCategoryCovers();
 
   const collections = React.useMemo(() => {
     const grouped = new Map<string, typeof allProducts>();
@@ -55,12 +60,12 @@ export function HomeCatalogSection() {
         slug: categorySlug,
         label: formatCategoryDisplayName(category),
         href: getCategoryPath(category),
-        image: cover?.image || "",
+        image: categoryCovers?.get(categorySlug) || cover?.image || PLACEHOLDER_IMAGE,
         count: products.length,
         fromPrice: prices.length > 0 ? Math.min(...prices) : null,
       };
     });
-  }, [allProducts, categoryNames]);
+  }, [allProducts, categoryNames, categoryCovers]);
 
   const featuredProducts = React.useMemo(
     () => allProducts.slice(0, HOME_FEATURED_PRODUCTS),
@@ -82,7 +87,7 @@ export function HomeCatalogSection() {
 
         <div id="product-list" className="home-catalog-list">
           {collections.length === 0 && isLoadingAll ? (
-            <div className="home-collection-grid">
+            <div className="home-collection-grid no-scrollbar">
               {Array(6)
                 .fill(0)
                 .map((_, index) => (
@@ -91,7 +96,7 @@ export function HomeCatalogSection() {
             </div>
           ) : collections.length > 0 ? (
             <>
-              <div className="home-collection-grid">
+              <div className="home-collection-grid no-scrollbar">
                 {collections.map((collection, index) => (
                   <Link
                     key={collection.slug}
@@ -99,18 +104,16 @@ export function HomeCatalogSection() {
                     className="home-collection-card"
                   >
                     <span className="home-collection-media">
-                      {collection.image ? (
-                        <img
-                          src={collection.image}
-                          srcSet={getResponsiveImageSrcSet(collection.image, [240, 320, 480])}
-                          sizes="(min-width: 1024px) 220px, 45vw"
-                          alt={`Coleccion ${collection.label} - DIFIORI Guayaquil`}
-                          loading={index < 4 ? "eager" : "lazy"}
-                          decoding="async"
-                          width={320}
-                          height={320}
-                        />
-                      ) : null}
+                      <img
+                        src={collection.image}
+                        srcSet={getResponsiveImageSrcSet(collection.image, [240, 320, 480])}
+                        sizes="(min-width: 1024px) 220px, 45vw"
+                        alt={`Coleccion ${collection.label} - DIFIORI Guayaquil`}
+                        loading={index < 4 ? "eager" : "lazy"}
+                        decoding="async"
+                        width={320}
+                        height={320}
+                      />
                     </span>
                     <span className="home-collection-body">
                       <strong className="home-collection-name">{collection.label}</strong>

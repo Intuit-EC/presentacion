@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import type { Product } from "../data/mock";
 import { resolveApiUrl } from "@/lib/api";
-import { toPublicImageUrl } from "@/lib/media";
+import { PLACEHOLDER_IMAGE, toPublicImageUrl } from "@/lib/media";
 import { areSameCategory, isPublicCatalogProduct } from "@shared/catalog";
 
 const API_URL = "/api/external/products";
@@ -32,13 +32,11 @@ export const productsQueryKey = (options: string | ProductsQueryOptions = {}) =>
 };
 
 function getImageUrl(imagePath: string | null | undefined): string {
-  const PLACEHOLDER = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='500' viewBox='0 0 400 500'%3E%3Crect width='400' height='500' fill='%23f3f4f6'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='20' fill='%239ca3af'%3ESin imagen disponible%3C/text%3E%3C/svg%3E";
-
   if (!imagePath || imagePath.trim() === "" || imagePath === "/assets/product1.png") {
-    return PLACEHOLDER;
+    return PLACEHOLDER_IMAGE;
   }
 
-  return toPublicImageUrl(imagePath) || PLACEHOLDER;
+  return toPublicImageUrl(imagePath) || PLACEHOLDER_IMAGE;
 }
 
 function normalizePublicProductText(value: unknown) {
