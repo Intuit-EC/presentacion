@@ -30,6 +30,10 @@ spec:
             # Sin esta variable el sitio no carga Google Analytics.
             - name: GA_MEASUREMENT_ID
               value: "G-XXXXXXXXXX"
+            # Opcional: etiqueta HTML de verificacion de Google Search Console
+            # (Configuracion de la propiedad > Verificacion > Etiqueta HTML).
+            # - name: GOOGLE_SITE_VERIFICATION
+            #   value: "pega-aqui-el-valor-del-content"
             # Opcional: si sirves imágenes desde otro dominio/CDN
             # - name: APP_PUBLIC_ASSET_URL
             #   value: "https://cdn.difiori.com"

@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { getResponsiveImageSrcSet } from "@/lib/media";
 import { useProducts } from "@/hooks/useProducts";
 import { useCompany } from "@/hooks/useCompany";
+import { useReviews } from "@/hooks/useReviews";
 import { useCart } from "@/context/CartContext";
 import { useToast } from "@/hooks/use-toast";
 import { Seo } from "@/components/Seo";
@@ -42,6 +43,7 @@ export default function ProductDetails() {
   const [location, setLocation] = useLocation();
   const { data: allProducts = [], isLoading } = useProducts();
   const { data: company } = useCompany();
+  const { data: reviews = [] } = useReviews();
   const { addItem, buyNow, setIsCartOpen } = useCart();
   const { toast } = useToast();
 
@@ -258,7 +260,7 @@ export default function ProductDetails() {
           },
         },
       },
-      getMerchantOrganizationSchema(),
+      getMerchantOrganizationSchema(reviews),
       {
         "@type": "BreadcrumbList",
         itemListElement: [

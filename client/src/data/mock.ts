@@ -194,6 +194,22 @@ export const FAQS = [
   {
     question: "¿Aceptan pagos con tarjeta?",
     answer: "Aceptamos todas las tarjetas de crédito, transferencias y pagos por WhatsApp."
+  },
+  {
+    question: "¿Hacen envíos fuera de Guayaquil?",
+    answer: "Por ahora entregamos únicamente dentro de Guayaquil. Si vives en el exterior, puedes pagar con PayPal y coordinamos la entrega a tu familiar o ser querido en la ciudad."
+  },
+  {
+    question: "¿Puedo pagar desde otro país?",
+    answer: "Sí, aceptamos PayPal para que puedas enviar un regalo a Guayaquil desde cualquier país sin necesidad de una cuenta bancaria local."
+  },
+  {
+    question: "¿Puedo cambiar o cancelar mi pedido?",
+    answer: "Como son productos frescos y personalizados, los cambios o cancelaciones se coordinan con nuestro equipo antes de preparar y despachar el pedido."
+  },
+  {
+    question: "¿Cómo confirman que mi pedido fue entregado?",
+    answer: "Confirmamos contigo por WhatsApp la dirección y el horario, y te avisamos en cuanto el pedido ya fue entregado."
   }
 ];
 

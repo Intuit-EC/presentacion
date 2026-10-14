@@ -3,6 +3,7 @@ import { ArrowRight, CalendarHeart, CheckCircle2, Clock3, Flower2, Gift, Heart, 
 import { Seo } from "@/components/Seo";
 import { HomeCatalogSection } from "@/components/home/HomeCatalogSection";
 import { FAQS } from "@/data/mock";
+import { useReviews } from "@/hooks/useReviews";
 import { DEFAULT_COMPANY, absoluteUrl, canonicalUrl } from "@/lib/site";
 import { getMerchantOrganizationSchema } from "@/lib/merchant-seo";
 import "./home-shell.css";
@@ -54,6 +55,7 @@ export default function Home() {
   const deferredTriggerRef = useRef<HTMLDivElement | null>(null);
   const hashScrollTimeoutsRef = useRef<number[]>([]);
   const [shouldLoadDeferredSections, setShouldLoadDeferredSections] = useState(false);
+  const { data: reviews = [] } = useReviews();
 
   const clearHashScrollTimeouts = () => {
     hashScrollTimeoutsRef.current.forEach((timeoutId) => window.clearTimeout(timeoutId));
@@ -150,7 +152,7 @@ export default function Home() {
     "@context": "https://schema.org",
     "@graph": [
       {
-        ...getMerchantOrganizationSchema(),
+        ...getMerchantOrganizationSchema(reviews),
         makesOffer: [
           { "@type": "Offer", itemOffered: { "@type": "Product", name: "Flores para regalar en Guayaquil" } },
           { "@type": "Offer", itemOffered: { "@type": "Product", name: "Ramos de flores a domicilio" } },

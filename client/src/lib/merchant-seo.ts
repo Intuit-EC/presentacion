@@ -4,6 +4,47 @@ export const MERCHANT_ORGANIZATION_ID = `${canonicalUrl("/")}#organization`;
 export const MERCHANT_SHIPPING_ID = `${canonicalUrl("/")}#shipping-policy`;
 export const MERCHANT_RETURN_POLICY_ID = `${canonicalUrl("/")}#return-policy`;
 
+export interface MerchantReview {
+  name: string;
+  content: string;
+  stars: number;
+  createdAt?: string;
+}
+
+// Mostrar la calificacion en los resultados de Google sube el click-through
+// de forma directa (el usuario ve estrellas antes de entrar al sitio). Se
+// calcula sobre resenas reales de clientes, nunca inventadas.
+function getAggregateRatingSchema(reviews: MerchantReview[]) {
+  const validReviews = reviews.filter((review) => review.stars >= 1 && review.stars <= 5);
+  if (validReviews.length === 0) return null;
+
+  const total = validReviews.reduce((sum, review) => sum + review.stars, 0);
+  const average = total / validReviews.length;
+
+  return {
+    "@type": "AggregateRating",
+    ratingValue: average.toFixed(1),
+    reviewCount: validReviews.length,
+    bestRating: 5,
+    worstRating: 1,
+  };
+}
+
+function getReviewListSchema(reviews: MerchantReview[]) {
+  return reviews.slice(0, 10).map((review) => ({
+    "@type": "Review",
+    author: { "@type": "Person", name: review.name },
+    reviewRating: {
+      "@type": "Rating",
+      ratingValue: review.stars,
+      bestRating: 5,
+      worstRating: 1,
+    },
+    reviewBody: review.content,
+    ...(review.createdAt ? { datePublished: review.createdAt } : {}),
+  }));
+}
+
 export function getMerchantShippingServiceSchema() {
   return {
     "@type": "ShippingService",
@@ -44,7 +85,9 @@ export function getMerchantReturnPolicySchema() {
   };
 }
 
-export function getMerchantOrganizationSchema() {
+export function getMerchantOrganizationSchema(reviews: MerchantReview[] = []) {
+  const aggregateRating = getAggregateRatingSchema(reviews);
+
   return {
     "@type": "Florist",
     "@id": MERCHANT_ORGANIZATION_ID,
@@ -74,6 +117,7 @@ export function getMerchantOrganizationSchema() {
     currenciesAccepted: "USD",
     hasShippingService: getMerchantShippingServiceSchema(),
     hasMerchantReturnPolicy: getMerchantReturnPolicySchema(),
+    ...(aggregateRating ? { aggregateRating, review: getReviewListSchema(reviews) } : {}),
   };
 }
 

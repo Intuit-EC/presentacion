@@ -24,6 +24,7 @@ import { DEFAULT_SEO_STATE, renderSeoTags, type SeoState } from "../client/src/c
 import { categoriesQueryKey, fetchCategories } from "../client/src/hooks/useCategories";
 import { companyQueryKey, fetchCompany } from "../client/src/hooks/useCompany";
 import { productsQueryKey, fetchProducts } from "../client/src/hooks/useProducts";
+import { reviewsQueryKey, fetchReviews } from "../client/src/hooks/useReviews";
 import { DEFAULT_COMPANY } from "../client/src/lib/site";
 import { INITIAL_PRODUCTS, TESTIMONIALS, type Product } from "../client/src/data/mock";
 import type { QueryClient } from "@tanstack/react-query";
@@ -421,6 +422,14 @@ function injectHtml(
     .replace("<!--app-state-->", stateScript);
 }
 
+// Sin este meta tag, Search Console no puede confirmar la propiedad del
+// dominio via "etiqueta HTML" y no hay forma de ver cobertura de indexacion,
+// errores ni enviar el sitemap desde la cuenta de Google del negocio.
+function buildSearchConsoleVerificationTag() {
+  const code = String(process.env.GOOGLE_SITE_VERIFICATION || "").trim();
+  return code ? `<meta name="google-site-verification" content="${escapeXml(code)}" />` : "";
+}
+
 function buildPublicConfigScript() {
   return `<script>window.__APP_CONFIG__ = ${serializeForScript({
     siteUrl: SITE_URL,
@@ -525,10 +534,18 @@ async function loadRenderApp(vite?: ViteDevServer): Promise<RenderApp> {
 }
 
 async function prefetchSsrRouteData(queryClient: QueryClient, path: string, baseUrl: string) {
-  await queryClient.prefetchQuery({
-    queryKey: companyQueryKey,
-    queryFn: () => fetchCompany(baseUrl),
-  });
+  await Promise.all([
+    queryClient.prefetchQuery({
+      queryKey: companyQueryKey,
+      queryFn: () => fetchCompany(baseUrl),
+    }),
+    // Las resenas alimentan el AggregateRating del schema Florist (home y
+    // producto): sin esto, Google solo veria las estrellas tras ejecutar JS.
+    queryClient.prefetchQuery({
+      queryKey: reviewsQueryKey,
+      queryFn: () => fetchReviews(baseUrl),
+    }),
+  ]);
 
   if (path === "/contacto") {
     return 200;
@@ -1518,7 +1535,7 @@ app.use((req, res, next) => {
 
       if (!shouldSsrPath(req.path)) {
         const page = injectHtml(template, {
-          head: renderSeoTags(getFallbackSeoState(req.path)),
+          head: renderSeoTags(getFallbackSeoState(req.path)) + buildSearchConsoleVerificationTag(),
           stateScript: buildPublicConfigScript(),
         });
         // Una ruta inexistente respondia 200, asi que Google indexaba paginas de
@@ -1543,7 +1560,7 @@ app.use((req, res, next) => {
       });
 
       const page = injectHtml(template, {
-        head: renderSeoTags(seo),
+        head: renderSeoTags(seo) + buildSearchConsoleVerificationTag(),
         appHtml,
         stateScript: `${buildPublicConfigScript()}<script>window.__REACT_QUERY_STATE__ = ${serializeForScript(dehydratedState)}</script>`,
       });
