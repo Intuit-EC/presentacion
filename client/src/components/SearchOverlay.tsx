@@ -101,7 +101,7 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[100] bg-[#FDF8FF]/95 backdrop-blur-2xl flex flex-col items-center pt-32 px-6"
+          className="fixed inset-0 z-[100] bg-[#FDF8FF]/95 backdrop-blur-2xl flex flex-col items-center overflow-y-auto pt-32 px-6 pb-20"
         >
           <button 
             type="button"
