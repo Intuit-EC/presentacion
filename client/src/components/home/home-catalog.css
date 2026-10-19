@@ -19,6 +19,99 @@
   overflow: hidden;
 }
 
+.home-catalog-intro {
+  display: grid;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  border: 1px solid rgb(122 81 150 / 0.16);
+  border-radius: 1.5rem;
+  background: linear-gradient(135deg, #fff 0%, #fbf4ff 100%);
+  padding: 1.35rem 1.25rem;
+  box-shadow: 0 18px 42px rgb(74 51 98 / 0.08);
+}
+
+.home-catalog-intro-kicker {
+  display: block;
+  margin-bottom: 0.45rem;
+  color: var(--color-accent);
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.home-catalog-intro-title {
+  max-width: 36rem;
+  color: var(--color-foreground);
+  font-family: var(--font-serif);
+  font-size: clamp(1.8rem, 3.2vw, 2.65rem);
+  line-height: 1.05;
+}
+
+.home-catalog-intro-copy {
+  max-width: 39rem;
+  margin-top: 0.6rem;
+  color: rgb(74 51 98 / 0.72);
+  font-size: 0.98rem;
+  line-height: 1.55;
+}
+
+.home-catalog-intro-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.home-catalog-intro-button { min-height: 46px; }
+
+.home-catalog-intro-help {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--color-accent);
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.home-catalog-intro-help:hover { text-decoration: underline; }
+
+.home-catalog-intro-trust {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem 1rem;
+  border-top: 1px solid rgb(122 81 150 / 0.12);
+  padding-top: 0.85rem;
+  color: rgb(74 51 98 / 0.72);
+  font-size: 0.73rem;
+  font-weight: 800;
+}
+
+.home-catalog-intro-trust span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.home-catalog-intro-trust svg { width: 0.9rem; height: 0.9rem; color: #168253; }
+
+.home-collections-heading {
+  margin: 2.2rem 0 0.9rem;
+}
+
+.home-collections-heading h3 {
+  color: var(--color-foreground);
+  font-family: var(--font-serif);
+  font-size: 1.55rem;
+}
+
+.home-collections-heading p {
+  margin-top: 0.25rem;
+  color: rgb(74 51 98 / 0.68);
+  font-size: 0.9rem;
+}
+
 .home-catalog-header {
   display: flex;
   align-items: center;
@@ -204,6 +297,16 @@
 }
 
 @media (min-width: 768px) {
+  .home-catalog-intro {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    padding: 1.6rem 1.7rem;
+  }
+
+  .home-catalog-intro-trust {
+    grid-column: 1 / -1;
+  }
+
   .home-collection-grid {
     gap: 0.85rem;
   }

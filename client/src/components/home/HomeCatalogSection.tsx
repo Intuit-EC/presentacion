@@ -1,12 +1,13 @@
 import React from "react";
 import { Link } from "wouter";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, CheckCircle2, Clock3, MessageCircleMore } from "lucide-react";
 import { CategorySidebar } from "@/components/CategorySidebar";
 import { ProductCard } from "@/components/ProductCard";
 import { useCategories } from "@/hooks/useCategories";
 import { useCategoryCovers } from "@/hooks/useCategoryCovers";
 import { useProducts } from "@/hooks/useProducts";
 import { PLACEHOLDER_IMAGE, getResponsiveImageSrcSet } from "@/lib/media";
+import { DEFAULT_COMPANY } from "@/lib/site";
 import {
   formatCategoryDisplayName,
   getCategoryPath,
@@ -79,6 +80,35 @@ export function HomeCatalogSection() {
       </aside>
 
       <main className="home-catalog-main">
+        <div className="home-catalog-intro">
+          <div>
+            <span className="home-catalog-intro-kicker">Flores y regalos en Guayaquil</span>
+            <h1 className="home-catalog-intro-title">Flores y regalos en Guayaquil, listos para sorprender</h1>
+            <p className="home-catalog-intro-copy">
+              Elige tu producto, indica la fecha de entrega y nosotros confirmamos cada detalle por WhatsApp.
+            </p>
+          </div>
+          <div className="home-catalog-intro-actions">
+            <Link href="/shop" className="ui-btn-primary home-catalog-intro-button">
+              Comprar ahora <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            </Link>
+            <a
+              href={`https://wa.me/${DEFAULT_COMPANY.phoneDigits}?text=${encodeURIComponent("Hola, necesito ayuda para elegir un regalo.")}`}
+              target="_blank"
+              rel="noreferrer"
+              className="home-catalog-intro-help"
+            >
+              <MessageCircleMore className="h-4 w-4" aria-hidden="true" />
+              Te ayudamos a elegir
+            </a>
+          </div>
+          <div className="home-catalog-intro-trust" aria-label="Beneficios de comprar en DIFIORI">
+            <span><CheckCircle2 aria-hidden="true" /> Pago seguro</span>
+            <span><Clock3 aria-hidden="true" /> Entrega coordinada</span>
+            <span><MessageCircleMore aria-hidden="true" /> Confirmación por WhatsApp</span>
+          </div>
+        </div>
+
         <div id="catalogo" className="home-catalog-header">
           <div className="home-catalog-line" />
           <h2 className="home-catalog-title">Nuestras colecciones</h2>
@@ -96,42 +126,6 @@ export function HomeCatalogSection() {
             </div>
           ) : collections.length > 0 ? (
             <>
-              <div className="home-collection-grid no-scrollbar">
-                {collections.map((collection, index) => (
-                  <Link
-                    key={collection.slug}
-                    href={collection.href}
-                    className="home-collection-card"
-                  >
-                    <span className="home-collection-media">
-                      <img
-                        src={collection.image}
-                        srcSet={getResponsiveImageSrcSet(collection.image, [240, 320, 480])}
-                        sizes="(min-width: 1024px) 220px, 45vw"
-                        alt={`Coleccion ${collection.label} - DIFIORI Guayaquil`}
-                        loading={index < 4 ? "eager" : "lazy"}
-                        decoding="async"
-                        width={320}
-                        height={320}
-                      />
-                    </span>
-                    <span className="home-collection-body">
-                      <strong className="home-collection-name">{collection.label}</strong>
-                      <small className="home-collection-meta">
-                        {collection.count > 0
-                          ? `${collection.count} ${collection.count === 1 ? "opción" : "opciones"}${
-                              collection.fromPrice !== null
-                                ? ` · desde $${collection.fromPrice.toFixed(2)}`
-                                : ""
-                            }`
-                          : "Ver colección"}
-                      </small>
-                    </span>
-                    <ArrowRight className="home-collection-arrow" aria-hidden="true" />
-                  </Link>
-                ))}
-              </div>
-
               <div className="home-featured">
                 <div className="home-featured-head">
                   <h3 className="home-featured-title">Los más pedidos</h3>
@@ -149,6 +143,38 @@ export function HomeCatalogSection() {
                     />
                   ))}
                 </div>
+              </div>
+
+              <div className="home-collections-heading">
+                <h3>Compra por ocasión</h3>
+                <p>Encuentra una opción según la persona, la fecha o tu presupuesto.</p>
+              </div>
+              <div className="home-collection-grid no-scrollbar">
+                {collections.map((collection, index) => (
+                  <Link key={collection.slug} href={collection.href} className="home-collection-card">
+                    <span className="home-collection-media">
+                      <img
+                        src={collection.image}
+                        srcSet={getResponsiveImageSrcSet(collection.image, [240, 320, 480])}
+                        sizes="(min-width: 1024px) 220px, 45vw"
+                        alt={`Coleccion ${collection.label} - DIFIORI Guayaquil`}
+                        loading={index < 4 ? "eager" : "lazy"}
+                        decoding="async"
+                        width={320}
+                        height={320}
+                      />
+                    </span>
+                    <span className="home-collection-body">
+                      <strong className="home-collection-name">{collection.label}</strong>
+                      <small className="home-collection-meta">
+                        {collection.count > 0
+                          ? `${collection.count} ${collection.count === 1 ? "opción" : "opciones"}${collection.fromPrice !== null ? ` · desde $${collection.fromPrice.toFixed(2)}` : ""}`
+                          : "Ver colección"}
+                      </small>
+                    </span>
+                    <ArrowRight className="home-collection-arrow" aria-hidden="true" />
+                  </Link>
+                ))}
               </div>
             </>
           ) : (

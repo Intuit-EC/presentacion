@@ -213,8 +213,6 @@ export default function Home() {
         path="/"
         schema={homeSchema}
       />
-      <h1 className="sr-only">DIFIORI Flores en Guayaquil - Floreria Guayaquil con Pedidos de Flores a Domicilio</h1>
-
       <div className="home-shell-main home-shell-main-catalog-first">
         <HomeCatalogSection />
 
