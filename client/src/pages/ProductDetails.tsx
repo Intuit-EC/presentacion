@@ -400,6 +400,29 @@ export default function ProductDetails() {
               </div>
             </div>
 
+            {/* En movil el layout apila imagen, titulo, precio y descripcion
+                antes de llegar a los botones de compra al fondo: quien entra
+                desde un anuncio tenia que bajar varias pantallas para comprar.
+                Este bloque pone "Comprar ahora" al alcance apenas se ve el precio. */}
+            <div className="flex flex-col sm:flex-row gap-4 mb-10 lg:hidden">
+              <button type="button" onClick={handleBuyNow} disabled={isBuying} className="ui-btn-primary flex-1 py-4">
+                {isBuying ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <ShoppingBag className="h-5 w-5" />
+                )}
+                {isBuying ? "Cargando..." : "Comprar ahora"}
+              </button>
+              <a
+                href={`https://wa.me/${DEFAULT_COMPANY.phoneDigits}?text=Hola!%20Deseo%20ordenar%20el%20arreglo:%20${encodeURIComponent(product.name)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="ui-btn-secondary flex-1 py-4"
+              >
+                <MessageSquare className="h-5 w-5" /> Pedir por WhatsApp
+              </a>
+            </div>
+
             <p className="product-description-strong mb-10 max-w-2xl">
               {product.description}
             </p>

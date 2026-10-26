@@ -96,6 +96,8 @@
 
 .home-catalog-intro-trust svg { width: 0.9rem; height: 0.9rem; color: #168253; }
 
+.home-catalog-intro-rating svg { color: #d97706; fill: #d97706; }
+
 .home-collections-heading {
   margin: 2.2rem 0 0.9rem;
 }

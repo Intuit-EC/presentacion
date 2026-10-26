@@ -1,11 +1,12 @@
 import React from "react";
 import { Link } from "wouter";
-import { ArrowRight, CheckCircle2, Clock3, MessageCircleMore } from "lucide-react";
+import { ArrowRight, CheckCircle2, Clock3, MessageCircleMore, Star } from "lucide-react";
 import { CategorySidebar } from "@/components/CategorySidebar";
 import { ProductCard } from "@/components/ProductCard";
 import { useCategories } from "@/hooks/useCategories";
 import { useCategoryCovers } from "@/hooks/useCategoryCovers";
 import { useProducts } from "@/hooks/useProducts";
+import { useReviews } from "@/hooks/useReviews";
 import { PLACEHOLDER_IMAGE, getResponsiveImageSrcSet } from "@/lib/media";
 import { DEFAULT_COMPANY } from "@/lib/site";
 import {
@@ -32,6 +33,20 @@ export function HomeCatalogSection() {
   // vitrina corta de arriba: con 8 productos de muestra la mayoria de las
   // categorias no tenian ningun producto propio y se quedaban sin imagen.
   const { data: categoryCovers } = useCategoryCovers();
+  const { data: reviews = [] } = useReviews();
+  // Mismo calculo que alimenta el AggregateRating del schema de la portada:
+  // mostrarlo tambien aqui evita que la calificacion solo exista para Google
+  // y no para quien realmente visita la pagina.
+  const ratingSummary = React.useMemo(() => {
+    const validReviews = reviews.filter((review) => review.stars >= 1 && review.stars <= 5);
+    if (validReviews.length === 0) return null;
+
+    const total = validReviews.reduce((sum, review) => sum + review.stars, 0);
+    return {
+      average: (total / validReviews.length).toFixed(1),
+      count: validReviews.length,
+    };
+  }, [reviews]);
 
   const collections = React.useMemo(() => {
     const grouped = new Map<string, typeof allProducts>();
@@ -103,6 +118,12 @@ export function HomeCatalogSection() {
             </a>
           </div>
           <div className="home-catalog-intro-trust" aria-label="Beneficios de comprar en DIFIORI">
+            {ratingSummary ? (
+              <span className="home-catalog-intro-rating">
+                <Star aria-hidden="true" /> {ratingSummary.average} · {ratingSummary.count}{" "}
+                {ratingSummary.count === 1 ? "reseña" : "reseñas"}
+              </span>
+            ) : null}
             <span><CheckCircle2 aria-hidden="true" /> Pago seguro</span>
             <span><Clock3 aria-hidden="true" /> Entrega coordinada</span>
             <span><MessageCircleMore aria-hidden="true" /> Confirmación por WhatsApp</span>
