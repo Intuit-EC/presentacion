@@ -95,7 +95,7 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    if (shouldLoadDeferredSections) return;
+    if (shouldLoadDeferredSections || typeof window === "undefined") return;
 
     const target = deferredTriggerRef.current;
     if (!target || typeof IntersectionObserver === "undefined") {
@@ -103,18 +103,37 @@ export default function Home() {
       return;
     }
 
+    const load = () => setShouldLoadDeferredSections(true);
+
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries.some((entry) => entry.isIntersecting)) {
-          setShouldLoadDeferredSections(true);
-          observer.disconnect();
-        }
+        if (entries.some((entry) => entry.isIntersecting)) load();
       },
-      { rootMargin: "500px 0px" },
+      { rootMargin: "1200px 0px" },
     );
-
     observer.observe(target);
-    return () => observer.disconnect();
+
+    // Red de seguridad: un salto de scroll instantaneo (tecla Fin, arrastrar
+    // la barra de scroll, un flick rapido en movil) puede saltarse por
+    // completo la franja que vigila el IntersectionObserver y dejar las
+    // resenas, el FAQ y el pie de pagina "cargando" para siempre. Revisar la
+    // posicion real tras cada scroll evita que eso ocurra.
+    const checkScrollPosition = () => {
+      const scrollEl = document.scrollingElement || document.documentElement;
+      if (window.scrollY + window.innerHeight >= scrollEl.scrollHeight - 1500) {
+        load();
+      }
+    };
+    window.addEventListener("scroll", checkScrollPosition, { passive: true });
+
+    // Ultimo respaldo para quien no haga scroll (por ejemplo, un crawler).
+    const fallbackTimeout = window.setTimeout(load, 4000);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("scroll", checkScrollPosition);
+      window.clearTimeout(fallbackTimeout);
+    };
   }, [shouldLoadDeferredSections]);
 
   useEffect(() => {

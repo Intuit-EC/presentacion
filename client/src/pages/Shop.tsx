@@ -3,8 +3,10 @@ import { ProductCard } from "@/components/ProductCard";
 import { CategorySidebar } from "@/components/CategorySidebar";
 import { Seo } from "@/components/Seo";
 import { absoluteUrl, canonicalUrl } from "@/lib/site";
+import { cn } from "@/lib/utils";
 import { getProductPath } from "@shared/catalog";
 import { useEffect, useMemo, useState } from "react";
+import { ChevronDown } from "lucide-react";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -87,6 +89,7 @@ export default function Shop() {
   const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE_PRODUCTS);
   const [occasion, setOccasion] = useState<(typeof OCCASION_FILTERS)[number]["value"]>("all");
   const [priceRange, setPriceRange] = useState<(typeof PRICE_FILTERS)[number]["value"]>("all");
+  const [showFilters, setShowFilters] = useState(false);
   const hasActiveFilters = occasion !== "all" || priceRange !== "all";
   const requestedProductCount = hasActiveFilters ? 60 : visibleCount;
   const { data: allProducts = [], isLoading } = useProducts({
@@ -97,6 +100,9 @@ export default function Shop() {
   // El servidor entrega 12 productos reales en el HTML para que Google y el
   // visitante vean el catálogo de inmediato. El resto solo se pide cuando el
   // cliente quiere ver mas, evitando descargar todo el inventario en celular.
+
+  const occasionLabel = OCCASION_FILTERS.find((filter) => filter.value === occasion)?.label ?? "Todas las ocasiones";
+  const priceLabel = PRICE_FILTERS.find((filter) => filter.value === priceRange)?.label ?? "Cualquier precio";
 
   const filteredProducts = useMemo(() => {
     const occasionFilter = OCCASION_FILTERS.find((filter) => filter.value === occasion)!;
@@ -223,27 +229,37 @@ export default function Shop() {
               </div>
             ) : allProducts.length > 0 ? (
               <>
-                <div className="mb-6 grid gap-3 rounded-2xl border border-primary/15 bg-white/80 p-4 shadow-sm sm:grid-cols-2">
-                  <label className="grid gap-2 text-sm font-bold text-[#4A3362]">
-                    Ocasión
-                    <select
-                      value={occasion}
-                      onChange={(event) => setOccasion(event.target.value as typeof occasion)}
-                      className="h-11 rounded-xl border border-primary/20 bg-white px-3 font-medium text-foreground outline-none focus:border-primary"
-                    >
-                      {OCCASION_FILTERS.map((filter) => <option key={filter.value} value={filter.value}>{filter.label}</option>)}
-                    </select>
-                  </label>
-                  <label className="grid gap-2 text-sm font-bold text-[#4A3362]">
-                    Precio
-                    <select
-                      value={priceRange}
-                      onChange={(event) => setPriceRange(event.target.value as typeof priceRange)}
-                      className="h-11 rounded-xl border border-primary/20 bg-white px-3 font-medium text-foreground outline-none focus:border-primary"
-                    >
-                      {PRICE_FILTERS.map((filter) => <option key={filter.value} value={filter.value}>{filter.label}</option>)}
-                    </select>
-                  </label>
+                <div className="mb-6 rounded-2xl border border-primary/15 bg-white/80 shadow-sm">
+                  <button
+                    type="button"
+                    onClick={() => setShowFilters((current) => !current)}
+                    className="flex w-full items-center justify-between gap-3 p-4 text-left text-sm font-bold text-[#4A3362] sm:hidden"
+                  >
+                    <span className="min-w-0 truncate">Filtros: {occasionLabel} · {priceLabel}</span>
+                    <ChevronDown className={cn("h-4 w-4 shrink-0 transition-transform", showFilters && "rotate-180")} aria-hidden="true" />
+                  </button>
+                  <div className={cn("grid gap-3 p-4 sm:grid-cols-2", showFilters ? "grid" : "hidden sm:grid")}>
+                    <label className="grid gap-2 text-sm font-bold text-[#4A3362]">
+                      Ocasión
+                      <select
+                        value={occasion}
+                        onChange={(event) => setOccasion(event.target.value as typeof occasion)}
+                        className="h-11 rounded-xl border border-primary/20 bg-white px-3 font-medium text-foreground outline-none focus:border-primary"
+                      >
+                        {OCCASION_FILTERS.map((filter) => <option key={filter.value} value={filter.value}>{filter.label}</option>)}
+                      </select>
+                    </label>
+                    <label className="grid gap-2 text-sm font-bold text-[#4A3362]">
+                      Precio
+                      <select
+                        value={priceRange}
+                        onChange={(event) => setPriceRange(event.target.value as typeof priceRange)}
+                        className="h-11 rounded-xl border border-primary/20 bg-white px-3 font-medium text-foreground outline-none focus:border-primary"
+                      >
+                        {PRICE_FILTERS.map((filter) => <option key={filter.value} value={filter.value}>{filter.label}</option>)}
+                      </select>
+                    </label>
+                  </div>
                 </div>
                 <div className="mb-6 rounded-2xl border border-primary/15 bg-white/80 px-5 py-4 text-sm font-bold text-[#4A3362] shadow-sm">
                   Mostrando {visibleProducts.length} de {filteredProducts.length} productos. Usa los filtros o carga más para explorar el catálogo completo.
