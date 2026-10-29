@@ -190,12 +190,12 @@ const landingPages = {
     path: "/flores-a-guayaquil-desde-el-exterior",
     title: "Envía Flores a Guayaquil desde el Exterior | DIFIORI",
     description:
-      "Envía flores y regalos a tu familia en Guayaquil desde Estados Unidos, España o cualquier país. Paga en línea con PayPal y coordinamos la entrega en Ecuador.",
+      "Envía flores y regalos a tu familia en Guayaquil desde Estados Unidos, España, Italia o cualquier país. Paga en línea con PayPal y coordinamos la entrega en Ecuador.",
     keywords:
-      "enviar flores a guayaquil desde estados unidos, enviar flores a ecuador desde el exterior, regalos para guayaquil desde afuera, flores guayaquil paypal, enviar regalo a ecuador desde españa",
+      "enviar flores a guayaquil desde estados unidos, enviar flores a ecuador desde el exterior, regalos para guayaquil desde afuera, flores guayaquil paypal, enviar regalo a ecuador desde españa, enviar flores a ecuador desde italia, enviar regalo a guayaquil desde nueva york",
     h1: "Envía flores a Guayaquil desde donde estés",
     intro:
-      "Vives afuera y quieres sorprender a alguien en Guayaquil: mamá, pareja, un amigo. Paga en línea con PayPal en tu moneda y nosotros coordinamos la entrega en Ecuador, con confirmación por WhatsApp para que sepas que llegó.",
+      "Vives afuera y quieres sorprender a alguien en Guayaquil: mamá, pareja, un amigo. Ya sea desde Estados Unidos, España, Italia o cualquier otro país, pagas en línea con PayPal en tu moneda y nosotros coordinamos la entrega en Ecuador, con confirmación por WhatsApp para que sepas que llegó.",
     focus: ["Pago con PayPal desde cualquier país", "Coordinación de entrega en Guayaquil", "Confirmamos por WhatsApp cuando se entrega"],
     preferredCategories: ["Ramo de Flores", "Flores para Aniversario", "Desayuno Sorpresa"],
     productTerms: ["rosas", "ramo", "flor", "desayuno"],

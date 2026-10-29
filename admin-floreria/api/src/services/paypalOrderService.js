@@ -511,7 +511,9 @@ async function createPaypalCheckoutOrder(prisma, payload) {
         paypal: {
           experience_context: {
             brand_name: company.name || "DIFIORI",
-            locale: "es-EC",
+            // Sin "locale" fijo, PayPal usa el idioma de la cuenta/navegador de
+            // quien paga. Antes se forzaba es-EC, asi que alguien pagando desde
+            // Estados Unidos o Italia veia el checkout en espanol de Ecuador.
             landing_page: "LOGIN",
             shipping_preference: "NO_SHIPPING",
             user_action: "PAY_NOW",

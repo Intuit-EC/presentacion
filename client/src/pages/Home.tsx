@@ -1,5 +1,5 @@
 import { Suspense, lazy, useEffect, useRef, useState } from "react";
-import { ArrowRight, CalendarHeart, CheckCircle2, Clock3, Flower2, Gift, Heart, MessageCircleMore, ShieldCheck, Sparkles } from "lucide-react";
+import { ArrowRight, CalendarHeart, CheckCircle2, Clock3, Coffee, Flower2, Gift, Globe, Heart, HeartHandshake, MessageCircleMore, ShieldCheck, Sparkles, UserRound } from "lucide-react";
 import { Seo } from "@/components/Seo";
 import { HomeCatalogSection } from "@/components/home/HomeCatalogSection";
 import { FAQS } from "@/data/mock";
@@ -284,6 +284,26 @@ export default function Home() {
             <a href="/floreria-guayaquil" className="home-discovery-card">
               <span className="home-discovery-icon"><Flower2 aria-hidden="true" /></span>
               <span><strong>Floreria en Guayaquil</strong><small>Flores frescas y entrega a domicilio</small></span>
+              <ArrowRight aria-hidden="true" />
+            </a>
+            <a href="/desayunos-sorpresa-guayaquil" className="home-discovery-card">
+              <span className="home-discovery-icon"><Coffee aria-hidden="true" /></span>
+              <span><strong>Desayuno sorpresa</strong><small>Entrega temprano con flores y frutas</small></span>
+              <ArrowRight aria-hidden="true" />
+            </a>
+            <a href="/regalos-para-hombre-guayaquil" className="home-discovery-card">
+              <span className="home-discovery-icon"><UserRound aria-hidden="true" /></span>
+              <span><strong>Regalos para hombre</strong><small>Detalles pensados para él</small></span>
+              <ArrowRight aria-hidden="true" />
+            </a>
+            <a href="/arreglos-funebres-guayaquil" className="home-discovery-card">
+              <span className="home-discovery-icon"><HeartHandshake aria-hidden="true" /></span>
+              <span><strong>Arreglos fúnebres</strong><small>Ofrendas con entrega en sala de velación</small></span>
+              <ArrowRight aria-hidden="true" />
+            </a>
+            <a href="/flores-a-guayaquil-desde-el-exterior" className="home-discovery-card">
+              <span className="home-discovery-icon"><Globe aria-hidden="true" /></span>
+              <span><strong>Envía desde el exterior</strong><small>Paga con PayPal desde cualquier país</small></span>
               <ArrowRight aria-hidden="true" />
             </a>
             <a href="/shop" className="home-discovery-card home-discovery-card-accent">

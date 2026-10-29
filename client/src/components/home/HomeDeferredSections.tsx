@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "wouter";
 import { Star, Instagram, Facebook, Music2, Mail, MessageSquare, Phone } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FAQS } from "@/data/mock";
@@ -198,9 +199,9 @@ export function HomeDeferredSections() {
                 La Maison
               </h4>
               <ul className="home-footer-links">
-                <li className="home-footer-link">Tienda</li>
-                <li className="home-footer-link">Contacto</li>
-                <li className="home-footer-link">Preguntas Frecuentes</li>
+                <li><Link href="/shop" className="home-footer-link">Tienda</Link></li>
+                <li><Link href="/contacto" className="home-footer-link">Contacto</Link></li>
+                <li><a href="#faq" className="home-footer-link">Preguntas Frecuentes</a></li>
                 <li className="home-footer-link">Terminos y Condiciones</li>
               </ul>
             </div>
